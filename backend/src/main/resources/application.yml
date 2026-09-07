@@ -7,17 +7,15 @@ spring:
 
   datasource:
     # Local MySQL or a managed MySQL instance (RDS, PlanetScale, etc.) - adjust host/port/db name
-    url: ${DB_URL:jdbc:mysql://localhost:3306/pawfectly?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/pawfectly?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:changeme}
+    password: ${DB_PASSWORD:12345}
     hikari:
       maximum-pool-size: 10
 
   jpa:
     hibernate:
-      # Use 'update' while iterating on entities. Switch to 'validate' once you introduce
-      # a migration tool (Flyway/Liquibase) for anything beyond local dev.
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
@@ -28,7 +26,7 @@ app:
   jwt:
     # Generate a real secret for prod: openssl rand -base64 64
     secret: ${JWT_SECRET:replace-this-with-a-long-random-base64-secret-change-me}
-    expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24h
+    expiration-ms: ${JWT_EXPIRATION:${JWT_EXPIRATION_MS:86400000}} # 24h
 
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:3001}
