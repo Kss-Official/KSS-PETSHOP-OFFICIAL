@@ -1,5 +1,6 @@
 # Java / Maven (Backend)
 target/
+**/target/
 *.iml
 
 # Node / Web (Frontend)
@@ -17,6 +18,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
+logs/
 
 # IDE & OS
 .vscode/*
@@ -24,3 +27,8 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 *.log
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
