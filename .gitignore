@@ -1,3 +1,7 @@
+# Documentation (Ignore README from Git)
+README.md
+**/README.md
+
 # Java / Maven (Backend)
 target/
 **/target/
