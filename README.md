@@ -1,4 +1,4 @@
-# Pawsitive Pet Shop & Clinic Management System
+# Pawfectly Pet Shop & Clinic Management System
 
 Full-stack pet clinic management system containing both the Spring Boot backend and React + Vite frontend.
 
