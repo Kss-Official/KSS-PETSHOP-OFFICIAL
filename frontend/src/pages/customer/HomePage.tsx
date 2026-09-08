@@ -2,15 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-import { getCloudinaryImageUrl } from '../../lib/utils';
+import { CtaBanner } from '../../components/layout/CtaBanner';
+import { getCloudinaryImageUrl, getVetImageUrl } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { apiClient } from '../../lib/axios';
+import { useAuth } from '../../features/auth/AuthContext';
 import {
   ChevronRight,
-  ArrowRight,
   Stethoscope,
   Utensils,
   Scissors,
@@ -19,6 +20,7 @@ import {
   Calendar,
   ShieldCheck,
   Truck,
+  ShoppingBag,
   Sparkles,
   Headphones,
 } from 'lucide-react';
@@ -33,15 +35,16 @@ interface ServiceItem {
 
 interface VetItem {
   id: number;
-  fullName: string;
-  title: string;
+  name: string;
   specialization: string;
-  experienceYears: number;
-  rating: number;
-  reviewsCount: number;
-  city: string;
-  country: string;
-  imageUrl?: string;
+  secondarySpecialization?: string;
+  petTypes?: string;
+  experienceYears?: number;
+  reviewsCount?: number;
+  city?: string;
+  consultationFee?: number;
+  photoUrl?: string;
+  rating?: number;
 }
 
 export const HomePage: React.FC = () => {
@@ -50,6 +53,7 @@ export const HomePage: React.FC = () => {
   const [vets, setVets] = useState<VetItem[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
   const [loadingVets, setLoadingVets] = useState(true);
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Cloudinary image assets
@@ -63,7 +67,6 @@ export const HomePage: React.FC = () => {
   const avatar2Url = getCloudinaryImageUrl('avatar_user_2');
   const avatar3Url = getCloudinaryImageUrl('avatar_user_3');
   const avatar4Url = getCloudinaryImageUrl('avatar_user_4');
-  const ctaCatUrl = getCloudinaryImageUrl('cta_cat_sunglasses_flawless_seamless');
 
   const vetScrollRef = useRef<HTMLDivElement>(null);
 
@@ -97,6 +100,17 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     fetchHomeData();
   }, []);
+
+  const filteredVets = vets.filter((vet) => {
+    if (activeCategory === 'All') return true;
+    const petLower = activeCategory.toLowerCase();
+    if (vet.petTypes && vet.petTypes.toLowerCase().includes(petLower)) return true;
+    if (activeCategory === 'Exotic Pets' && (
+      (vet.specialization && vet.specialization.toLowerCase().includes('exotic')) ||
+      (vet.petTypes && (vet.petTypes.toLowerCase().includes('bird') || vet.petTypes.toLowerCase().includes('rabbit') || vet.petTypes.toLowerCase().includes('exotic')))
+    )) return true;
+    return false;
+  });
 
   const handleVetScroll = () => {
     if (vetScrollRef.current) {
@@ -160,7 +174,7 @@ export const HomePage: React.FC = () => {
             {/* Hero Left Content (5 cols) */}
             <div className="lg:col-span-5 space-y-6 text-center lg:text-left z-20">
               <Badge variant="orange" className="inline-flex">
-                ALL THE LOVE. ALL THE CARE. ❤️
+                ALL THE LOVE. ALL THE CARE.
               </Badge>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#16241B] leading-[1.1] font-sans">
@@ -177,7 +191,7 @@ export const HomePage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
                 <Link to="/find-a-vet">
                   <Button variant="primary" size="lg">
-                    Find a Vet 🐾
+                    Find a Vet
                   </Button>
                 </Link>
                 <Link to="/pharmacy">
@@ -213,7 +227,7 @@ export const HomePage: React.FC = () => {
                 </div>
                 <span className="text-xs sm:text-sm font-bold text-[#334437]">
                   Loved by 25,000+<br />
-                  pets & parents 🐾
+                  pets & parents
                 </span>
               </div>
             </div>
@@ -232,8 +246,8 @@ export const HomePage: React.FC = () => {
 
                 {/* Floating Callout Cards */}
                 <div className="absolute -top-6 left-[22%] sm:left-[26%] -translate-x-1/2 bg-[#EE9D1A] border border-[#D98A00] text-[#16241B] px-4 py-2 rounded-2xl rounded-bl-none shadow-xl text-xs sm:text-sm font-bold flex flex-col animate-float-slow z-20">
-                  <span className="font-black text-black leading-tight">Your pet called.</span>
-                  <span className="font-semibold text-black/90 text-[11px] sm:text-xs">They need a vet.</span>
+                  <span className="font-bold text-black leading-tight">Your pet called.</span>
+                  <span className="font-medium text-black/90 text-[11px] sm:text-xs">They need a vet.</span>
                 </div>
 
                 <div className="absolute top-2 right-2 sm:right-6 lg:right-10 bg-white border border-[#EBE5D6] text-[#16241B] px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3 animate-float-delayed z-20 whitespace-nowrap">
@@ -242,21 +256,21 @@ export const HomePage: React.FC = () => {
                   </div>
                   <div className="flex flex-col text-left">
                     <span className="text-[10px] sm:text-[11px] text-gray-500 font-medium leading-none mb-0.5">Professional</span>
-                    <span className="text-xs sm:text-sm font-extrabold text-[#16241B] leading-tight">Treat Tester</span>
+                    <span className="text-xs sm:text-sm font-bold text-[#16241B] leading-tight">Treat Tester</span>
                   </div>
                 </div>
 
                 <div className="absolute top-[36%] sm:top-[38%] -left-6 sm:-left-12 lg:-left-16 -translate-y-1/2 bg-[#C5EAD4] border border-[#A7DBC0] text-[#16241B] px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl shadow-xl flex flex-col gap-0.5 animate-float-slow z-20">
                   <span className="text-[11px] sm:text-xs text-[#285A3F] font-medium leading-tight">Always</span>
-                  <span className="text-sm sm:text-base font-extrabold text-[#16241B] leading-tight tracking-tight">Ready For</span>
+                  <span className="text-sm sm:text-base font-bold text-[#16241B] leading-tight tracking-tight">Ready For</span>
                   <span className="text-xs sm:text-sm text-[#285A3F] font-bold leading-tight">Treats</span>
                 </div>
 
                 <div className="absolute -bottom-4 sm:-bottom-5 left-[6%] sm:left-[10%] bg-[#FDF0AA] border border-[#F3E188] text-[#16241B] px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3 animate-float-delayed z-20">
                   <div className="flex flex-col text-left">
                     <span className="text-[10px] sm:text-[11px] text-[#6B5A10] font-medium leading-none mb-1">Appointment</span>
-                    <span className="text-xs sm:text-sm font-extrabold text-[#16241B] flex items-center gap-1">
-                      Booked <span className="text-[#059669] font-black">✓</span>
+                    <span className="text-xs sm:text-sm font-bold text-[#16241B] flex items-center gap-1">
+                      Booked <span className="text-[#059669] font-bold">✓</span>
                     </span>
                   </div>
                   <div className="w-8 h-8 rounded-xl bg-white/80 border border-[#E9D575] flex items-center justify-center text-[#16241B] shrink-0 shadow-xs">
@@ -266,7 +280,7 @@ export const HomePage: React.FC = () => {
 
                 <div className="absolute -bottom-4 sm:-bottom-5 right-4 sm:right-8 lg:right-12 bg-[#FCE3E4] border border-[#F9C3C6] text-[#16241B] px-4 py-2.5 rounded-2xl shadow-xl flex flex-col animate-float-slow z-20">
                   <span className="text-[10px] sm:text-[11px] text-[#9F1239] font-bold mb-0.5">10/10</span>
-                  <span className="text-xs sm:text-sm font-extrabold text-[#9F1239] leading-tight">Good Boy</span>
+                  <span className="text-xs sm:text-sm font-bold text-[#9F1239] leading-tight">Good Boy</span>
                 </div>
               </div>
             </div>
@@ -304,7 +318,7 @@ export const HomePage: React.FC = () => {
             </div>
             <Link to="/services">
               <Button variant="primary" size="md" className="shrink-0 self-start sm:self-auto">
-                Explore All Services 🐾
+                Explore All Services
               </Button>
             </Link>
           </div>
@@ -327,8 +341,7 @@ export const HomePage: React.FC = () => {
                 return (
                   <div
                     key={service.id}
-                    onClick={() => navigate('/services')}
-                    className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group cursor-pointer transition-all duration-300"
+                    className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group transition-all duration-300"
                   >
                     <div className={`absolute -top-2.5 -left-2.5 sm:-top-3 sm:-left-3 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border-2 border-white flex items-center justify-center shadow-md z-20 ${badgeBg}`}>
                       {icon}
@@ -353,14 +366,6 @@ export const HomePage: React.FC = () => {
                         <p className="text-[11px] text-[#5D6F63] font-medium leading-snug line-clamp-2 mt-1">
                           {service.description || 'Comprehensive, loving care designed for your pet.'}
                         </p>
-                      </div>
-                      <div className="flex justify-between items-center pt-2">
-                        <span className="text-xs font-black text-[#287A41]">
-                          Verified Care
-                        </span>
-                        <div className="w-7 h-7 rounded-full bg-[#FAF6EE] border border-[#EAE3D4] text-[#14261C] group-hover:bg-[#14261C] group-hover:text-white group-hover:border-[#14261C] transition-all duration-300 flex items-center justify-center shadow-2xs">
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -401,7 +406,7 @@ export const HomePage: React.FC = () => {
             {/* Left Content */}
             <div className="lg:col-span-5 space-y-6 relative">
               <Badge variant="orange" className="inline-flex">
-                BEST CARE, RIGHT NEAR YOU ❤️
+                BEST CARE, RIGHT NEAR YOU
               </Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#16241B] tracking-tight">
                 Meet Their New <span className="text-[#EF7C3C]">Favorite</span> Human.
@@ -417,7 +422,7 @@ export const HomePage: React.FC = () => {
                 <div className="relative inline-flex items-center ml-10 sm:ml-20 lg:ml-28">
                   <div className="inline-flex items-center bg-white border border-[#E8E2D4] px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-xs">
                     <span className="text-xs sm:text-sm font-bold text-[#16241B] flex items-center gap-1.5">
-                      P.S. They'll get extra treats <span className="text-red-500">❤️</span>
+                      P.S. They'll get extra treats
                     </span>
                   </div>
 
@@ -451,16 +456,19 @@ export const HomePage: React.FC = () => {
                       <Skeleton className="w-full aspect-[4/3] rounded-2xl" />
                       <Skeleton className="h-5 w-1/2" />
                       <Skeleton className="h-4 w-1/3" />
-                      <Skeleton className="h-8 w-full rounded-full" />
                     </div>
                   ))
-                ) : vets.length > 0 ? (
-                  vets.map((vet) => (
-                    <Card key={vet.id} className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group">
+                ) : filteredVets.length > 0 ? (
+                  filteredVets.map((vet) => (
+                    <Card
+                      key={vet.id}
+                      onClick={() => navigate(isAuthenticated ? `/profile?tab=appointments&vetId=${vet.id}` : '/login')}
+                      className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group bg-white rounded-3xl p-5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all cursor-pointer"
+                    >
                       <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
                         <img
-                          src={vet.imageUrl || getCloudinaryImageUrl('vet_dr_sarah_mitchell')}
-                          alt={vet.fullName}
+                          src={getVetImageUrl(vet.name, vet.photoUrl, vet.id)}
+                          alt={vet.name}
                           className="w-full h-full object-cover object-[center_20%] rounded-2xl group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
@@ -468,30 +476,25 @@ export const HomePage: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <h3 className="text-lg font-extrabold text-[#16241B]">
-                          {vet.fullName}
+                        <h3 className="text-lg font-black text-[#16241B] group-hover:text-[#EF7C3C] transition-colors">
+                          {vet.name}
                         </h3>
-                        <p className="text-xs font-semibold text-[#EF7C3C]">
-                          {vet.title || vet.specialization}
+                        <p className="text-xs font-bold text-[#EF7C3C] mt-0.5">
+                          {vet.specialization}
                         </p>
                       </div>
                       <div className="space-y-1 text-xs text-[#556658]">
-                        <p>{vet.experienceYears || 10}+ years experience</p>
-                        <p className="line-clamp-1">{vet.specialization}</p>
-                        <p className="font-semibold text-[#16241B] pt-1 flex items-center gap-1">
-                          <span className="text-[#EF7C3C]">📍</span> {vet.city || 'New York'}, {vet.country || 'USA'}
+                        <p className="font-semibold">{vet.experienceYears || 10}+ years experience</p>
+                        <p className="font-semibold text-[#16241B] line-clamp-1">{vet.secondarySpecialization || vet.specialization}</p>
+                        <p className="font-semibold text-[#16241B] pt-0.5 flex items-center gap-1">
+                          <span className="text-[#EF7C3C]">📍</span> {vet.city || 'New York, USA'}
                         </p>
                       </div>
-                      <Link to={`/find-a-vet?vetId=${vet.id}`} className="block">
-                        <button className="w-full py-3 px-4 bg-[#FBA834] hover:bg-[#e0942b] text-white font-extrabold rounded-full shadow-xs transition-colors cursor-pointer text-sm">
-                          View Profile & Book
-                        </button>
-                      </Link>
                     </Card>
                   ))
                 ) : (
                   <div className="w-full py-8 text-center text-[#5D6F63] text-sm font-semibold">
-                    No veterinarians listed at this time.
+                    No veterinarians listed for {activeCategory} at this time.
                   </div>
                 )}
               </div>
@@ -508,70 +511,8 @@ export const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* 7. CTA Banner with 3D Pop-out Cat */}
-        <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-16 overflow-visible">
-          <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-              {/* Left 3D Cat with Sunglasses */}
-              <div className="lg:col-span-5 flex justify-center items-end relative overflow-visible z-20">
-                <div className="relative -mt-24 sm:-mt-32 lg:-mt-40 -mb-6 sm:-mb-10 lg:-mb-14 w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[460px] flex justify-center items-end pointer-events-none">
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-10 bg-black/30 rounded-full blur-xl -z-10" />
-                  <img
-                    src={ctaCatUrl}
-                    alt="Cool cat wearing sunglasses"
-                    className="w-full h-auto object-contain [filter:drop-shadow(0_12px_18px_rgba(0,0,0,0.18))_drop-shadow(0_28px_40px_rgba(180,83,9,0.30))]"
-                  />
-                </div>
-              </div>
-
-              {/* Right Content */}
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
-                  Happy Pet. Happy Home.<br className="hidden sm:inline" /> It's That Simple.
-                </h2>
-                <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
-                  Join thousands of pet parents who trust us for everything their pets deserve.
-                </p>
-
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                  <Link to="/login">
-                    <button className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-[0_8px_20px_rgba(0,158,102,0.35)] transition-all flex items-center gap-2 text-base cursor-pointer">
-                      Join the Pack 🐾
-                    </button>
-                  </Link>
-
-                  <div className="bg-[#FFE58A]/95 backdrop-blur-xs px-4 py-2.5 rounded-full border border-white/50 shadow-xs flex items-center gap-3">
-                    <div className="flex -space-x-2">
-                      <img
-                        className="w-7 h-7 rounded-full ring-2 ring-white object-cover object-top"
-                        src={avatar1Url}
-                        alt="User Reviewer 1"
-                      />
-                      <img
-                        className="w-7 h-7 rounded-full ring-2 ring-white object-cover object-top"
-                        src={avatar2Url}
-                        alt="User Reviewer 2"
-                      />
-                      <img
-                        className="w-7 h-7 rounded-full ring-2 ring-white object-cover object-top"
-                        src={avatar3Url}
-                        alt="User Reviewer 3"
-                      />
-                      <img
-                        className="w-7 h-7 rounded-full ring-2 ring-white object-cover object-top"
-                        src={avatar4Url}
-                        alt="User Reviewer 4"
-                      />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">
-                      25,000+ tails wagging! ❤️
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* 7. Shared CTA Banner */}
+        <CtaBanner />
 
         {/* 8. Feature Strip */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -602,13 +543,13 @@ export const HomePage: React.FC = () => {
 
             <div className="flex items-center gap-3.5">
               <div className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center text-[#8C6D00] shrink-0">
-                <Truck className="w-5 h-5" />
+                <ShoppingBag className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="text-sm font-extrabold text-[#16241B]">
-                  Free Delivery over $49
+                  In-Store Pickup Available
                 </h4>
-                <p className="text-xs text-[#556658]">Right to your doorstep</p>
+                <p className="text-xs text-[#556658]">Ready at your nearest clinic</p>
               </div>
             </div>
 

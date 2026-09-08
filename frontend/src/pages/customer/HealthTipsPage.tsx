@@ -9,7 +9,6 @@ import { apiClient } from '../../lib/axios';
 import {
   Search,
   Heart,
-  LayoutGrid,
   Utensils,
   Syringe,
   Scissors,
@@ -24,20 +23,29 @@ import {
   Sparkles,
   Mail,
   CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 
 interface ArticleDto {
   id: number;
   title: string;
+  excerpt?: string;
+  content?: string;
   category: string;
-  excerpt: string;
-  content: string;
-  authorName?: string;
-  readTimeMinutes: number;
-  featured: boolean;
-  publishedAt?: string;
+  petType?: string;
   imageUrl?: string;
+  publishedAt?: string;
+  readTimeMinutes?: number;
+  featured?: boolean;
 }
+
+const resolveArticleImageUrl = (photoUrl?: string): string => {
+  if (!photoUrl) return getCloudinaryImageUrl('health_tips_hero');
+  if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
+    return photoUrl;
+  }
+  return getCloudinaryImageUrl(photoUrl);
+};
 
 export const HealthTipsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('All Tips');
@@ -48,11 +56,11 @@ export const HealthTipsPage: React.FC = () => {
   const [subscribeMsg, setSubscribeMsg] = useState<string | null>(null);
 
   const [articles, setArticles] = useState<ArticleDto[]>([]);
+  const [selectedPetType, setSelectedPetType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const filterTabs = [
-    { name: 'All Tips', icon: LayoutGrid, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]', border: 'border-[#C3ECD0]' },
     { name: 'Nutrition', icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]', border: 'border-[#FDE047]' },
     { name: 'Vaccination', icon: Syringe, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]', border: 'border-[#BAE6FD]' },
     { name: 'Grooming', icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]', border: 'border-[#FECDD3]' },
@@ -96,30 +104,121 @@ export const HealthTipsPage: React.FC = () => {
   }, []);
 
   const filteredArticles = articles.filter((art) => {
+    const category = (art.category || '').toLowerCase();
+    const title = (art.title || '').toLowerCase();
+    const excerpt = (art.excerpt || '').toLowerCase();
+    const targetTab = (activeTab || '').toLowerCase();
+    const query = (searchQuery || '').toLowerCase();
+
     const matchesCategory =
-      activeTab === 'All Tips' ||
-      art.category.toLowerCase().includes(activeTab.toLowerCase());
+      activeTab === 'All Tips' || category.includes(targetTab);
 
     const matchesSearch =
       searchQuery === '' ||
-      art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.category.toLowerCase().includes(searchQuery.toLowerCase());
+      title.includes(query) ||
+      excerpt.includes(query) ||
+      category.includes(query);
 
     return matchesCategory && matchesSearch;
   });
 
   const featuredList = filteredArticles.filter((a) => a.featured).slice(0, 3);
-  const latestList = filteredArticles.slice(0, 8);
+
+  const petTypeFilteredArticles = articles.filter((art) => {
+    if (!selectedPetType) return true;
+
+    const petType = (art.petType || '').toLowerCase();
+    const title = (art.title || '').toLowerCase();
+    const excerpt = (art.excerpt || '').toLowerCase();
+    const category = (art.category || '').toLowerCase();
+    const target = selectedPetType.toLowerCase();
+
+    return (
+      petType === target ||
+      title.includes(target) ||
+      excerpt.includes(target) ||
+      category.includes(target)
+    );
+  });
 
   const petTypes = [
-    { name: 'Dogs', bg: 'bg-[#FEF9C3]', border: 'border-[#FDE047]' },
-    { name: 'Cats', bg: 'bg-[#E6F9EC]', border: 'border-[#C3ECD0]' },
-    { name: 'Rabbits', bg: 'bg-[#FFEDD5]', border: 'border-[#FED7AA]' },
-    { name: 'Birds', bg: 'bg-[#E0F2FE]', border: 'border-[#BAE6FD]' },
-    { name: 'Small Pets', bg: 'bg-[#FFE4E6]', border: 'border-[#FECDD3]' },
-    { name: 'Reptiles', bg: 'bg-[#DCFCE7]', border: 'border-[#BBF7D0]' },
-    { name: 'Fish', bg: 'bg-[#CCFBF1]', border: 'border-[#99F6E4]' },
+    {
+      name: 'Dogs',
+      bg: 'bg-[#FEF9C3]',
+      border: 'border-[#FDE047]',
+      hoverBorder: 'hover:border-[#EAB308]',
+      activeBorder: 'border-[#CA8A04]',
+      text: 'text-[#B45309]',
+      hoverText: 'group-hover:text-[#B45309]',
+      hoverBg: 'hover:bg-[#FEF9C3]/50',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895238/be7aa286-04e9-4307-b2f4-6dc218dfb17f_1.png',
+    },
+    {
+      name: 'Cats',
+      bg: 'bg-[#E6F9EC]',
+      border: 'border-[#C3ECD0]',
+      hoverBorder: 'hover:border-[#3FA65C]',
+      activeBorder: 'border-[#287A41]',
+      text: 'text-[#287A41]',
+      hoverText: 'group-hover:text-[#287A41]',
+      hoverBg: 'hover:bg-[#E6F9EC]/50',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895237/17d0f799-c458-4c6c-a0a6-80d8cf71e496_1.png',
+    },
+    {
+      name: 'Rabbits',
+      bg: 'bg-[#FFEDD5]',
+      border: 'border-[#FED7AA]',
+      hoverBorder: 'hover:border-[#FB923C]',
+      activeBorder: 'border-[#C2410C]',
+      text: 'text-[#C2410C]',
+      hoverText: 'group-hover:text-[#C2410C]',
+      hoverBg: 'hover:bg-[#FFEDD5]/50',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/886e967f-9a24-48c5-aeff-ff8e6f6a00e6_1.png',
+    },
+    {
+      name: 'Birds',
+      bg: 'bg-[#E0F2FE]',
+      border: 'border-[#BAE6FD]',
+      hoverBorder: 'hover:border-[#38BDF8]',
+      activeBorder: 'border-[#0284C7]',
+      text: 'text-[#0284C7]',
+      hoverText: 'group-hover:text-[#0284C7]',
+      hoverBg: 'hover:bg-[#E0F2FE]/50',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/ce452fe3-fdc7-4140-8b94-6c0f373622db_1.png',
+    },
+    {
+      name: 'Small Pets',
+      bg: 'bg-[#FFE4E6]',
+      border: 'border-[#FECDD3]',
+      hoverBorder: 'hover:border-[#FB7185]',
+      activeBorder: 'border-[#E11D48]',
+      text: 'text-[#E11D48]',
+      hoverText: 'group-hover:text-[#E11D48]',
+      hoverBg: 'hover:bg-[#FFE4E6]/50',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/c0d11401-6185-488d-9267-a5235e16375a_1.png',
+    },
+    {
+      name: 'Reptiles',
+      bg: 'bg-[#DCFCE7]',
+      border: 'border-[#BBF7D0]',
+      hoverBorder: 'hover:border-[#4ADE80]',
+      activeBorder: 'border-[#15803D]',
+      text: 'text-[#15803D]',
+      hoverText: 'group-hover:text-[#15803D]',
+      hoverBg: 'hover:bg-[#DCFCE7]/50',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/3553855e-62e9-4565-9f5a-a5d484ecd080_1.png',
+    },
+    {
+      name: 'Fish',
+      bg: 'bg-[#CCFBF1]',
+      border: 'border-[#99F6E4]',
+      hoverBorder: 'hover:border-[#2DD4BF]',
+      activeBorder: 'border-[#0D9488]',
+      text: 'text-[#0D9488]',
+      hoverText: 'group-hover:text-[#0D9488]',
+      hoverBg: 'hover:bg-[#CCFBF1]/50',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/119ae58d-9928-4822-afb6-97826bd4341c_1.png',
+    },
   ];
 
   const quickDailyTips = [
@@ -183,91 +282,112 @@ export const HealthTipsPage: React.FC = () => {
 
       <main className="flex-grow space-y-16 lg:space-y-24 pb-20">
         {/* 2. Hero Section */}
-        <section className="bg-[#EFF8F0] border-b border-[#E2EEDB] relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-18">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-              {/* Left Column */}
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider shadow-2xs">
-                  <Heart className="w-3.5 h-3.5 fill-[#EF7C3C]" />
-                  <span>PET HEALTH TIPS</span>
-                </div>
+        <section id="health-tips-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 lg:pt-28 pb-16 sm:pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center min-h-[460px] sm:min-h-[540px]">
+            <div className="lg:col-span-5 space-y-8">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider shadow-2xs">
+                <Heart className="w-3.5 h-3.5 fill-[#EF7C3C]" />
+                <span>PET HEALTH TIPS</span>
+              </div>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
-                  Small Care Makes A{' '}
-                  <span className="text-[#EF7C3C]">Big Difference.</span>
-                </h1>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#16241B] tracking-tight leading-[1.12]">
+                Small Care Makes A{' '}
+                <span className="text-[#EF7C3C]">Big Difference.</span>
+              </h1>
 
-                <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
-                  Simple tips. Healthier pets. Happier lives. Expert advice,
-                  everyday care, and everything your pet needs to stay healthy and vibrant.
-                </p>
+              <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
+                Simple tips. Healthier pets. Happier lives. Expert advice,
+                everyday care, and everything your pet needs to stay healthy and vibrant.
+              </p>
 
-                {/* Search Bar */}
-                <div className="max-w-xl pt-2">
-                  <form
-                    onSubmit={(e) => e.preventDefault()}
-                    className="flex items-center bg-white rounded-full p-1.5 sm:p-2 border border-[#EDE7D9] shadow-md focus-within:ring-2 focus-within:ring-[#3FA65C] transition-all"
-                  >
-                    <div className="pl-3 sm:pl-4 text-[#556658]">
-                      <Search className="w-5 h-5 text-[#556658]" />
-                    </div>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search health tips (e.g. diet, vaccination, grooming...)"
-                      className="w-full px-3 text-xs sm:text-sm text-[#16241B] placeholder-[#88998C] bg-transparent focus:outline-hidden"
-                    />
-                    <button
-                      type="submit"
-                      className="px-5 sm:px-7 py-2.5 sm:py-3 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-full text-xs sm:text-sm shadow-xs transition-all shrink-0 cursor-pointer"
-                    >
-                      Search
-                    </button>
-                  </form>
-
-                  {/* Popular Searches */}
-                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-3.5 text-xs text-[#556658]">
-                    <span className="font-bold text-[#16241B]">Popular Searches:</span>
-                    {popularTags.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => setSearchQuery(tag)}
-                        className="px-3 py-1 rounded-full bg-white border border-[#E5DFCE] hover:border-[#3FA65C] hover:text-[#3FA65C] font-semibold text-xs transition-colors cursor-pointer"
-                      >
-                        {tag}
-                      </button>
-                    ))}
+              {/* Search Bar */}
+              <div className="max-w-xl pt-2">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('featured-health-tips');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="flex items-center bg-white rounded-full p-1.5 sm:p-2 border border-[#EDE7D9] shadow-md focus-within:ring-2 focus-within:ring-[#3FA65C] transition-all"
+                >
+                  <div className="pl-3 sm:pl-4 text-[#556658]">
+                    <Search className="w-5 h-5 text-[#556658]" />
                   </div>
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="lg:col-span-5 flex justify-center items-center relative">
-                <div className="absolute inset-0 bg-[#D8F3DC]/70 rounded-[48%_52%_68%_32%/42%_58%_42%_58%] -rotate-3 scale-105 pointer-events-none blur-xs" />
-                <div className="absolute -top-4 left-4 z-20 bg-white border border-[#E2EEDB] px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#F5A623] shrink-0" />
-                  <span className="text-xs font-black text-[#16241B]">
-                    Healthy Pets, Happier Tomorrows!
-                  </span>
-                </div>
-
-                <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border-2 border-[#D0EBD5] shadow-lg bg-white z-10">
-                  <img
-                    src={getCloudinaryImageUrl('hero_dog_cat_green_bg')}
-                    alt="Health & Wellness"
-                    className="w-full h-full object-cover rounded-3xl"
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search health tips (e.g. diet, vaccination, grooming...)"
+                    className="w-full px-3 text-xs sm:text-sm text-[#16241B] placeholder-[#88998C] bg-transparent focus:outline-hidden"
                   />
+                  <button
+                    type="submit"
+                    className="px-5 sm:px-7 py-2.5 sm:py-3 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-full text-xs sm:text-sm shadow-xs transition-all shrink-0 cursor-pointer"
+                  >
+                    Search
+                  </button>
+                </form>
+
+                {/* Popular Searches */}
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-3.5 text-xs text-[#556658]">
+                  <span className="font-bold text-[#16241B]">Popular Searches:</span>
+                  {popularTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        setSearchQuery(tag);
+                        const el = document.getElementById('featured-health-tips');
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                      className="px-3 py-1 rounded-full bg-white border border-[#E5DFCE] hover:border-[#3FA65C] hover:text-[#3FA65C] font-semibold text-xs transition-colors cursor-pointer"
+                    >
+                      {tag}
+                    </button>
+                  ))}
                 </div>
               </div>
+            </div>
+
+            {/* Transparent Hero Graphic - Bigger & Static */}
+            <div className="lg:col-span-7 flex justify-center lg:justify-end items-center">
+              <img
+                src={getCloudinaryImageUrl('health_tips_hero')}
+                alt="Health Tips - Small Pets Big Love"
+                className="w-full max-w-[980px] lg:max-w-[1080px] h-auto object-contain pointer-events-none select-none"
+              />
             </div>
           </div>
         </section>
 
-        {/* 3. Filter Tabs (8 Pills) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 pt-1 scroll-smooth">
+        {/* 3. Featured Health Tips Header & Filter Tabs */}
+        <section id="featured-health-tips" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
+                Featured <span className="text-[#EF7C3C]">Health Tips</span>.
+              </h2>
+              <p className="text-xs sm:text-sm text-[#556658] font-medium">
+                Expert-backed advice to keep your furry friends healthy, happy, and active.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setActiveTab('All Tips');
+                setSearchQuery('');
+              }}
+              className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            >
+              <span>View all</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2.5 sm:gap-3 lg:gap-3.5 w-full py-1 overflow-x-auto no-scrollbar scroll-smooth">
             {filterTabs.map((tab) => {
               const TabIcon = tab.icon;
               const isActive = activeTab === tab.name;
@@ -275,56 +395,54 @@ export const HealthTipsPage: React.FC = () => {
                 <button
                   key={tab.name}
                   onClick={() => setActiveTab(tab.name)}
-                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold shrink-0 transition-all border cursor-pointer ${
+                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${
                     isActive
                       ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41] shadow-xs ring-2 ring-[#3FA65C]/20'
-                      : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B]'
+                      : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B] shadow-2xs'
                   }`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                       isActive ? 'bg-[#3FA65C] text-white' : `${tab.bg} ${tab.text}`
                     }`}
                   >
                     <TabIcon className="w-3.5 h-3.5" />
                   </div>
-                  <span>{tab.name}</span>
+                  <span className="whitespace-nowrap">{tab.name}</span>
                 </button>
               );
             })}
           </div>
         </section>
 
-        {/* 4. Featured Health Tips */}
+        {/* 4. Featured Health Tips Articles */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
-              <div className="space-y-1">
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
-                  Featured <span className="text-[#EF7C3C]">Health Tips</span>
-                </h2>
-                <p className="text-xs sm:text-sm text-[#556658] font-medium">
-                  Expert-backed advice to keep your furry friends healthy, happy, and active.
-                </p>
-              </div>
-            </div>
-
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-[24px] p-4 border border-[#EDE7D9] space-y-3">
-                    <Skeleton className="w-full aspect-[16/10] rounded-[18px]" />
-                    <Skeleton className="h-5 w-2/3" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-4/5" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] space-y-2">
+                    <Skeleton className="w-full aspect-[16/10] rounded-[16px]" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
                   </div>
                 ))}
               </div>
             ) : error ? (
               <ErrorState message={error} onRetry={fetchArticles} />
+            ) : filteredArticles.length === 0 ? (
+              <EmptyState
+                title="No articles found"
+                description="We couldn't find any health tips matching your selected category or search filter."
+                actionLabel="View All Articles"
+                onAction={() => {
+                  setActiveTab('All Tips');
+                  setSearchQuery('');
+                }}
+              />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {(featuredList.length > 0 ? featuredList : filteredArticles.slice(0, 3)).map((tip) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {(featuredList.length > 0 ? featuredList : filteredArticles.slice(0, 4)).map((tip) => {
                   const colors = categoryColorMap[tip.category] || {
                     bg: 'bg-[#E6F9EC]',
                     text: 'text-[#287A41]',
@@ -333,46 +451,31 @@ export const HealthTipsPage: React.FC = () => {
                   return (
                     <div
                       key={tip.id}
-                      className="bg-white rounded-[24px] p-4 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
+                      className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
                     >
-                      <div className="relative w-full aspect-[16/10] rounded-[18px] overflow-hidden bg-[#FAF6EE] border border-[#EAE3D2]">
+                      <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3">
                         <img
-                          src={
-                            tip.imageUrl ||
-                            getCloudinaryImageUrl('hero_dog_cat_green_bg')
-                          }
+                          src={resolveArticleImageUrl(tip.imageUrl)}
                           alt={tip.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover"
                         />
                         <span
-                          className={`absolute bottom-3 left-3 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
+                          className={`absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
                         >
                           {tip.category}
                         </span>
                       </div>
 
-                      <div className="pt-4 flex flex-col flex-grow">
-                        <h3 className="text-base sm:text-lg font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2">
-                          {tip.title}
-                        </h3>
-                        <p className="text-xs text-[#556658] font-medium leading-relaxed mt-2 mb-4 flex-grow line-clamp-2">
-                          {tip.excerpt}
-                        </p>
+                      <h3 className="text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 flex-grow">
+                        {tip.title}
+                      </h3>
 
-                        <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-xs text-[#88998C] font-semibold mt-auto">
-                          <div className="flex items-center gap-4">
-                            <span className="flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-[#3FA65C]" />
-                              {tip.publishedAt ? new Date(tip.publishedAt).toLocaleDateString() : 'Recent'}
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-[#EF7C3C]" />
-                              {tip.readTimeMinutes || 5} min read
-                            </span>
-                          </div>
-                          <div className="w-8 h-8 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
-                            <ChevronRight className="w-4 h-4" />
-                          </div>
+                      <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#88998C] font-semibold mt-3">
+                        <div className="flex items-center gap-3">
+                          <span>{tip.readTimeMinutes || 5} min read</span>
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
+                          <ChevronRight className="w-3.5 h-3.5" />
                         </div>
                       </div>
                     </div>
@@ -383,46 +486,18 @@ export const HealthTipsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* 5. Browse Health Tips by Pet Type */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#16241B] tracking-tight">
-                Browse <span className="text-[#EF7C3C]">Health Tips</span> by Pet Type
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth">
-              {petTypes.map((pet) => (
-                <div
-                  key={pet.name}
-                  onClick={() => setSearchQuery(pet.name)}
-                  className={`min-w-[140px] sm:min-w-[160px] flex-1 bg-white rounded-[22px] p-3 border ${pet.border} shadow-xs hover:shadow-md transition-all flex flex-col items-center text-center group cursor-pointer`}
-                >
-                  <div className={`w-14 h-14 rounded-full ${pet.bg} flex items-center justify-center text-2xl mb-2.5 shadow-2xs`}>
-                    🐾
-                  </div>
-                  <span className="text-xs sm:text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors">
-                    {pet.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 6. Quick Daily Tips */}
+        {/* 5. Quick Daily Tips */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-10 border border-[#E2EEDB] shadow-xs">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-4 space-y-3 text-center lg:text-left">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#EF7C3C] text-[11px] font-black uppercase tracking-wider shadow-2xs">
-                  <Sparkles className="w-3.5 h-3.5 text-[#EF7C3C]" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#287A41] text-[11px] font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#287A41]" />
                   <span>QUICK DAILY TIPS</span>
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight leading-tight">
                   Little Habits.<br />
-                  <span className="text-[#EF7C3C]">Healthier Tomorrows.</span>
+                  <span className="text-[#287A41]">Healthier Tomorrows.</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-[#556658] font-medium leading-relaxed">
                   Simple habits you can follow every day to keep your pet happy and thriving.
@@ -453,81 +528,138 @@ export const HealthTipsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* 7. Latest Health Tips Grid */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* 6. Browse Articles by Pet Type */}
+        <section id="browse-articles-pet-type" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#16241B] tracking-tight">
-                All <span className="text-[#EF7C3C]">Health Articles</span> ({filteredArticles.length})
+                Browse <span className="text-[#EF7C3C]">Articles</span> by Pet Type<span className="text-[#EF7C3C]">.</span>
               </h2>
+
+              <button
+                onClick={() => {
+                  setSelectedPetType(null);
+                }}
+                className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+              >
+                <span>View all articles</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] space-y-2">
-                    <Skeleton className="w-full aspect-[16/10] rounded-[16px]" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                ))}
-              </div>
-            ) : filteredArticles.length === 0 ? (
-              <EmptyState
-                title="No articles found"
-                description="Try clearing your search query or selecting a different category."
-                actionLabel="Reset Search"
-                onAction={() => {
-                  setSearchQuery('');
-                  setActiveTab('All Tips');
-                }}
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {latestList.map((tip) => {
-                  const colors = categoryColorMap[tip.category] || {
-                    bg: 'bg-[#E6F9EC]',
-                    text: 'text-[#287A41]',
-                  };
-
-                  return (
-                    <div
-                      key={tip.id}
-                      className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
-                    >
-                      <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3">
-                        <img
-                          src={
-                            tip.imageUrl ||
-                            getCloudinaryImageUrl('hero_dog_cat_green_bg')
-                          }
-                          alt={tip.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <span
-                          className={`absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
-                        >
-                          {tip.category}
-                        </span>
-                      </div>
-
-                      <h3 className="text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 flex-grow">
-                        {tip.title}
-                      </h3>
-
-                      <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#88998C] font-semibold mt-3">
-                        <div className="flex items-center gap-3">
-                          <span>{tip.readTimeMinutes || 5} min read</span>
-                        </div>
-                        <div className="w-6 h-6 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
+            <div className="flex items-center gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth">
+              {petTypes.map((pet) => {
+                const isSelected = selectedPetType?.toLowerCase() === pet.name.toLowerCase();
+                return (
+                  <div
+                    key={pet.name}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedPetType(null);
+                      } else {
+                        setSelectedPetType(pet.name);
+                      }
+                    }}
+                    className={`min-w-[130px] sm:min-w-[150px] flex-1 rounded-[20px] p-2.5 sm:p-3 border transition-all flex flex-col items-center text-center group cursor-pointer ${
+                      isSelected
+                        ? `${pet.bg} ${pet.activeBorder} shadow-md ring-2 ring-current/20`
+                        : `bg-white ${pet.border} ${pet.hoverBorder} ${pet.hoverBg} shadow-2xs hover:shadow-md`
+                    }`}
+                  >
+                    <div className="w-full aspect-[4/3] rounded-[14px] overflow-hidden bg-[#FAF6EE] mb-2 border border-black/5">
+                      <img
+                        src={pet.imageUrl}
+                        alt={pet.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <span className={`text-xs sm:text-sm font-bold transition-colors ${
+                      isSelected ? pet.text : `text-[#16241B] ${pet.hoverText}`
+                    }`}>
+                      {pet.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Articles Grid or Empty State under Pet Types */}
+            <div className="pt-2">
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bg-white rounded-[24px] p-4 border border-[#EDE7D9] space-y-3">
+                      <Skeleton className="w-full aspect-[16/10] rounded-[18px]" />
+                      <Skeleton className="h-5 w-2/3" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-4/5" />
+                    </div>
+                  ))}
+                </div>
+              ) : petTypeFilteredArticles.length === 0 ? (
+                <EmptyState
+                  title="No articles found"
+                  description={
+                    selectedPetType
+                      ? `We couldn't find any health articles for ${selectedPetType} right now. Check back soon for expert tips!`
+                      : 'We couldn\'t find any articles matching your search filter.'
+                  }
+                  actionLabel="View All Articles"
+                  onAction={() => {
+                    setSelectedPetType(null);
+                  }}
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {petTypeFilteredArticles.map((tip) => {
+                    const colors = categoryColorMap[tip.category] || {
+                      bg: 'bg-[#E6F9EC]',
+                      text: 'text-[#287A41]',
+                    };
+
+                    return (
+                      <div
+                        key={tip.id}
+                        className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
+                      >
+                        <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3 border border-[#F0EAE1]">
+                          <img
+                            src={resolveArticleImageUrl(tip.imageUrl)}
+                            alt={tip.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <span
+                            className={`absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
+                          >
+                            {tip.category}
+                          </span>
+                        </div>
+
+                        <h3 className="text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 flex-grow">
+                          {tip.title}
+                        </h3>
+
+                        <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#88998C] font-semibold mt-3">
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-[#3FA65C]" />
+                              {tip.publishedAt ? new Date(tip.publishedAt).toLocaleDateString() : 'Recent'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-[#287A41]" />
+                              {tip.readTimeMinutes || 5} min read
+                            </span>
+                          </div>
+                          <div className="w-6 h-6 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -538,7 +670,12 @@ export const HealthTipsPage: React.FC = () => {
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
                   A Healthier Tomorrow Starts with What{' '}
-                  <span className="text-[#EF7C3C]">You Know Today.</span>
+                  <span
+                    className="text-[#EF7C3C]"
+                    style={{ WebkitTextStroke: '0.75px #16241B' }}
+                  >
+                    You Know Today.
+                  </span>
                 </h2>
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
                   Get the latest pet health tips, expert advice, and care reminders straight to your inbox.

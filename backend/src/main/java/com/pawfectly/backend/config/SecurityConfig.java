@@ -94,11 +94,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/newsletter/subscribe").permitAll()
                         
-                        // Customer scoped endpoints
-                        .requestMatchers("/api/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
-                        
-                        // Admin scoped endpoints
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Customer scoped endpoints - strictly CUSTOMER role only
+                        .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                         
                         // All other endpoints require authentication
                         .anyRequest().authenticated()

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Navbar } from '../../components/layout/Navbar';
-import { Footer } from '../../components/layout/Footer';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../features/auth/AuthContext';
 import apiClient from '../../lib/axios';
 import type { AuthResponse } from '../../features/auth/types';
 import { Mail, Lock, User as UserIcon, Phone, ArrowRight } from 'lucide-react';
+import { getCloudinaryImageUrl } from '../../lib/utils';
 
 export const LoginPage: React.FC = () => {
   const [isRegister, setIsRegister] = useState(false);
@@ -19,9 +18,7 @@ export const LoginPage: React.FC = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/profile';
+  const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,11 +27,18 @@ export const LoginPage: React.FC = () => {
 
     try {
       if (isRegister) {
+        const cleanPhone = phone.replace(/\D/g, '');
+        if (cleanPhone.length !== 10) {
+          setErrorMessage('Phone number must be exactly 10 digits.');
+          setLoading(false);
+          return;
+        }
+
         const response = await apiClient.post<AuthResponse>('/auth/register', {
           name,
           email,
           password,
-          phone,
+          phone: cleanPhone,
           role: 'CUSTOMER',
         });
         login(response.data);
@@ -45,7 +49,7 @@ export const LoginPage: React.FC = () => {
         });
         login(response.data);
       }
-      navigate(from, { replace: true });
+      navigate('/profile', { replace: true });
     } catch (err: unknown) {
       const error = err as Error;
       setErrorMessage(error.message || 'Authentication failed. Please check your credentials.');
@@ -56,13 +60,31 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] flex flex-col font-sans">
-      <Navbar />
-
       <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16">
         <div className="bg-white rounded-[32px] p-8 sm:p-12 max-w-md w-full border border-[#EDE7D9] shadow-xl space-y-6">
+          {/* Logo Brand Header */}
+          <div className="flex justify-center mb-2">
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/');
+              }}
+              className="flex items-center gap-2.5 hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              <img
+                src={logoUrl}
+                alt="Pawfectly Logo"
+                className="w-9 h-9 rounded-full object-cover shadow-xs"
+              />
+              <span className="text-2xl font-black tracking-tight text-[#16241B]">
+                Pawfectly<span className="text-[#EF7C3C]">.</span>
+              </span>
+            </a>
+          </div>
           <div className="text-center space-y-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider">
-              {isRegister ? 'JOIN PAWFECTLY 🐾' : 'WELCOME BACK ❤️'}
+              {isRegister ? 'JOIN PAWFECTLY' : 'WELCOME BACK'}
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">
               {isRegister ? 'Create Your Account' : 'Log In to Pawfectly'}
@@ -126,12 +148,17 @@ export const LoginPage: React.FC = () => {
                   <Phone className="w-4 h-4 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
+                    required
+                    maxLength={10}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="9876543210"
                     className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
                   />
                 </div>
+                <span className="text-[11px] text-[#88998C] font-medium block mt-1">
+                  Must be a valid 10-digit mobile number.
+                </span>
               </div>
             )}
 
@@ -190,20 +217,9 @@ export const LoginPage: React.FC = () => {
                 ? 'Already have an account? Log In'
                 : "Don't have an account? Register"}
             </button>
-
-            <div>
-              <Link
-                to="/admin/login"
-                className="text-[11px] font-semibold text-[#88998C] hover:text-[#16241B] transition-colors"
-              >
-                Staff / Admin Login →
-              </Link>
-            </div>
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 };

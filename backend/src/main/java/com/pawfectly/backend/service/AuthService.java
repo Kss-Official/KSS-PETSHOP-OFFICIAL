@@ -37,12 +37,18 @@ public class AuthService {
 
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
+        String rawPhone = request.getPhone();
+        String cleanPhone = rawPhone != null ? rawPhone.replaceAll("\\D", "") : "";
+        if (cleanPhone.length() != 10) {
+            throw new BadRequestException("Phone number must be exactly 10 digits.");
+        }
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail().toLowerCase().trim())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(userRole)
-                .phone(request.getPhone())
+                .phone(cleanPhone)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -67,6 +73,11 @@ public class AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        if (userDetails.getRole() != Role.CUSTOMER) {
+            throw new BadRequestException("Access denied: Only customer accounts can access the customer portal.");
+        }
+
         String jwt = jwtUtils.generateJwtToken(authentication);
 
         return AuthResponse.builder()

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { ImagePlaceholder } from '../../components/ui/ImagePlaceholder';
+import { getCloudinaryImageUrl } from '../../lib/utils';
 import {
   ShieldCheck,
   Clock,
@@ -15,7 +16,6 @@ import {
   ChevronUp,
   ArrowRight,
   Shield,
-  Sparkles,
   Zap,
   X,
   Send,
@@ -50,7 +50,7 @@ export const InsurancePage: React.FC = () => {
     e.preventDefault();
     if (!quoteFormData.email || !quoteFormData.petName) return;
     setQuoteSubmitted(true);
-    showToast(`Quote request for ${quoteFormData.petName} submitted successfully! 🐾`);
+    showToast(`Quote request for ${quoteFormData.petName} submitted successfully!`);
   };
 
   const plans = [
@@ -222,7 +222,7 @@ export const InsurancePage: React.FC = () => {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#16241B] text-white px-5 py-3 rounded-full shadow-xl text-sm font-bold flex items-center gap-2 animate-bounce">
+        <div className="fixed top-20 right-6 z-50 bg-[#16241B] text-white px-4 py-2.5 rounded-full shadow-lg text-xs font-bold flex items-center gap-2 transition-all">
           <Check className="w-4 h-4 text-[#3FA65C]" />
           <span>{toastMessage}</span>
         </div>
@@ -230,10 +230,9 @@ export const InsurancePage: React.FC = () => {
 
       <main className="flex-grow space-y-16 lg:space-y-24 pb-20">
         {/* 2. Hero Section */}
-        <section className="bg-[#EFF8F0] border-b border-[#E2EEDB] relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-18">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
+        <section id="insurance-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
+            <div className="lg:col-span-5 space-y-6 text-left z-20">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
                   <Shield className="w-3.5 h-3.5 text-[#287A41]" />
                   <span>PET INSURANCE</span>
@@ -294,19 +293,16 @@ export const InsurancePage: React.FC = () => {
                     <span className="text-xs font-bold text-[#16241B]">25,000+ Pet Parents</span>
                   </div>
                 </div>
-              </div>
+            </div>
 
-              <div className="lg:col-span-5 flex justify-center items-center relative">
-                <div className="absolute inset-0 bg-[#D8F3DC]/70 rounded-[48%_52%_68%_32%/42%_58%_42%_58%] -rotate-3 scale-105 pointer-events-none blur-xs" />
-                <div className="absolute -top-4 right-4 z-20 bg-white border border-[#E2EEDB] px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#F5A623] shrink-0" />
-                  <span className="text-xs font-black text-[#16241B]">
-                    Because accidents don't wait.
-                  </span>
-                </div>
-                <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border-2 border-[#D0EBD5] shadow-lg bg-white z-10">
-                  <ImagePlaceholder label="Protected Dog and Cat Family" className="rounded-3xl" />
-                </div>
+            {/* Right Column: Large hero image (7 cols) - Moved right */}
+            <div className="lg:col-span-7 relative flex justify-center lg:justify-end items-center lg:translate-x-4 xl:translate-x-8 z-10">
+              <div className="relative w-full max-w-[800px] lg:max-w-[1000px] xl:max-w-[1180px] overflow-visible py-2 sm:py-4">
+                <img
+                  src={getCloudinaryImageUrl('insurance_hero')}
+                  alt="Pet Insurance Protection"
+                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none transition-transform duration-300 hover:scale-[1.02] scale-105 sm:scale-110"
+                />
               </div>
             </div>
           </div>
@@ -535,7 +531,12 @@ export const InsurancePage: React.FC = () => {
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
                   Give Them the Protection{' '}
-                  <span className="text-[#EF7C3C]">They Deserve.</span>
+                  <span
+                    className="text-[#EF7C3C]"
+                    style={{ WebkitTextStroke: '0.75px #16241B' }}
+                  >
+                    They Deserve.
+                  </span>
                 </h2>
 
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
@@ -633,6 +634,8 @@ export const InsurancePage: React.FC = () => {
                     >
                       <option value="Dog">Dog</option>
                       <option value="Cat">Cat</option>
+                      <option value="Rabbit">Rabbit</option>
+                      <option value="Bird">Bird</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>

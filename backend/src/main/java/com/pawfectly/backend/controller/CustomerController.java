@@ -16,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customer")
-@PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+@PreAuthorize("hasRole('CUSTOMER')")
 @RequiredArgsConstructor
 public class CustomerController {
 
