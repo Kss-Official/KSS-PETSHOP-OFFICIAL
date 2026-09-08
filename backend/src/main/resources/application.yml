@@ -29,4 +29,4 @@ app:
     expiration-ms: ${JWT_EXPIRATION:${JWT_EXPIRATION_MS:86400000}} # 24h
 
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:3001}
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:5174,http://localhost:3000,http://localhost:3001}

@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-import { ImagePlaceholder } from '../../components/ui/ImagePlaceholder';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/feedback/EmptyState';
+import { ErrorState } from '../../components/feedback/ErrorState';
+import { getCloudinaryImageUrl } from '../../lib/utils';
+import { apiClient } from '../../lib/axios';
 import {
   Stethoscope,
   Scissors,
@@ -16,83 +21,60 @@ import {
   Shield,
   Lock,
   Coins,
+  Sparkles,
 } from 'lucide-react';
 
+interface ServiceDto {
+  id: number;
+  name: string;
+  category: string;
+  tagline: string;
+  description: string;
+  price: number;
+  durationMinutes: number;
+  available: boolean;
+  imageUrl?: string;
+}
+
 export const ServicesPage: React.FC = () => {
-  const serviceCards = [
-    {
-      id: 'vet-care',
-      title: 'Veterinary Care',
-      description: 'Expert medical care for your pets by trusted veterinarians.',
-      icon: Stethoscope,
-      iconBg: 'bg-[#E6F9EC]',
-      iconText: 'text-[#287A41]',
-      placeholderLabel: 'Beagle Dog',
-    },
-    {
-      id: 'grooming',
-      title: 'Grooming',
-      description: 'Professional grooming to keep your pet clean and cute.',
-      icon: Scissors,
-      iconBg: 'bg-[#FEF9C3]',
-      iconText: 'text-[#B45309]',
-      placeholderLabel: 'Grooming Dog',
-    },
-    {
-      id: 'nutrition',
-      title: 'Pet Nutrition',
-      description: 'Balanced diet plans and premium food for a healthier pet.',
-      icon: Utensils,
-      iconBg: 'bg-[#FFE4E6]',
-      iconText: 'text-[#E11D48]',
-      placeholderLabel: 'Cat with Food Bowl',
-    },
-    {
-      id: 'boarding',
-      title: 'Boarding',
-      description: "Safe, comfortable, and fun stays while you're away.",
-      icon: Home,
-      iconBg: 'bg-[#E0F2FE]',
-      iconText: 'text-[#0284C7]',
-      placeholderLabel: 'Puppy in Pet Bed',
-    },
-    {
-      id: 'walking',
-      title: 'Pet Walking',
-      description: 'Daily walks and exercise to keep your pet active.',
-      icon: Footprints,
-      iconBg: 'bg-[#F3E8FF]',
-      iconText: 'text-[#7E22CE]',
-      placeholderLabel: 'Dog on Leash',
-    },
-    {
-      id: 'training',
-      title: 'Training',
-      description: 'Obedience and behavior training by certified experts.',
-      icon: Award,
-      iconBg: 'bg-[#DCFCE7]',
-      iconText: 'text-[#15803D]',
-      placeholderLabel: 'Pomeranian Training',
-    },
-    {
-      id: 'insurance',
-      title: 'Pet Insurance',
-      description: "Comprehensive insurance for your pet's peace of mind.",
-      icon: ShieldCheck,
-      iconBg: 'bg-[#FFEDD5]',
-      iconText: 'text-[#C2410C]',
-      placeholderLabel: 'Fluffy Persian Cat',
-    },
-    {
-      id: 'transport',
-      title: 'Pet Transport',
-      description: 'Safe and reliable transportation for your pets.',
-      icon: Truck,
-      iconBg: 'bg-[#FCE7F3]',
-      iconText: 'text-[#BE185D]',
-      placeholderLabel: 'Dog in Pet Carrier',
-    },
-  ];
+  const [services, setServices] = useState<ServiceDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const fetchServices = () => {
+    setLoading(true);
+    setError(null);
+    apiClient
+      .get('/services')
+      .then((res) => {
+        setServices(res.data || []);
+      })
+      .catch(() => {
+        setError('Failed to load services. Please try again.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const serviceIconsMap: Record<string, { icon: React.ElementType; bg: string; text: string }> = {
+    'Vet Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
+    'Veterinary Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
+    'Grooming': { icon: Scissors, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
+    'Pet Food': { icon: Utensils, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
+    'Pet Nutrition': { icon: Utensils, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
+    'Boarding': { icon: Home, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]' },
+    'Pet Walking': { icon: Footprints, bg: 'bg-[#F3E8FF]', text: 'text-[#7E22CE]' },
+    'Training': { icon: Award, bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]' },
+    'Pet Insurance': { icon: ShieldCheck, bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
+    'Pet Transport': { icon: Truck, bg: 'bg-[#FCE7F3]', text: 'text-[#BE185D]' },
+    'Pharmacy': { icon: Sparkles, bg: 'bg-[#BAE6FD]', text: 'text-[#0369A1]' },
+  };
 
   const howItWorksSteps = [
     {
@@ -111,7 +93,7 @@ export const ServicesPage: React.FC = () => {
       step: '03',
       emoji: '🏠',
       title: 'We Care for Your Pet',
-      description: 'Our experts provide the best care and attention.',
+      description: 'Our certified experts provide the best care and attention.',
     },
     {
       step: '04',
@@ -152,7 +134,7 @@ export const ServicesPage: React.FC = () => {
       bg: 'bg-[#FFE4E6]',
       text: 'text-[#E11D48]',
       title: 'Affordable Prices',
-      subtitle: 'Quality care at the best prices.',
+      subtitle: 'Quality care at transparent prices.',
     },
   ];
 
@@ -170,34 +152,40 @@ export const ServicesPage: React.FC = () => {
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
                   Services That Make{' '}
-                  <span className="text-[#EF7C3C]">Tails Wag</span> And Hearts
-                  Happy.
+                  <span className="text-[#EF7C3C]">Tails Wag</span> And Hearts Happy.
                 </h1>
                 <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
-                  Explore our wide range of pet care services designed to keep
-                  your furry friends healthy, happy, and loved.
+                  Explore our verified range of pet care services designed to keep your furry friends healthy, happy, and loved.
                 </p>
+                <div className="pt-2 flex flex-wrap gap-4 justify-center lg:justify-start">
+                  <Link to="/find-a-vet">
+                    <button className="px-6 py-3 bg-[#009E66] hover:bg-[#008757] text-white font-extrabold rounded-full shadow-md transition-all flex items-center gap-2 cursor-pointer">
+                      Book a Vet Visit 🐾
+                    </button>
+                  </Link>
+                  <Link to="/pharmacy">
+                    <button className="px-6 py-3 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all cursor-pointer">
+                      Explore Pharmacy 💊
+                    </button>
+                  </Link>
+                </div>
               </div>
 
-              {/* Right Column: Hero Image Placeholder on Organic Blob */}
+              {/* Right Column: Hero Image with Organic Blob */}
               <div className="lg:col-span-5 flex justify-center items-center relative">
-                {/* Organic Green Blob Shape */}
                 <div className="absolute inset-0 bg-[#D8F3DC]/70 rounded-[48%_52%_68%_32%/42%_58%_42%_58%] -rotate-3 scale-105 pointer-events-none blur-xs" />
-
-                {/* Decorative Doodles */}
                 <span className="absolute -top-3 left-6 text-2xl text-[#3FA65C] select-none pointer-events-none animate-pulse">
                   🐾
                 </span>
                 <span className="absolute top-8 right-4 text-2xl text-[#EF7C3C] select-none pointer-events-none">
                   ❤️
                 </span>
-                <div className="absolute -bottom-2 left-10 w-12 h-6 border-b-2 border-dashed border-[#3FA65C]/60 rounded-full pointer-events-none" />
 
-                {/* Hero Group Photo Container */}
                 <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border-2 border-[#D0EBD5] shadow-lg bg-white z-10">
-                  <ImagePlaceholder
-                    label="Group of Pets (Dog, Rabbit, Hamster, Lizard, Cockatiel)"
-                    className="rounded-3xl"
+                  <img
+                    src={getCloudinaryImageUrl('hero_dog_cat_green_bg')}
+                    alt="Services Care"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               </div>
@@ -205,10 +193,9 @@ export const ServicesPage: React.FC = () => {
           </div>
         </section>
 
-        {/* 3. Our Pet Care Services (8-Card Grid) */}
+        {/* 3. Our Pet Care Services Dynamic Grid */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
-            {/* Section Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
               <div className="space-y-2">
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider">
@@ -219,55 +206,93 @@ export const ServicesPage: React.FC = () => {
                 </h2>
               </div>
 
-              <button className="bg-[#3FA65C] hover:bg-[#348e4e] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-xs transition-all flex items-center gap-1 cursor-pointer">
-                View All Services ›
-              </button>
+              <Link to="/find-a-vet">
+                <button className="bg-[#009E66] hover:bg-[#008757] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-xs transition-all flex items-center gap-1 cursor-pointer">
+                  Find a Clinic ›
+                </button>
+              </Link>
             </div>
 
-            {/* 8-Card Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {serviceCards.map((service) => {
-                const IconComponent = service.icon;
-                return (
-                  <div
-                    key={service.id}
-                    className="bg-white rounded-[24px] p-4 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
-                  >
-                    {/* Photo Container with Top-Left Icon Badge */}
-                    <div className="relative w-full aspect-[4/3] rounded-[18px] overflow-hidden bg-[#FAF6EE] border border-[#EAE3D2]">
-                      <ImagePlaceholder
-                        label={service.placeholderLabel}
-                        className="rounded-[18px]"
-                      />
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-[24px] p-4 border border-[#EDE7D9] space-y-3">
+                    <Skeleton className="w-full aspect-[4/3] rounded-[18px]" />
+                    <Skeleton className="h-5 w-2/3" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-4/5" />
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <ErrorState message={error} onRetry={fetchServices} />
+            ) : services.length === 0 ? (
+              <EmptyState
+                title="No services found"
+                description="We are currently updating our list of available services."
+                actionLabel="Check Again"
+                onAction={fetchServices}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {services.map((service) => {
+                  const iconConfig = serviceIconsMap[service.name] || {
+                    icon: Stethoscope,
+                    bg: 'bg-[#E6F9EC]',
+                    text: 'text-[#287A41]',
+                  };
+                  const IconComponent = iconConfig.icon;
 
-                      {/* Overlapping Icon Badge */}
-                      <div
-                        className={`absolute top-3 left-3 w-9 h-9 rounded-full ${service.iconBg} ${service.iconText} flex items-center justify-center shadow-xs border border-white/80`}
-                      >
-                        <IconComponent className="w-4 h-4" />
+                  return (
+                    <div
+                      key={service.id}
+                      className="bg-white rounded-[24px] p-4 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
+                    >
+                      <div className="relative w-full aspect-[4/3] rounded-[18px] overflow-hidden bg-[#FAF6EE] border border-[#EAE3D2]">
+                        <img
+                          src={
+                            service.imageUrl ||
+                            getCloudinaryImageUrl('service_01_vet_care')
+                          }
+                          alt={service.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+
+                        <div
+                          className={`absolute top-3 left-3 w-9 h-9 rounded-full ${iconConfig.bg} ${iconConfig.text} flex items-center justify-center shadow-xs border border-white/80`}
+                        >
+                          <IconComponent className="w-4 h-4" />
+                        </div>
+                      </div>
+
+                      <div className="pt-4 flex flex-col flex-grow">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-base font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors">
+                            {service.name}
+                          </h3>
+                          <span className="text-xs font-black text-[#287A41]">
+                            ${service.price ? service.price.toFixed(2) : '35.00'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#556658] font-medium leading-relaxed mt-1.5 mb-4 flex-grow line-clamp-2">
+                          {service.description || service.tagline}
+                        </p>
+                        <button
+                          onClick={() => navigate('/find-a-vet')}
+                          className="text-xs font-bold text-[#3FA65C] hover:text-[#2e7d44] transition-colors flex items-center gap-1 mt-auto cursor-pointer"
+                        >
+                          Book Now ›
+                        </button>
                       </div>
                     </div>
-
-                    {/* Card Content */}
-                    <div className="pt-4 flex flex-col flex-grow">
-                      <h3 className="text-base font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors">
-                        {service.title}
-                      </h3>
-                      <p className="text-xs text-[#556658] font-medium leading-relaxed mt-1.5 mb-4 flex-grow">
-                        {service.description}
-                      </p>
-                      <button className="text-xs font-bold text-[#3FA65C] hover:text-[#2e7d44] transition-colors flex items-center gap-1 mt-auto cursor-pointer">
-                        Learn More ›
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 
-        {/* 4. How It Works (4-Step Horizontal Flow) */}
+        {/* 4. How It Works Flow */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-3 mb-12">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider">
@@ -284,7 +309,6 @@ export const ServicesPage: React.FC = () => {
                 key={stepItem.step}
                 className="flex flex-col items-center text-center relative group"
               >
-                {/* Step Circle with Dashed Green Border & Number Badge */}
                 <div className="relative mb-5">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white border-2 border-dashed border-[#3FA65C] flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
                     <span className="text-3xl select-none" role="img" aria-label={stepItem.title}>
@@ -292,13 +316,11 @@ export const ServicesPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Top-Right Number Badge */}
                   <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#16241B] text-white text-[11px] font-black flex items-center justify-center shadow-xs">
                     {stepItem.step}
                   </span>
                 </div>
 
-                {/* Title & Description */}
                 <h3 className="text-base font-black text-[#16241B]">
                   {stepItem.title}
                 </h3>
@@ -306,7 +328,6 @@ export const ServicesPage: React.FC = () => {
                   {stepItem.description}
                 </p>
 
-                {/* Connecting Arrow for Desktop (between items) */}
                 {index < howItWorksSteps.length - 1 && (
                   <div className="hidden md:flex absolute top-10 -right-4 lg:-right-6 w-8 lg:w-12 items-center justify-center pointer-events-none z-10 text-[#16241B]/40">
                     <ArrowRight className="w-5 h-5 text-[#3FA65C]" />
@@ -317,39 +338,42 @@ export const ServicesPage: React.FC = () => {
           </div>
         </section>
 
-        {/* 5. CTA Banner (Reused Gold Component with Corgi Sunglasses) */}
+        {/* 5. CTA Banner */}
         <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-              {/* Left Content */}
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
                   Pamper Your Pet With The{' '}
-                  <span className="text-[#EF7C3C]">Best Care</span> They
-                  Deserve!
+                  <span className="text-[#EF7C3C]">Best Care</span> They Deserve!
                 </h2>
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
-                  From health to happiness, we're here for every step of your
-                  pet's journey.
+                  From health to happiness, we're here for every step of your pet's journey.
                 </p>
 
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                  <button className="px-7 py-3.5 bg-[#3FA65C] hover:bg-[#348e4e] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer">
+                  <button
+                    onClick={() => navigate('/find-a-vet')}
+                    className="px-7 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                  >
                     Book a Service →
                   </button>
 
-                  <button className="px-6 py-3.5 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer">
-                    Talk to Our Expert 📞
+                  <button
+                    onClick={() => navigate('/find-a-vet')}
+                    className="px-6 py-3.5 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                  >
+                    Talk to Our Vet 📞
                   </button>
                 </div>
               </div>
 
-              {/* Right Image Placeholder (Corgi with Sunglasses) */}
               <div className="lg:col-span-5 flex justify-center items-center relative z-20">
                 <div className="w-full max-w-[340px] aspect-square rounded-3xl overflow-hidden border-2 border-white/60 shadow-lg bg-white/90">
-                  <ImagePlaceholder
-                    label="Corgi with Sunglasses"
-                    className="rounded-3xl"
+                  <img
+                    src={getCloudinaryImageUrl('cta_cat_sunglasses_flawless_seamless')}
+                    alt="Corgi with Sunglasses"
+                    className="w-full h-full object-cover rounded-3xl"
                   />
                 </div>
               </div>
@@ -357,7 +381,7 @@ export const ServicesPage: React.FC = () => {
           </div>
         </section>
 
-        {/* 6. Feature Strip (4 Items) */}
+        {/* 6. Feature Strip */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-[24px] p-6 sm:p-8 border border-[#EDE7D9] shadow-xs">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">

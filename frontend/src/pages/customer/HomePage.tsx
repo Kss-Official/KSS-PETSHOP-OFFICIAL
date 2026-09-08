@@ -1,10 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { apiClient } from '../../lib/axios';
 import {
   ChevronRight,
   ArrowRight,
@@ -20,8 +23,34 @@ import {
   Headphones,
 } from 'lucide-react';
 
+interface ServiceItem {
+  id: number;
+  name: string;
+  description?: string;
+  iconUrl?: string;
+  isActive?: boolean;
+}
+
+interface VetItem {
+  id: number;
+  fullName: string;
+  title: string;
+  specialization: string;
+  experienceYears: number;
+  rating: number;
+  reviewsCount: number;
+  city: string;
+  country: string;
+  imageUrl?: string;
+}
+
 export const HomePage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('All');
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [vets, setVets] = useState<VetItem[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingVets, setLoadingVets] = useState(true);
+  const navigate = useNavigate();
 
   // Cloudinary image assets
   const heroCloudinaryUrl = getCloudinaryImageUrl('hero_dog_cat_green_bg');
@@ -30,8 +59,6 @@ export const HomePage: React.FC = () => {
   const service03Url = getCloudinaryImageUrl('service_02_pet_food_rabbit_bowl');
   const service04Url = getCloudinaryImageUrl('service_04_pharmacy_cat_med');
   const service05Url = getCloudinaryImageUrl('service_05_toys_kittens_play');
-  const vetSarahUrl = getCloudinaryImageUrl('vet_dr_sarah_mitchell');
-  const vetJamesUrl = getCloudinaryImageUrl('vet_dr_james_carter');
   const avatar1Url = getCloudinaryImageUrl('avatar_user_1');
   const avatar2Url = getCloudinaryImageUrl('avatar_user_2');
   const avatar3Url = getCloudinaryImageUrl('avatar_user_3');
@@ -42,16 +69,89 @@ export const HomePage: React.FC = () => {
 
   const categories = ['All', 'Dogs', 'Cats', 'Birds', 'Rabbits', 'Exotic Pets'];
 
+  const fetchHomeData = () => {
+    setLoadingServices(true);
+    setLoadingVets(true);
+
+    apiClient
+      .get('/services')
+      .then((res) => {
+        setServices(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => {
+        setServices([]);
+      })
+      .finally(() => setLoadingServices(false));
+
+    apiClient
+      .get('/vets')
+      .then((res) => {
+        setVets(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => {
+        setVets([]);
+      })
+      .finally(() => setLoadingVets(false));
+  };
+
+  useEffect(() => {
+    fetchHomeData();
+  }, []);
+
   const handleVetScroll = () => {
     if (vetScrollRef.current) {
       vetScrollRef.current.scrollBy({ left: 320, behavior: 'smooth' });
     }
   };
 
+  const getServiceVisuals = (name: string, iconUrl?: string) => {
+    const lower = (name || '').toLowerCase();
+    let icon = <Sparkles className="w-5 h-5" />;
+    let badgeBg = 'bg-[#D6F842] text-[#163824]';
+    let defaultImg = service01Url;
+
+    if (lower.includes('vet') || lower.includes('care') || lower.includes('health') || lower.includes('doctor')) {
+      icon = <Stethoscope className="w-5 h-5" />;
+      badgeBg = 'bg-[#D6F842] text-[#163824]';
+      defaultImg = service01Url;
+    } else if (lower.includes('food') || lower.includes('nutri') || lower.includes('diet')) {
+      icon = <Utensils className="w-5 h-5" />;
+      badgeBg = 'bg-[#FEE440] text-[#634700]';
+      defaultImg = service03Url;
+    } else if (lower.includes('groom') || lower.includes('bath') || lower.includes('spa')) {
+      icon = <Scissors className="w-5 h-5" />;
+      badgeBg = 'bg-[#FFD6E8] text-[#9E1B58]';
+      defaultImg = service02Url;
+    } else if (lower.includes('pharm') || lower.includes('med') || lower.includes('drug')) {
+      icon = <Pill className="w-5 h-5" />;
+      badgeBg = 'bg-[#BAE6FD] text-[#0369A1]';
+      defaultImg = service04Url;
+    } else if (lower.includes('toy') || lower.includes('play') || lower.includes('enrich')) {
+      icon = <Gamepad2 className="w-5 h-5" />;
+      badgeBg = 'bg-[#E9D5FF] text-[#6B21A8]';
+      defaultImg = service05Url;
+    } else if (lower.includes('board') || lower.includes('daycare') || lower.includes('stay')) {
+      icon = <ShieldCheck className="w-5 h-5" />;
+      badgeBg = 'bg-[#FED7AA] text-[#9A3412]';
+      defaultImg = avatar2Url;
+    } else if (lower.includes('train') || lower.includes('behav') || lower.includes('class')) {
+      icon = <Sparkles className="w-5 h-5" />;
+      badgeBg = 'bg-[#C7D2FE] text-[#3730A3]';
+      defaultImg = avatar3Url;
+    } else if (lower.includes('trans') || lower.includes('ambul') || lower.includes('ride')) {
+      icon = <Truck className="w-5 h-5" />;
+      badgeBg = 'bg-[#FBCFE8] text-[#9D174D]';
+      defaultImg = avatar4Url;
+    }
+
+    const img = iconUrl ? getCloudinaryImageUrl(iconUrl) : defaultImg;
+    return { icon, badgeBg, img };
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C]">
       {/* 1. Navbar */}
-      <Navbar />
+      <Navbar activePage="home" />
 
       <main className="flex-1 space-y-16 md:space-y-24 py-8 md:py-12">
         {/* 2. Hero Section */}
@@ -75,12 +175,16 @@ export const HomePage: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                <Button variant="primary" size="lg">
-                  Find a Vet 🐾
-                </Button>
-                <Button variant="secondary" size="lg">
-                  Shop Essentials
-                </Button>
+                <Link to="/find-a-vet">
+                  <Button variant="primary" size="lg">
+                    Find a Vet 🐾
+                  </Button>
+                </Link>
+                <Link to="/pharmacy">
+                  <Button variant="secondary" size="lg">
+                    Shop Essentials
+                  </Button>
+                </Link>
               </div>
 
               {/* Social Proof Row */}
@@ -108,17 +212,16 @@ export const HomePage: React.FC = () => {
                   />
                 </div>
                 <span className="text-xs sm:text-sm font-bold text-[#334437]">
-                  Loved by 25,000+<br></br>
+                  Loved by 25,000+<br />
                   pets & parents 🐾
                 </span>
               </div>
             </div>
 
-            {/* Hero Right Visual Stack (Shifted Right & Enlarged) */}
+            {/* Hero Right Visual Stack */}
             <div className="lg:col-span-7 relative flex justify-center lg:justify-end items-center lg:translate-x-14 xl:translate-x-20">
               <div className="relative w-full max-w-[1000px] lg:max-w-[1350px] flex items-center justify-center lg:justify-end overflow-visible py-6 sm:py-8">
-
-                {/* Main Hero Transparent Cutout Image from Cloudinary */}
+                {/* Main Hero Cutout Image */}
                 <div className="w-full relative flex items-center justify-center lg:justify-end overflow-visible z-10">
                   <img
                     src={heroCloudinaryUrl}
@@ -128,13 +231,11 @@ export const HomePage: React.FC = () => {
                 </div>
 
                 {/* Floating Callout Cards */}
-                {/* 1. Speech Bubble (Top Center above Dog's Head) */}
                 <div className="absolute -top-6 left-[22%] sm:left-[26%] -translate-x-1/2 bg-[#EE9D1A] border border-[#D98A00] text-[#16241B] px-4 py-2 rounded-2xl rounded-bl-none shadow-xl text-xs sm:text-sm font-bold flex flex-col animate-float-slow z-20">
                   <span className="font-black text-black leading-tight">Your pet called.</span>
                   <span className="font-semibold text-black/90 text-[11px] sm:text-xs">They need a vet.</span>
                 </div>
 
-                {/* 2. Professional Treat Tester (Top Right Border next to Cat) */}
                 <div className="absolute top-2 right-2 sm:right-6 lg:right-10 bg-white border border-[#EBE5D6] text-[#16241B] px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3 animate-float-delayed z-20 whitespace-nowrap">
                   <div className="w-8 h-8 rounded-full bg-[#FEF3C7] border border-[#FDE68A] flex items-center justify-center text-base shrink-0">
                     🍪
@@ -145,14 +246,12 @@ export const HomePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 3. Always Ready For Treats (Outer Left Border next to Dog) */}
                 <div className="absolute top-[36%] sm:top-[38%] -left-6 sm:-left-12 lg:-left-16 -translate-y-1/2 bg-[#C5EAD4] border border-[#A7DBC0] text-[#16241B] px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl shadow-xl flex flex-col gap-0.5 animate-float-slow z-20">
                   <span className="text-[11px] sm:text-xs text-[#285A3F] font-medium leading-tight">Always</span>
                   <span className="text-sm sm:text-base font-extrabold text-[#16241B] leading-tight tracking-tight">Ready For</span>
                   <span className="text-xs sm:text-sm text-[#285A3F] font-bold leading-tight">Treats</span>
                 </div>
 
-                {/* 4. Appointment Booked ✓ (Bottom Border in front of Dog) */}
                 <div className="absolute -bottom-4 sm:-bottom-5 left-[6%] sm:left-[10%] bg-[#FDF0AA] border border-[#F3E188] text-[#16241B] px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3 animate-float-delayed z-20">
                   <div className="flex flex-col text-left">
                     <span className="text-[10px] sm:text-[11px] text-[#6B5A10] font-medium leading-none mb-1">Appointment</span>
@@ -165,7 +264,6 @@ export const HomePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 5. 10/10 Good Boy (Bottom Right Border) */}
                 <div className="absolute -bottom-4 sm:-bottom-5 right-4 sm:right-8 lg:right-12 bg-[#FCE3E4] border border-[#F9C3C6] text-[#16241B] px-4 py-2.5 rounded-2xl shadow-xl flex flex-col animate-float-slow z-20">
                   <span className="text-[10px] sm:text-[11px] text-[#9F1239] font-bold mb-0.5">10/10</span>
                   <span className="text-xs sm:text-sm font-extrabold text-[#9F1239] leading-tight">Good Boy</span>
@@ -179,16 +277,16 @@ export const HomePage: React.FC = () => {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-2 sm:-mt-4 lg:-mt-6 relative z-20">
           <div className="bg-white/95 backdrop-blur-sm border border-[#E8DFC8] rounded-full shadow-[0_20px_45px_-12px_rgba(22,36,27,0.12),0_4px_16px_rgba(22,36,27,0.04)] px-6 sm:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-[#EFE8DA] transition-all duration-300 hover:shadow-[0_24px_50px_-10px_rgba(22,36,27,0.16)]">
             <div className="w-full md:w-1/4 text-center py-2 md:py-0 px-3 font-bold text-xs sm:text-sm text-[#16241B] flex items-center justify-center gap-2.5 transition-transform hover:scale-[1.02]">
-              <span className="text-base"></span> <span>Good dogs welcome</span>
+              <span>Good dogs welcome</span>
             </div>
             <div className="w-full md:w-1/4 text-center py-2 md:py-0 px-3 font-bold text-xs sm:text-sm text-[#16241B] flex items-center justify-center gap-2.5 transition-transform hover:scale-[1.02]">
-              <span className="text-base"></span> <span>Cats are in charge</span>
+              <span>Cats are in charge</span>
             </div>
             <div className="w-full md:w-1/4 text-center py-2 md:py-0 px-3 font-bold text-xs sm:text-sm text-[#16241B] flex items-center justify-center gap-2.5 transition-transform hover:scale-[1.02]">
-              <span className="text-base"></span> <span>Tiny paws, big personalities</span>
+              <span>Tiny paws, big personalities</span>
             </div>
             <div className="w-full md:w-1/4 text-center py-2 md:py-0 px-3 font-bold text-xs sm:text-sm text-[#16241B] flex items-center justify-center gap-2.5 transition-transform hover:scale-[1.02]">
-              <span className="text-base"></span> <span>No judgment. Only treats.</span>
+              <span>No judgment. Only treats.</span>
             </div>
           </div>
         </section>
@@ -204,197 +302,75 @@ export const HomePage: React.FC = () => {
                 Basically, <span className="text-[#EF7C3C]">Everything</span> Your<br className="hidden sm:inline" /> Pet Could Ask For.
               </h2>
             </div>
-            <Button variant="primary" size="md" className="shrink-0 self-start sm:self-auto">
-              Explore All Services 🐾
-            </Button>
+            <Link to="/services">
+              <Button variant="primary" size="md" className="shrink-0 self-start sm:self-auto">
+                Explore All Services 🐾
+              </Button>
+            </Link>
           </div>
 
-          {/* 5 Equal-Width Cards Grid matching reference design */}
+          {/* Dynamic Services Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-5 pt-2">
-            {/* Service 01 - Vet Care */}
-            <div className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group cursor-pointer transition-all duration-300">
-              {/* Overlapping Top-Left Badge */}
-              <div className="absolute -top-2.5 -left-2.5 sm:-top-3 sm:-left-3 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#D6F842] border-2 border-white flex items-center justify-center text-[#163824] shadow-md z-20">
-                <Stethoscope className="w-5 h-5" />
-              </div>
-
-              {/* Long & Big Card Image Container */}
-              <div className="relative w-full aspect-[3/4.2] rounded-[22px] overflow-hidden bg-[#F4EFE6] mb-2.5">
-                <img
-                  src={service01Url}
-                  alt="Vet Care Service"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Short & Compact Card Content */}
-              <div className="px-1 pt-0.5 pb-0.5 flex-1 flex flex-col justify-between">
-                <div>
-                  <span className="text-xs font-black text-[#EF7C3C] tracking-wide block leading-none mb-1">
-                    01
-                  </span>
-                  <h3 className="text-base font-black text-[#14261C] tracking-tight leading-tight group-hover:text-[#EF7C3C] transition-colors">
-                    Vet Care
-                  </h3>
-                  <p className="text-[11px] text-[#5D6F63] font-medium leading-snug line-clamp-2 mt-1">
-                    Because Google is not a veterinarian.
-                  </p>
+            {loadingServices ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-[28px] p-3.5 border border-[#ECE5D8] space-y-3">
+                  <Skeleton className="w-full aspect-[3/4.2] rounded-[22px]" />
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-3 w-full" />
                 </div>
-                <div className="flex justify-end pt-1">
-                  <div className="w-7 h-7 rounded-full bg-[#FAF6EE] border border-[#EAE3D4] text-[#14261C] group-hover:bg-[#14261C] group-hover:text-white group-hover:border-[#14261C] transition-all duration-300 flex items-center justify-center shadow-2xs">
-                    <ArrowRight className="w-3.5 h-3.5" />
+              ))
+            ) : services.length > 0 ? (
+              services.slice(0, 5).map((service, index) => {
+                const { icon, badgeBg, img } = getServiceVisuals(service.name, service.iconUrl);
+
+                return (
+                  <div
+                    key={service.id}
+                    onClick={() => navigate('/services')}
+                    className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group cursor-pointer transition-all duration-300"
+                  >
+                    <div className={`absolute -top-2.5 -left-2.5 sm:-top-3 sm:-left-3 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border-2 border-white flex items-center justify-center shadow-md z-20 ${badgeBg}`}>
+                      {icon}
+                    </div>
+
+                    <div className="relative w-full aspect-[3/4.2] rounded-[22px] overflow-hidden bg-[#F4EFE6] mb-2.5">
+                      <img
+                        src={img}
+                        alt={service.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+
+                    <div className="px-1 pt-0.5 pb-0.5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <span className="text-xs font-black text-[#EF7C3C] tracking-wide block leading-none mb-1">
+                          0{index + 1}
+                        </span>
+                        <h3 className="text-base font-black text-[#14261C] tracking-tight leading-tight group-hover:text-[#EF7C3C] transition-colors">
+                          {service.name}
+                        </h3>
+                        <p className="text-[11px] text-[#5D6F63] font-medium leading-snug line-clamp-2 mt-1">
+                          {service.description || 'Comprehensive, loving care designed for your pet.'}
+                        </p>
+                      </div>
+                      <div className="flex justify-between items-center pt-2">
+                        <span className="text-xs font-black text-[#287A41]">
+                          Verified Care
+                        </span>
+                        <div className="w-7 h-7 rounded-full bg-[#FAF6EE] border border-[#EAE3D4] text-[#14261C] group-hover:bg-[#14261C] group-hover:text-white group-hover:border-[#14261C] transition-all duration-300 flex items-center justify-center shadow-2xs">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                );
+              })
+            ) : (
+              <div className="col-span-full py-8 text-center text-[#5D6F63] text-sm font-semibold">
+                No services available at the moment.
               </div>
-            </div>
-
-            {/* Service 02 - Pet Food */}
-            <div className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group cursor-pointer transition-all duration-300">
-              {/* Overlapping Top-Left Badge */}
-              <div className="absolute -top-2.5 -left-2.5 sm:-top-3 sm:-left-3 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#FEE440] border-2 border-white flex items-center justify-center text-[#634700] shadow-md z-20">
-                <Utensils className="w-5 h-5" />
-              </div>
-
-              {/* Long & Big Card Image Container */}
-              <div className="relative w-full aspect-[3/4.2] rounded-[22px] overflow-hidden bg-[#F4EFE6] mb-2.5">
-                <img
-                  src={service03Url}
-                  alt="Pet Food Service"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Short & Compact Card Content */}
-              <div className="px-1 pt-0.5 pb-0.5 flex-1 flex flex-col justify-between">
-                <div>
-                  <span className="text-xs font-black text-[#EF7C3C] tracking-wide block leading-none mb-1">
-                    02
-                  </span>
-                  <h3 className="text-base font-black text-[#14261C] tracking-tight leading-tight group-hover:text-[#EF7C3C] transition-colors">
-                    Pet Food
-                  </h3>
-                  <p className="text-[11px] text-[#5D6F63] font-medium leading-snug line-clamp-2 mt-1">
-                    Dinner worthy of their royal highness
-                  </p>
-                </div>
-                <div className="flex justify-end pt-1">
-                  <div className="w-7 h-7 rounded-full bg-[#FAF6EE] border border-[#EAE3D4] text-[#14261C] group-hover:bg-[#14261C] group-hover:text-white group-hover:border-[#14261C] transition-all duration-300 flex items-center justify-center shadow-2xs">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Service 03 - Grooming */}
-            <div className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group cursor-pointer transition-all duration-300">
-              {/* Overlapping Top-Left Badge */}
-              <div className="absolute -top-2.5 -left-2.5 sm:-top-3 sm:-left-3 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#FFD6E8] border-2 border-white flex items-center justify-center text-[#9E1B58] shadow-md z-20">
-                <Scissors className="w-5 h-5" />
-              </div>
-
-              {/* Long & Big Card Image Container */}
-              <div className="relative w-full aspect-[3/4.2] rounded-[22px] overflow-hidden bg-[#F4EFE6] mb-2.5">
-                <img
-                  src={service02Url}
-                  alt="Grooming Service"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Short & Compact Card Content */}
-              <div className="px-1 pt-0.5 pb-0.5 flex-1 flex flex-col justify-between">
-                <div>
-                  <span className="text-xs font-black text-[#EF7C3C] tracking-wide block leading-none mb-1">
-                    03
-                  </span>
-                  <h3 className="text-base font-black text-[#14261C] tracking-tight leading-tight group-hover:text-[#EF7C3C] transition-colors">
-                    Grooming
-                  </h3>
-                  <p className="text-[11px] text-[#5D6F63] font-medium leading-snug line-clamp-2 mt-1">
-                    From fluffy mess to fancy pants
-                  </p>
-                </div>
-                <div className="flex justify-end pt-1">
-                  <div className="w-7 h-7 rounded-full bg-[#FAF6EE] border border-[#EAE3D4] text-[#14261C] group-hover:bg-[#14261C] group-hover:text-white group-hover:border-[#14261C] transition-all duration-300 flex items-center justify-center shadow-2xs">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Service 04 - Pharmacy */}
-            <div className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group cursor-pointer transition-all duration-300">
-              {/* Overlapping Top-Left Badge */}
-              <div className="absolute -top-2.5 -left-2.5 sm:-top-3 sm:-left-3 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#BAE6FD] border-2 border-white flex items-center justify-center text-[#0369A1] shadow-md z-20">
-                <Pill className="w-5 h-5" />
-              </div>
-
-              {/* Long & Big Card Image Container */}
-              <div className="relative w-full aspect-[3/4.2] rounded-[22px] overflow-hidden bg-[#F4EFE6] mb-2.5">
-                <img
-                  src={service04Url}
-                  alt="Pharmacy Service"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Short & Compact Card Content */}
-              <div className="px-1 pt-0.5 pb-0.5 flex-1 flex flex-col justify-between">
-                <div>
-                  <span className="text-xs font-black text-[#EF7C3C] tracking-wide block leading-none mb-1">
-                    04
-                  </span>
-                  <h3 className="text-base font-black text-[#14261C] tracking-tight leading-tight group-hover:text-[#EF7C3C] transition-colors">
-                    Pharmacy
-                  </h3>
-                  <p className="text-[11px] text-[#5D6F63] font-medium leading-snug line-clamp-2 mt-1">
-                    Less scratching. More napping.
-                  </p>
-                </div>
-                <div className="flex justify-end pt-1">
-                  <div className="w-7 h-7 rounded-full bg-[#FAF6EE] border border-[#EAE3D4] text-[#14261C] group-hover:bg-[#14261C] group-hover:text-white group-hover:border-[#14261C] transition-all duration-300 flex items-center justify-center shadow-2xs">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Service 05 - Toys */}
-            <div className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group cursor-pointer transition-all duration-300">
-              {/* Overlapping Top-Left Badge */}
-              <div className="absolute -top-2.5 -left-2.5 sm:-top-3 sm:-left-3 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#E9D5FF] border-2 border-white flex items-center justify-center text-[#6B21A8] shadow-md z-20">
-                <Gamepad2 className="w-5 h-5" />
-              </div>
-
-              {/* Long & Big Card Image Container */}
-              <div className="relative w-full aspect-[3/4.2] rounded-[22px] overflow-hidden bg-[#F4EFE6] mb-2.5">
-                <img
-                  src={service05Url}
-                  alt="Toys Service"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Short & Compact Card Content */}
-              <div className="px-1 pt-0.5 pb-0.5 flex-1 flex flex-col justify-between">
-                <div>
-                  <span className="text-xs font-black text-[#EF7C3C] tracking-wide block leading-none mb-1">
-                    05
-                  </span>
-                  <h3 className="text-base font-black text-[#14261C] tracking-tight leading-tight group-hover:text-[#EF7C3C] transition-colors">
-                    Toys
-                  </h3>
-                  <p className="text-[11px] text-[#5D6F63] font-medium leading-snug line-clamp-2 mt-1">
-                    For pets who have 37 toys and still want yours.
-                  </p>
-                </div>
-                <div className="flex justify-end pt-1">
-                  <div className="w-7 h-7 rounded-full bg-[#FAF6EE] border border-[#EAE3D4] text-[#14261C] group-hover:bg-[#14261C] group-hover:text-white group-hover:border-[#14261C] transition-all duration-300 flex items-center justify-center shadow-2xs">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -428,20 +404,15 @@ export const HomePage: React.FC = () => {
                 BEST CARE, RIGHT NEAR YOU ❤️
               </Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#16241B] tracking-tight">
-                Meet Their New <span className="text-[#EF7C3C]">Favorite</span>{' '}
-                Human.
+                Meet Their New <span className="text-[#EF7C3C]">Favorite</span> Human.
               </h2>
               <p className="text-base text-[#445548] leading-relaxed">
                 Verified vets. Happy pets. Less worry for you.
               </p>
 
-              {/* Find My Vet Button + P.S. Badge */}
+              {/* Spacer + P.S. Badge */}
               <div className="pt-2 space-y-3.5 relative">
-                <div className="flex items-center gap-4">
-                  <button className="px-6 py-3.5 bg-[#48BB78] hover:bg-[#38A169] text-white font-extrabold rounded-full shadow-md transition-all flex items-center gap-2 text-base cursor-pointer">
-                    Find My Vet 🐾
-                  </button>
-                </div>
+                <div className="h-12" aria-hidden="true" />
 
                 <div className="relative inline-flex items-center ml-10 sm:ml-20 lg:ml-28">
                   <div className="inline-flex items-center bg-white border border-[#E8E2D4] px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-xs">
@@ -450,7 +421,6 @@ export const HomePage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Slanding Hand-drawn Curved Arrow starting from the middle of the text pill towards the Vet Card */}
                   <div className="hidden sm:block absolute left-[52%] bottom-[80%] w-52 sm:w-60 lg:w-68 h-28 pointer-events-none z-10">
                     <svg
                       className="w-full h-full text-[#14261C] overflow-visible"
@@ -461,9 +431,7 @@ export const HomePage: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      {/* Smooth Arching Curve starting from the middle */}
                       <path d="M 8,92 C 12,28 50,8 115,10 C 160,12 190,24 225,18" />
-                      {/* Sleek, Crisp Arrowhead */}
                       <path d="M 212,10 L 228,18 L 215,27" />
                     </svg>
                   </div>
@@ -477,69 +445,55 @@ export const HomePage: React.FC = () => {
                 ref={vetScrollRef}
                 className="flex items-center gap-6 overflow-x-auto no-scrollbar py-2 px-1 scroll-smooth"
               >
-                {/* Vet Card 1 - Dr. Sarah Mitchell */}
-                <Card className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group">
-                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
-                    <img
-                      src={vetSarahUrl}
-                      alt="Dr. Sarah Mitchell"
-                      className="w-full h-full object-cover object-[center_20%] rounded-2xl"
-                    />
-                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
-                      <span className="text-yellow-500">★</span> 4.9
+                {loadingVets ? (
+                  Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="w-[300px] sm:w-[320px] shrink-0 bg-white rounded-2xl p-4 border border-[#ECE5D8] space-y-3">
+                      <Skeleton className="w-full aspect-[4/3] rounded-2xl" />
+                      <Skeleton className="h-5 w-1/2" />
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-8 w-full rounded-full" />
                     </div>
+                  ))
+                ) : vets.length > 0 ? (
+                  vets.map((vet) => (
+                    <Card key={vet.id} className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group">
+                      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
+                        <img
+                          src={vet.imageUrl || getCloudinaryImageUrl('vet_dr_sarah_mitchell')}
+                          alt={vet.fullName}
+                          className="w-full h-full object-cover object-[center_20%] rounded-2xl group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
+                          <span className="text-yellow-500">★</span> {vet.rating ? vet.rating.toFixed(1) : '4.9'}
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-extrabold text-[#16241B]">
+                          {vet.fullName}
+                        </h3>
+                        <p className="text-xs font-semibold text-[#EF7C3C]">
+                          {vet.title || vet.specialization}
+                        </p>
+                      </div>
+                      <div className="space-y-1 text-xs text-[#556658]">
+                        <p>{vet.experienceYears || 10}+ years experience</p>
+                        <p className="line-clamp-1">{vet.specialization}</p>
+                        <p className="font-semibold text-[#16241B] pt-1 flex items-center gap-1">
+                          <span className="text-[#EF7C3C]">📍</span> {vet.city || 'New York'}, {vet.country || 'USA'}
+                        </p>
+                      </div>
+                      <Link to={`/find-a-vet?vetId=${vet.id}`} className="block">
+                        <button className="w-full py-3 px-4 bg-[#FBA834] hover:bg-[#e0942b] text-white font-extrabold rounded-full shadow-xs transition-colors cursor-pointer text-sm">
+                          View Profile & Book
+                        </button>
+                      </Link>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="w-full py-8 text-center text-[#5D6F63] text-sm font-semibold">
+                    No veterinarians listed at this time.
                   </div>
-                  <div>
-                    <h3 className="text-lg font-extrabold text-[#16241B]">
-                      Dr. Sarah Mitchell
-                    </h3>
-                    <p className="text-xs font-semibold text-[#EF7C3C]">
-                      Veterinary Surgeon
-                    </p>
-                  </div>
-                  <div className="space-y-1 text-xs text-[#556658]">
-                    <p>12+ years experience</p>
-                    <p>Dogs, cats & dramatic patients</p>
-                    <p className="font-semibold text-[#16241B] pt-1 flex items-center gap-1">
-                      <span className="text-[#EF7C3C]">📍</span> New York, USA
-                    </p>
-                  </div>
-                  <button className="w-full py-3 px-4 bg-[#FBA834] hover:bg-[#e0942b] text-white font-extrabold rounded-full shadow-xs transition-colors cursor-pointer text-sm">
-                    View Profile
-                  </button>
-                </Card>
-
-                {/* Vet Card 2 - Dr. James Carter */}
-                <Card className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group">
-                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
-                    <img
-                      src={vetJamesUrl}
-                      alt="Dr. James Carter"
-                      className="w-full h-full object-cover object-[center_20%] rounded-2xl"
-                    />
-                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
-                      <span className="text-yellow-500">★</span> 4.9
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-extrabold text-[#16241B]">
-                      Dr. James Carter
-                    </h3>
-                    <p className="text-xs font-semibold text-[#EF7C3C]">
-                      Veterinary Surgeon
-                    </p>
-                  </div>
-                  <div className="space-y-1 text-xs text-[#556658]">
-                    <p>12+ years experience</p>
-                    <p>Dogs, cats & dramatic patients</p>
-                    <p className="font-semibold text-[#16241B] pt-1 flex items-center gap-1">
-                      <span className="text-[#EF7C3C]">📍</span> Chicago, USA
-                    </p>
-                  </div>
-                  <button className="w-full py-3 px-4 bg-[#FBA834] hover:bg-[#e0942b] text-white font-extrabold rounded-full shadow-xs transition-colors cursor-pointer text-sm">
-                    View Profile
-                  </button>
-                </Card>
+                )}
               </div>
 
               {/* Scroll Right Arrow Button */}
@@ -558,10 +512,9 @@ export const HomePage: React.FC = () => {
         <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-16 overflow-visible">
           <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-              {/* Left 3D Cat with Sunglasses (Realistic Pop-out with soft contact shadow) */}
+              {/* Left 3D Cat with Sunglasses */}
               <div className="lg:col-span-5 flex justify-center items-end relative overflow-visible z-20">
                 <div className="relative -mt-24 sm:-mt-32 lg:-mt-40 -mb-6 sm:-mb-10 lg:-mb-14 w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[460px] flex justify-center items-end pointer-events-none">
-                  {/* Ground ambient contact shadow */}
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-10 bg-black/30 rounded-full blur-xl -z-10" />
                   <img
                     src={ctaCatUrl}
@@ -577,16 +530,16 @@ export const HomePage: React.FC = () => {
                   Happy Pet. Happy Home.<br className="hidden sm:inline" /> It's That Simple.
                 </h2>
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
-                  Join thousands of pet parents who trust us for everything their
-                  pets deserve.
+                  Join thousands of pet parents who trust us for everything their pets deserve.
                 </p>
 
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                  <button className="px-8 py-3.5 bg-[#F9A02B] hover:bg-[#e28e19] text-white font-black rounded-full shadow-[0_8px_20px_rgba(249,160,43,0.35)] transition-all flex items-center gap-2 text-base cursor-pointer">
-                    Join the Pack 🐾
-                  </button>
+                  <Link to="/login">
+                    <button className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-[0_8px_20px_rgba(0,158,102,0.35)] transition-all flex items-center gap-2 text-base cursor-pointer">
+                      Join the Pack 🐾
+                    </button>
+                  </Link>
 
-                  {/* Avatar stack + badge */}
                   <div className="bg-[#FFE58A]/95 backdrop-blur-xs px-4 py-2.5 rounded-full border border-white/50 shadow-xs flex items-center gap-3">
                     <div className="flex -space-x-2">
                       <img

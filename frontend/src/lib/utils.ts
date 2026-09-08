@@ -1,3 +1,7 @@
+const ASSET_VERSIONS: Record<string, string> = {
+  cta_cat_sunglasses_flawless_seamless: 'v1788852915',
+};
+
 /**
  * Utility helper to build Cloudinary asset URLs from environment configuration
  */
@@ -13,5 +17,7 @@ export function getCloudinaryImageUrl(
   )
     .trim()
     .toLowerCase();
-  return `https://res.cloudinary.com/${cloudName}/image/upload/${options}/${publicId}`;
+
+  const version = ASSET_VERSIONS[publicId] ? `${ASSET_VERSIONS[publicId]}/` : '';
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${options}/${version}${publicId}`;
 }
