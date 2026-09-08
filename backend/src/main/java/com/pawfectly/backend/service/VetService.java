@@ -20,19 +20,31 @@ public class VetService {
     private final VetRepository vetRepository;
 
     @Transactional(readOnly = true)
-    public List<VetDto> getActiveVets(String specialization, String search, Integer limit) {
-        List<Vet> vets;
+    public List<VetDto> getActiveVets(String specialization, String petType, String search, Integer limit) {
+        List<Vet> vets = vetRepository.findByIsActiveTrue();
+
         if (specialization != null && !specialization.isBlank() && !specialization.equalsIgnoreCase("All Specializations") && !specialization.equalsIgnoreCase("All")) {
-            vets = vetRepository.findBySpecializationAndIsActiveTrue(specialization);
-        } else {
-            vets = vetRepository.findByIsActiveTrue();
+            String specLower = specialization.toLowerCase().trim();
+            vets = vets.stream()
+                    .filter(v -> (v.getSpecialization() != null && v.getSpecialization().toLowerCase().contains(specLower)) ||
+                            (v.getSecondarySpecialization() != null && v.getSecondarySpecialization().toLowerCase().contains(specLower)))
+                    .collect(Collectors.toList());
+        }
+
+        if (petType != null && !petType.isBlank() && !petType.equalsIgnoreCase("All")) {
+            String petLower = petType.toLowerCase().trim();
+            vets = vets.stream()
+                    .filter(v -> v.getPetTypes() != null && v.getPetTypes().toLowerCase().contains(petLower))
+                    .collect(Collectors.toList());
         }
 
         if (search != null && !search.isBlank()) {
             String lower = search.toLowerCase().trim();
             vets = vets.stream()
                     .filter(v -> v.getName().toLowerCase().contains(lower) ||
-                            v.getSpecialization().toLowerCase().contains(lower) ||
+                            (v.getSpecialization() != null && v.getSpecialization().toLowerCase().contains(lower)) ||
+                            (v.getSecondarySpecialization() != null && v.getSecondarySpecialization().toLowerCase().contains(lower)) ||
+                            (v.getCity() != null && v.getCity().toLowerCase().contains(lower)) ||
                             (v.getAddress() != null && v.getAddress().toLowerCase().contains(lower)))
                     .collect(Collectors.toList());
         }
@@ -62,60 +74,17 @@ public class VetService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public List<VetDto> getAllVetsAdmin() {
-        return vetRepository.findAll().stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public VetDto createVet(VetDto dto) {
-        Vet vet = Vet.builder()
-                .name(dto.getName())
-                .specialization(dto.getSpecialization())
-                .photoUrl(dto.getPhotoUrl())
-                .rating(dto.getRating() != null ? dto.getRating() : 5.0)
-                .address(dto.getAddress())
-                .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
-                .build();
-
-        Vet saved = vetRepository.save(vet);
-        log.info("Created vet: {}", saved.getName());
-        return mapToDto(saved);
-    }
-
-    @Transactional
-    public VetDto updateVet(Long id, VetDto dto) {
-        Vet vet = vetRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Vet not found with id: " + id));
-
-        vet.setName(dto.getName());
-        vet.setSpecialization(dto.getSpecialization());
-        if (dto.getPhotoUrl() != null) vet.setPhotoUrl(dto.getPhotoUrl());
-        if (dto.getRating() != null) vet.setRating(dto.getRating());
-        if (dto.getAddress() != null) vet.setAddress(dto.getAddress());
-        if (dto.getIsActive() != null) vet.setIsActive(dto.getIsActive());
-
-        Vet updated = vetRepository.save(vet);
-        log.info("Updated vet id: {}", id);
-        return mapToDto(updated);
-    }
-
-    @Transactional
-    public void deleteVet(Long id) {
-        Vet vet = vetRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Vet not found with id: " + id));
-        vet.setIsActive(false);
-        vetRepository.save(vet);
-        log.info("Soft-deleted vet id: {}", id);
-    }
-
     private VetDto mapToDto(Vet vet) {
         return VetDto.builder()
                 .id(vet.getId())
                 .name(vet.getName())
                 .specialization(vet.getSpecialization())
+                .secondarySpecialization(vet.getSecondarySpecialization())
+                .petTypes(vet.getPetTypes())
+                .experienceYears(vet.getExperienceYears())
+                .reviewsCount(vet.getReviewsCount())
+                .city(vet.getCity())
+                .consultationFee(vet.getConsultationFee())
                 .photoUrl(vet.getPhotoUrl())
                 .rating(vet.getRating())
                 .address(vet.getAddress())

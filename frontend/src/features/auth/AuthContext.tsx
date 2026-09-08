@@ -30,12 +30,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(JSON.parse(savedUser));
           // Verify with backend /api/auth/me
           const response = await apiClient.get<User>('/auth/me');
-          if (response.data) {
+          if (response.data && response.data.role === 'CUSTOMER') {
             setUser(response.data);
             localStorage.setItem('pawfectly_user', JSON.stringify(response.data));
+          } else {
+            throw new Error('Access denied: Customer portal accepts customer accounts only.');
           }
         } catch {
-          // Token expired or invalid
+          // Token expired or non-customer
           localStorage.removeItem('pawfectly_token');
           localStorage.removeItem('pawfectly_user');
           setToken(null);
@@ -49,6 +51,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = (authData: AuthResponse) => {
+    if (authData.role !== 'CUSTOMER') {
+      throw new Error('Access denied: Only customer accounts can access the customer portal.');
+    }
+
     const userData: User = {
       id: authData.id,
       name: authData.name,

@@ -7,21 +7,20 @@ import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
+import { useAuth } from '../../features/auth/AuthContext';
 import {
   Stethoscope,
   Scissors,
   Utensils,
   Home,
-  Footprints,
-  Award,
+  PawPrint,
   ShieldCheck,
   Truck,
   ArrowRight,
-  Headphones,
-  Shield,
-  Lock,
-  Coins,
   Sparkles,
+  CalendarCheck,
+  Heart,
+  Pill,
 } from 'lucide-react';
 
 interface ServiceDto {
@@ -41,6 +40,7 @@ export const ServicesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const fetchServices = () => {
     setLoading(true);
@@ -62,79 +62,91 @@ export const ServicesPage: React.FC = () => {
     fetchServices();
   }, []);
 
+  const resolveServiceImageUrl = (service: ServiceDto) => {
+    if (service.imageUrl && (service.imageUrl.startsWith('http://') || service.imageUrl.startsWith('https://'))) {
+      return service.imageUrl;
+    }
+    const name = service.name.toLowerCase();
+    if (name.includes('vet') || name.includes('doctor')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png';
+    }
+    if (name.includes('food') || name.includes('nutrition')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png';
+    }
+    if (name.includes('grooming')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png';
+    }
+    if (name.includes('pharmacy') || name.includes('med')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png';
+    }
+    if (name.includes('toy') || name.includes('enrichment')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png';
+    }
+    if (name.includes('boarding') || name.includes('daycare')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png';
+    }
+    if (name.includes('training') || name.includes('behaviour') || name.includes('behavior')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896174/c1b76666-8097-4311-911e-8b51d62c4739_1.png';
+    }
+    if (name.includes('transport') || name.includes('ambulance')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png';
+    }
+    const fallbacks = [
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896174/c1b76666-8097-4311-911e-8b51d62c4739_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png',
+    ];
+    return fallbacks[(service.id - 1) % fallbacks.length];
+  };
+
   const serviceIconsMap: Record<string, { icon: React.ElementType; bg: string; text: string }> = {
-    'Vet Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
     'Veterinary Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
-    'Grooming': { icon: Scissors, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
-    'Pet Food': { icon: Utensils, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
-    'Pet Nutrition': { icon: Utensils, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
-    'Boarding': { icon: Home, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]' },
-    'Pet Walking': { icon: Footprints, bg: 'bg-[#F3E8FF]', text: 'text-[#7E22CE]' },
-    'Training': { icon: Award, bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]' },
-    'Pet Insurance': { icon: ShieldCheck, bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
+    'Vet Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
+    'Pet Food & Nutrition': { icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
+    'Pet Food': { icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
+    'Professional Grooming': { icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
+    'Grooming': { icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
+    'Pet Pharmacy & Meds': { icon: Pill, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]' },
+    'Pharmacy': { icon: Pill, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]' },
+    'Toys & Enrichment': { icon: Sparkles, bg: 'bg-[#F3E8FF]', text: 'text-[#7E22CE]' },
+    'Boarding & Daycare': { icon: Home, bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
+    'Boarding': { icon: Home, bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
+    'Pet Training & Behaviour': { icon: PawPrint, bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]' },
+    'Training': { icon: PawPrint, bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]' },
+    'Pet Transport & Ambulance': { icon: Truck, bg: 'bg-[#FCE7F3]', text: 'text-[#BE185D]' },
     'Pet Transport': { icon: Truck, bg: 'bg-[#FCE7F3]', text: 'text-[#BE185D]' },
-    'Pharmacy': { icon: Sparkles, bg: 'bg-[#BAE6FD]', text: 'text-[#0369A1]' },
+    'Pet Insurance': { icon: ShieldCheck, bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
   };
 
   const howItWorksSteps = [
     {
       step: '01',
-      emoji: '📅',
+      icon: Stethoscope,
       title: 'Choose a Service',
       description: 'Browse and select the service your pet needs.',
     },
     {
       step: '02',
-      emoji: '📄',
+      icon: CalendarCheck,
       title: 'Book an Appointment',
       description: 'Pick a convenient time and confirm your booking.',
     },
     {
       step: '03',
-      emoji: '🏠',
+      icon: Heart,
       title: 'We Care for Your Pet',
       description: 'Our certified experts provide the best care and attention.',
     },
     {
       step: '04',
-      emoji: '🐱',
+      icon: Home,
       title: 'Happy Pet, Happy You',
       description: 'Your pet stays happy, healthy, and loved.',
-    },
-  ];
-
-  const featureItems = [
-    {
-      icon: Headphones,
-      emoji: '🎧',
-      bg: 'bg-[#E6F9EC]',
-      text: 'text-[#287A41]',
-      title: '24/7 Support',
-      subtitle: "We're here anytime you need us.",
-    },
-    {
-      icon: Shield,
-      emoji: '🛡️',
-      bg: 'bg-[#E0F2FE]',
-      text: 'text-[#0284C7]',
-      title: 'Expert Care',
-      subtitle: 'Certified professionals you can trust.',
-    },
-    {
-      icon: Lock,
-      emoji: '🔒',
-      bg: 'bg-[#FFEDD5]',
-      text: 'text-[#C2410C]',
-      title: 'Safe & Secure',
-      subtitle: "Top priority for your pet's safety.",
-    },
-    {
-      icon: Coins,
-      emoji: '💰',
-      bg: 'bg-[#FFE4E6]',
-      text: 'text-[#E11D48]',
-      title: 'Affordable Prices',
-      subtitle: 'Quality care at transparent prices.',
     },
   ];
 
@@ -145,49 +157,71 @@ export const ServicesPage: React.FC = () => {
 
       <main className="flex-grow space-y-16 lg:space-y-24 pb-20">
         {/* 2. Hero Section */}
-        <section className="bg-[#EFF8F0] border-b border-[#E2EEDB] relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-              {/* Left Column: Heading & Paragraph */}
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
-                  Services That Make{' '}
-                  <span className="text-[#EF7C3C]">Tails Wag</span> And Hearts Happy.
-                </h1>
-                <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
-                  Explore our verified range of pet care services designed to keep your furry friends healthy, happy, and loved.
-                </p>
-                <div className="pt-2 flex flex-wrap gap-4 justify-center lg:justify-start">
-                  <Link to="/find-a-vet">
-                    <button className="px-6 py-3 bg-[#009E66] hover:bg-[#008757] text-white font-extrabold rounded-full shadow-md transition-all flex items-center gap-2 cursor-pointer">
-                      Book a Vet Visit 🐾
-                    </button>
-                  </Link>
-                  <Link to="/pharmacy">
-                    <button className="px-6 py-3 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all cursor-pointer">
-                      Explore Pharmacy 💊
-                    </button>
-                  </Link>
-                </div>
+        <section id="services-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
+            {/* Left Column: Heading & Paragraph (5 cols) */}
+            <div className="lg:col-span-5 space-y-6 text-left z-20">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
+                Services That Make{' '}
+                <span className="text-[#EF7C3C]">Tails Wag</span> And Hearts Happy.
+              </h1>
+              <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
+                Explore our verified range of pet care services designed to keep your furry friends healthy, happy, and loved.
+              </p>
+              <div className="pt-2 flex flex-wrap gap-4 justify-center lg:justify-start">
+                <button
+                  onClick={() => navigate(isAuthenticated ? '/profile?tab=appointments' : '/login')}
+                  className="px-6 py-3 bg-[#009E66] hover:bg-[#008757] text-white font-extrabold rounded-full shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  Book a Vet Visit
+                </button>
+                <Link to="/pharmacy">
+                  <button className="px-6 py-3 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all cursor-pointer">
+                    Explore Pharmacy
+                  </button>
+                </Link>
               </div>
+            </div>
 
-              {/* Right Column: Hero Image with Organic Blob */}
-              <div className="lg:col-span-5 flex justify-center items-center relative">
-                <div className="absolute inset-0 bg-[#D8F3DC]/70 rounded-[48%_52%_68%_32%/42%_58%_42%_58%] -rotate-3 scale-105 pointer-events-none blur-xs" />
-                <span className="absolute -top-3 left-6 text-2xl text-[#3FA65C] select-none pointer-events-none animate-pulse">
-                  🐾
-                </span>
-                <span className="absolute top-8 right-4 text-2xl text-[#EF7C3C] select-none pointer-events-none">
-                  ❤️
-                </span>
+            {/* Right Column: Large cutout image with light grey messy bg and paw prints (7 cols) */}
+            <div className="lg:col-span-7 relative flex justify-center items-center lg:-translate-x-6 xl:-translate-x-10">
+              <div className="relative w-full max-w-[700px] lg:max-w-[900px] xl:max-w-[1050px] overflow-visible py-4 sm:py-6 flex justify-center items-center">
+                {/* Light grey messy/organic blob backdrop */}
+                <div className="absolute inset-2 sm:inset-4 bg-[#E5E7EB]/80 rounded-[42%_58%_70%_30%/45%_45%_55%_55%] transform -rotate-3 scale-105 shadow-inner -z-0" />
+                <div className="absolute inset-4 sm:inset-8 bg-[#D1D5DB]/40 rounded-[35%_65%_55%_45%/60%_38%_62%_40%] transform rotate-2 scale-100 blur-xs -z-0" />
 
-                <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border-2 border-[#D0EBD5] shadow-lg bg-white z-10">
-                  <img
-                    src={getCloudinaryImageUrl('hero_dog_cat_green_bg')}
-                    alt="Services Care"
-                    className="w-full h-full object-cover"
-                  />
+                {/* Cat Paw prints around the image */}
+                <div className="absolute -top-3 left-8 flex gap-1.5 text-[#6B7280] opacity-60 transform -rotate-12 pointer-events-none z-0">
+                  <PawPrint className="w-7 h-7 sm:w-9 sm:h-9" />
+                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 translate-y-2" />
                 </div>
+                <div className="absolute top-10 -left-4 sm:-left-8 flex gap-1 text-[#9CA3AF] opacity-50 transform rotate-45 pointer-events-none z-0">
+                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8" />
+                  <PawPrint className="w-5 h-5 sm:w-7 sm:h-7 translate-y-1.5" />
+                </div>
+                <div className="absolute -top-5 right-14 flex gap-1.5 text-[#6B7280] opacity-50 transform rotate-12 pointer-events-none z-0">
+                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8" />
+                  <PawPrint className="w-7 h-7 sm:w-9 sm:h-9 -translate-y-2" />
+                </div>
+                <div className="absolute top-16 -right-3 sm:-right-8 flex gap-1.5 text-[#9CA3AF] opacity-60 transform -rotate-30 pointer-events-none z-0">
+                  <PawPrint className="w-7 h-7 sm:w-9 sm:h-9" />
+                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 translate-y-2" />
+                </div>
+                <div className="absolute -bottom-3 left-20 flex gap-1 text-[#6B7280] opacity-50 transform rotate-25 pointer-events-none z-0">
+                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8" />
+                  <PawPrint className="w-5 h-5 sm:w-7 sm:h-7 -translate-y-1.5" />
+                </div>
+                <div className="absolute bottom-4 -right-3 flex gap-1.5 text-[#9CA3AF] opacity-50 transform -rotate-15 pointer-events-none z-0">
+                  <PawPrint className="w-7 h-7 sm:w-9 sm:h-9" />
+                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 translate-y-1.5" />
+                </div>
+
+                {/* Main Pets Cutout Image */}
+                <img
+                  src={getCloudinaryImageUrl('services_hero_cutout')}
+                  alt="Pet Care Services"
+                  className="w-full h-auto object-contain drop-shadow-xl pointer-events-none relative z-10 transition-transform duration-300 hover:scale-[1.02]"
+                />
               </div>
             </div>
           </div>
@@ -199,7 +233,7 @@ export const ServicesPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
               <div className="space-y-2">
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider">
-                  WHAT WE OFFER 🐾
+                  WHAT WE OFFER
                 </span>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
                   Our Pet Care Services
@@ -248,14 +282,11 @@ export const ServicesPage: React.FC = () => {
                       key={service.id}
                       className="bg-white rounded-[24px] p-4 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
                     >
-                      <div className="relative w-full aspect-[4/3] rounded-[18px] overflow-hidden bg-[#FAF6EE] border border-[#EAE3D2]">
+                      <div className="relative w-full aspect-[4/3] rounded-[18px] overflow-hidden bg-white border border-[#EAE3D2] p-1.5">
                         <img
-                          src={
-                            service.imageUrl ||
-                            getCloudinaryImageUrl('service_01_vet_care')
-                          }
+                          src={resolveServiceImageUrl(service)}
                           alt={service.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-contain rounded-[14px]"
                         />
 
                         <div
@@ -278,7 +309,7 @@ export const ServicesPage: React.FC = () => {
                           {service.description || service.tagline}
                         </p>
                         <button
-                          onClick={() => navigate('/find-a-vet')}
+                          onClick={() => navigate(isAuthenticated ? '/profile?tab=appointments' : '/login')}
                           className="text-xs font-bold text-[#3FA65C] hover:text-[#2e7d44] transition-colors flex items-center gap-1 mt-auto cursor-pointer"
                         >
                           Book Now ›
@@ -296,7 +327,7 @@ export const ServicesPage: React.FC = () => {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-3 mb-12">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider">
-              HOW IT WORKS 🐾
+              HOW IT WORKS
             </span>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
               Simple Steps, Happy Pets
@@ -304,17 +335,17 @@ export const ServicesPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-4 relative items-start">
-            {howItWorksSteps.map((stepItem, index) => (
-              <div
-                key={stepItem.step}
-                className="flex flex-col items-center text-center relative group"
-              >
-                <div className="relative mb-5">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white border-2 border-dashed border-[#3FA65C] flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
-                    <span className="text-3xl select-none" role="img" aria-label={stepItem.title}>
-                      {stepItem.emoji}
-                    </span>
-                  </div>
+            {howItWorksSteps.map((stepItem, index) => {
+              const StepIcon = stepItem.icon;
+              return (
+                <div
+                  key={stepItem.step}
+                  className="flex flex-col items-center text-center relative group"
+                >
+                  <div className="relative mb-5">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#E6F9EC] border-2 border-dashed border-[#3FA65C] flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
+                      <StepIcon className="w-9 h-9 sm:w-10 sm:h-10 text-[#16241B]" />
+                    </div>
 
                   <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#16241B] text-white text-[11px] font-black flex items-center justify-center shadow-xs">
                     {stepItem.step}
@@ -334,7 +365,8 @@ export const ServicesPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            ))}
+            );
+          })}
           </div>
         </section>
 
@@ -345,7 +377,13 @@ export const ServicesPage: React.FC = () => {
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
                   Pamper Your Pet With The{' '}
-                  <span className="text-[#EF7C3C]">Best Care</span> They Deserve!
+                  <span
+                    className="text-[#EF7C3C]"
+                    style={{ WebkitTextStroke: '0.75px #16241B' }}
+                  >
+                    Best Care
+                  </span>{' '}
+                  They Deserve!
                 </h2>
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
                   From health to happiness, we're here for every step of your pet's journey.
@@ -353,17 +391,10 @@ export const ServicesPage: React.FC = () => {
 
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
                   <button
-                    onClick={() => navigate('/find-a-vet')}
+                    onClick={() => navigate('/vets')}
                     className="px-7 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
                   >
-                    Book a Service →
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/find-a-vet')}
-                    className="px-6 py-3.5 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
-                  >
-                    Talk to Our Vet 📞
+                    Talk to Vet →
                   </button>
                 </div>
               </div>
@@ -377,33 +408,6 @@ export const ServicesPage: React.FC = () => {
                   />
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 6. Feature Strip */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-[24px] p-6 sm:p-8 border border-[#EDE7D9] shadow-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-              {featureItems.map((item) => (
-                <div key={item.title} className="flex items-center gap-4">
-                  <div
-                    className={`w-12 h-12 rounded-full ${item.bg} flex items-center justify-center shrink-0 text-xl shadow-xs`}
-                  >
-                    <span role="img" aria-label={item.title}>
-                      {item.emoji}
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black text-[#16241B]">
-                      {item.title}
-                    </h4>
-                    <p className="text-xs text-[#556658] font-medium mt-0.5 leading-snug">
-                      {item.subtitle}
-                    </p>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </section>

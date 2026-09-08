@@ -40,7 +40,17 @@ public class UserService {
         }
 
         user.setName(request.getName());
-        user.setPhone(request.getPhone());
+
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            String cleanPhone = request.getPhone().replaceAll("\\D", "");
+            if (cleanPhone.length() != 10) {
+                throw new BadRequestException("Phone number must be exactly 10 digits.");
+            }
+            user.setPhone(cleanPhone);
+        } else {
+            user.setPhone(request.getPhone());
+        }
+
         User updated = userRepository.save(user);
         log.info("Updated profile for user id: {}", userId);
 

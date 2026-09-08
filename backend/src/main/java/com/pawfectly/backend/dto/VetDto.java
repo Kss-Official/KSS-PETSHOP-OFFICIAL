@@ -19,6 +19,13 @@ public class VetDto {
     @NotBlank(message = "Specialization is required")
     private String specialization;
 
+    private String secondarySpecialization;
+    private String petTypes;
+    private Integer experienceYears;
+    private Integer reviewsCount;
+    private String city;
+    private Double consultationFee;
+
     private String photoUrl;
     private Double rating;
     private String address;

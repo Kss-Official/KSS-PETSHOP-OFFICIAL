@@ -33,6 +33,26 @@ public class Vet {
     @Column(nullable = false)
     private String specialization;
 
+    @Column(name = "secondary_specialization")
+    private String secondarySpecialization;
+
+    @Column(name = "pet_types")
+    private String petTypes;
+
+    @Column(name = "experience_years")
+    @Builder.Default
+    private Integer experienceYears = 5;
+
+    @Column(name = "reviews_count")
+    @Builder.Default
+    private Integer reviewsCount = 45;
+
+    private String city;
+
+    @Column(name = "consultation_fee")
+    @Builder.Default
+    private Double consultationFee = 50.0;
+
     @Column(name = "photo_url", length = 512)
     private String photoUrl;
 

@@ -18,9 +18,10 @@ public class PublicVetController {
     @GetMapping
     public ResponseEntity<List<VetDto>> getVets(
             @RequestParam(required = false) String specialization,
+            @RequestParam(required = false) String petType,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Integer limit) {
-        return ResponseEntity.ok(vetService.getActiveVets(specialization, search, limit));
+        return ResponseEntity.ok(vetService.getActiveVets(specialization, petType, search, limit));
     }
 
     @GetMapping("/{id}")

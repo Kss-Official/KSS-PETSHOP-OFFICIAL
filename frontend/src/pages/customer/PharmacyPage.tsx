@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -9,22 +9,18 @@ import { getCloudinaryImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
 import {
-  ShieldCheck,
-  Truck,
-  Headphones,
-  Lock,
   ArrowRight,
-  ChevronRight,
   Star,
   Heart,
   Pill,
-  Sparkles,
   ShoppingBag,
-  Check,
   Utensils,
   Scissors,
   Shield,
+  ShieldCheck,
   HeartPulse,
+  Minus,
+  Plus,
 } from 'lucide-react';
 
 interface ProductItem {
@@ -40,10 +36,15 @@ interface ProductItem {
   prescriptionRequired?: boolean;
 }
 
+interface CartItemMapValue {
+  id: number;
+  quantity: number;
+}
+
 export const PharmacyPage: React.FC = () => {
-  const [cartCount, setCartCount] = useState<number>(0);
+  const [cartItems, setCartItems] = useState<Record<number, CartItemMapValue>>({});
+  const [updatingCart, setUpdatingCart] = useState<Record<number, boolean>>({});
   const [wishlist, setWishlist] = useState<Record<number, boolean>>({});
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('All');
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -67,30 +68,35 @@ export const PharmacyPage: React.FC = () => {
       });
   };
 
-  const fetchCartCount = () => {
+  const fetchCart = () => {
     if (isAuthenticated) {
       apiClient
         .get('/customer/cart')
         .then((res) => {
-          const items = res.data || [];
-          const totalCount = items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0);
-          setCartCount(totalCount);
+          const items: { id: number; productId: number; quantity: number }[] = res.data || [];
+          const map: Record<number, CartItemMapValue> = {};
+          items.forEach((item) => {
+            map[item.productId] = { id: item.id, quantity: item.quantity };
+          });
+          setCartItems(map);
         })
-        .catch(() => {});
+        .catch(() => {
+          setCartItems({});
+        });
+    } else {
+      setCartItems({});
     }
   };
 
   useEffect(() => {
     fetchProducts();
-    fetchCartCount();
+    fetchCart();
+    const handleCartUpdate = () => fetchCart();
+    window.addEventListener('cart-updated', handleCartUpdate);
+    return () => {
+      window.removeEventListener('cart-updated', handleCartUpdate);
+    };
   }, [isAuthenticated]);
-
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
-  };
 
   const handleAddToCart = async (product: ProductItem) => {
     if (!isAuthenticated) {
@@ -98,22 +104,85 @@ export const PharmacyPage: React.FC = () => {
       return;
     }
 
+    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
     try {
-      await apiClient.post('/customer/cart', {
+      const res = await apiClient.post('/customer/cart', {
         productId: product.id,
         quantity: 1,
       });
-      setCartCount((prev) => prev + 1);
-      showToast(`Added "${product.name}" to cart! 🐾`);
+      if (res.data) {
+        setCartItems((prev) => ({
+          ...prev,
+          [product.id]: { id: res.data.id, quantity: res.data.quantity || 1 },
+        }));
+      }
+      window.dispatchEvent(new Event('cart-updated'));
     } catch {
-      showToast('Could not add to cart. Please try again.');
+      // Error handled safely
+    } finally {
+      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
+    }
+  };
+
+  const handleIncreaseQuantity = async (product: ProductItem, cartItem: CartItemMapValue) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    if (cartItem.quantity >= product.stockQuantity) return;
+
+    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
+    try {
+      const newQty = cartItem.quantity + 1;
+      const res = await apiClient.put(`/customer/cart/${cartItem.id}?quantity=${newQty}`);
+      if (res.data) {
+        setCartItems((prev) => ({
+          ...prev,
+          [product.id]: { ...cartItem, quantity: newQty },
+        }));
+      }
+      window.dispatchEvent(new Event('cart-updated'));
+    } catch {
+      // Error handled safely
+    } finally {
+      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
+    }
+  };
+
+  const handleDecreaseQuantity = async (product: ProductItem, cartItem: CartItemMapValue) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
+    try {
+      const newQty = cartItem.quantity - 1;
+      if (newQty <= 0) {
+        await apiClient.delete(`/customer/cart/${cartItem.id}`);
+        setCartItems((prev) => {
+          const next = { ...prev };
+          delete next[product.id];
+          return next;
+        });
+      } else {
+        await apiClient.put(`/customer/cart/${cartItem.id}?quantity=${newQty}`);
+        setCartItems((prev) => ({
+          ...prev,
+          [product.id]: { ...cartItem, quantity: newQty },
+        }));
+      }
+      window.dispatchEvent(new Event('cart-updated'));
+    } catch {
+      // Error handled safely
+    } finally {
+      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
     }
   };
 
   const toggleWishlist = (productId: number) => {
     setWishlist((prev) => {
       const next = !prev[productId];
-      showToast(next ? 'Added to favorites!' : 'Removed from favorites');
       return { ...prev, [productId]: next };
     });
   };
@@ -122,47 +191,46 @@ export const PharmacyPage: React.FC = () => {
     return `$${amount.toFixed(2)}`;
   };
 
-  const categoryCards = [
-    {
-      id: 'meds',
-      title: 'Medications',
-      subtitle: 'Prescription & OTC',
-      icon: Pill,
-      bg: 'bg-[#E6F9EC]',
-      text: 'text-[#287A41]',
-      border: 'border-[#C3ECD0]',
-      categoryFilter: 'Medications',
-    },
-    {
-      id: 'food',
-      title: 'Food & Nutrition',
-      subtitle: 'Dry & Wet Food',
-      icon: Utensils,
-      bg: 'bg-[#F3E8FF]',
-      text: 'text-[#7E22CE]',
-      border: 'border-[#E9D5FF]',
-      categoryFilter: 'Food',
-    },
-    {
-      id: 'grooming',
-      title: 'Grooming & Hygiene',
-      subtitle: 'Shampoos & Cleaners',
-      icon: Scissors,
-      bg: 'bg-[#FEF9C3]',
-      text: 'text-[#B45309]',
-      border: 'border-[#FDE047]',
-      categoryFilter: 'Grooming',
-    },
-    {
-      id: 'supplements',
-      title: 'Supplements & Care',
-      subtitle: 'Vitamins & Joint Care',
-      icon: HeartPulse,
-      bg: 'bg-[#FFE4E6]',
-      text: 'text-[#E11D48]',
-      border: 'border-[#FECDD3]',
-      categoryFilter: 'Supplements',
-    },
+  const resolveProductImageUrl = (product: ProductItem) => {
+    if (product.imageUrl && (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'))) {
+      return product.imageUrl;
+    }
+    const name = product.name.toLowerCase();
+    if (name.includes("hill") || name.includes("dog food")) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png';
+    }
+    if (name.includes("frontline")) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png';
+    }
+    if (name.includes("royal canin") || name.includes("kitten")) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png';
+    }
+    if (name.includes("vetplus") || name.includes("joint")) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png';
+    }
+    if (name.includes("virbac") || name.includes("epi-otic") || name.includes("ear cleaner")) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png';
+    }
+    if (name.includes("nexgard") || name.includes("chews")) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png';
+    }
+    const fallbacks = [
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png',
+      'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png',
+    ];
+    return fallbacks[(product.id - 1) % fallbacks.length];
+  };
+
+  const pharmacyCategoryTabs = [
+    { name: 'Medications', icon: Pill, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
+    { name: 'Food & Nutrition', icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
+    { name: 'Grooming & Hygiene', icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
+    { name: 'Supplements & Care', icon: HeartPulse, bg: 'bg-[#F3E8FF]', text: 'text-[#7E22CE]' },
+    { name: 'Flea & Tick', icon: ShieldCheck, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]' },
   ];
 
   const specialCareItems = [
@@ -201,259 +269,115 @@ export const PharmacyPage: React.FC = () => {
       {/* 1. Navbar */}
       <Navbar activePage="pharmacy" />
 
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#16241B] text-white px-5 py-3 rounded-full shadow-xl text-sm font-bold flex items-center gap-2 animate-bounce">
-          <Check className="w-4 h-4 text-[#3FA65C]" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Floating Cart Quick Access */}
-      {cartCount > 0 && (
-        <Link
-          to="/profile?tab=orders"
-          className="fixed bottom-6 left-6 z-40 bg-[#009E66] hover:bg-[#008757] text-white px-5 py-3 rounded-full shadow-xl text-sm font-black flex items-center gap-2.5 transition-all hover:scale-105"
-        >
-          <ShoppingBag className="w-4 h-4" />
-          <span>Cart ({cartCount})</span>
-        </Link>
-      )}
-
       <main className="flex-grow space-y-16 lg:space-y-24 pb-20">
         {/* 2. Hero Section */}
-        <section className="bg-[#EFF8F0] border-b border-[#E2EEDB] relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-18">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-              {/* Left Column */}
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#287A41]" />
-                  <span>Trusted Pet Pharmacy</span>
-                </div>
-
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
-                  Healthy Pets,{' '}
-                  <span className="text-[#EF7C3C]">Happier Lives.</span>
-                </h1>
-
-                <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
-                  Quality medicines, supplements and wellness products for your
-                  furry friends. Because their health matters — today and always.
-                </p>
-
-                {/* Buttons */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                  <a
-                    href="#popular-products"
-                    className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
-                  >
-                    Shop Now <ArrowRight className="w-4 h-4" />
-                  </a>
-                  <a
-                    href="#special-care"
-                    className="px-7 py-3.5 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
-                  >
-                    Special Care
-                  </a>
-                </div>
-
-                {/* Trust Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-6 text-left">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">100% Genuine Products</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#E0F2FE] text-[#0284C7] flex items-center justify-center shrink-0">
-                      <Truck className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">Fast Delivery</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#FFE4E6] text-[#E11D48] flex items-center justify-center shrink-0">
-                      <Headphones className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">Expert Support</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#FEF9C3] text-[#B45309] flex items-center justify-center shrink-0">
-                      <Lock className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">Secure Checkout</span>
-                  </div>
-                </div>
+        <section id="pharmacy-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
+            {/* Left Column (5 cols) */}
+            <div className="lg:col-span-5 space-y-6 text-left z-20">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#287A41]" />
+                <span>Trusted Pet Pharmacy</span>
               </div>
 
-              {/* Right Column */}
-              <div className="lg:col-span-5 flex justify-center items-center relative">
-                <div className="absolute inset-0 bg-[#D8F3DC]/70 rounded-[48%_52%_68%_32%/42%_58%_42%_58%] -rotate-3 scale-105 pointer-events-none blur-xs" />
-                <div className="absolute -top-4 right-4 z-20 bg-white border border-[#E2EEDB] px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#F5A623] shrink-0" />
-                  <span className="text-xs font-black text-[#16241B]">
-                    Good Health = More Playtime!
-                  </span>
-                </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
+                Healthy Pets,{' '}
+                <span className="text-[#EF7C3C]">Happier Lives.</span>
+              </h1>
 
-                <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border-2 border-[#D0EBD5] shadow-lg bg-white z-10">
-                  <img
-                    src={getCloudinaryImageUrl('hero_dog_cat_green_bg')}
-                    alt="Pet Pharmacy Essentials"
-                    className="w-full h-full object-cover rounded-3xl"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. Shop by Category */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-4 space-y-4 text-center lg:text-left">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider">
-                SHOP BY CATEGORY
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight leading-tight">
-                Everything They Need,<br />All in One Place.
-              </h2>
-              <p className="text-xs sm:text-sm text-[#556658] font-medium leading-relaxed">
-                From daily essentials to specialized care, find the best products for your pet's wellness.
+              <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
+                Quality medicines, supplements and wellness products for your
+                furry friends. Because their health matters — today and always.
               </p>
-              <button
-                onClick={() => setActiveCategoryFilter('All')}
-                className="bg-[#009E66] hover:bg-[#008757] text-white px-6 py-3 rounded-full text-xs sm:text-sm font-bold shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                Browse All <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
 
-            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {categoryCards.map((cat) => {
-                const CatIcon = cat.icon;
-                const isSelected = activeCategoryFilter === cat.categoryFilter;
-                return (
-                  <div
-                    key={cat.id}
-                    onClick={() => setActiveCategoryFilter(cat.categoryFilter)}
-                    className={`${cat.bg} rounded-[22px] p-3.5 border ${
-                      isSelected ? 'ring-2 ring-[#3FA65C] border-[#3FA65C]' : cat.border
-                    } shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer relative`}
-                  >
-                    <div className="relative w-full aspect-square rounded-[16px] overflow-hidden bg-white/70 mb-3 flex items-center justify-center">
-                      <CatIcon className={`w-12 h-12 ${cat.text}`} />
-                    </div>
-
-                    <div className="space-y-0.5">
-                      <h3 className="text-sm font-black text-[#16241B]">{cat.title}</h3>
-                      <p className="text-[11px] font-semibold text-[#556658]">{cat.subtitle}</p>
-                    </div>
-
-                    <div className="mt-3 flex justify-end">
-                      <div className="w-6 h-6 rounded-full bg-white group-hover:bg-[#16241B] group-hover:text-white text-[#16241B] flex items-center justify-center shadow-2xs transition-colors">
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* 4. Special Care Split Section */}
-        <section id="special-care" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-10 lg:p-12 border border-[#E2EEDB] shadow-xs">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-              <div className="lg:col-span-4 space-y-4 text-center lg:text-left">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
-                  <Shield className="w-3.5 h-3.5 text-[#287A41]" />
-                  <span>Stay Prepared</span>
-                </span>
-
-                <h2 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight leading-tight">
-                  Special Care for<br />Their <span className="text-[#EF7C3C]">Special Needs</span>
-                </h2>
-
-                <p className="text-xs sm:text-sm text-[#556658] font-medium leading-relaxed">
-                  Explore our verified range of medicines and wellness products for every stage of your pet's life.
-                </p>
-
-                <a href="#popular-products">
-                  <button className="bg-[#009E66] hover:bg-[#008757] text-white px-6 py-3 rounded-full text-xs sm:text-sm font-bold shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer">
-                    Explore Products <ArrowRight className="w-4 h-4" />
-                  </button>
+              {/* Buttons */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+                <a
+                  href="#popular-products"
+                  className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                >
+                  Shop Now <ArrowRight className="w-4 h-4" />
                 </a>
               </div>
+            </div>
 
-              <div className="lg:col-span-4 space-y-3.5">
-                {specialCareItems.map((item, idx) => {
-                  const ItemIcon = item.icon;
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-white rounded-2xl p-3.5 border border-[#EDE7D9] shadow-xs flex items-center gap-3.5 hover:shadow-md transition-all"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0 shadow-2xs">
-                        <ItemIcon className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-black text-[#16241B]">
-                          {item.title}
-                        </h4>
-                        <p className="text-[11px] text-[#556658] font-medium">
-                          {item.subtitle}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="lg:col-span-4 flex justify-center items-center relative">
-                <div className="relative w-full max-w-[320px] aspect-square rounded-3xl overflow-hidden border-2 border-white shadow-md bg-white">
-                  <img
-                    src={getCloudinaryImageUrl('cta_cat_sunglasses_flawless_seamless')}
-                    alt="Veterinary Care"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs border border-[#EDE7D9] px-3 py-1.5 rounded-xl shadow-xs text-[10px] font-black text-[#16241B]">
-                    Healthy Today, Happier Tomorrow ✨
-                  </div>
-                </div>
+            {/* Right Column: Large cutout image (7 cols) */}
+            <div className="lg:col-span-7 relative flex justify-center items-center lg:-translate-x-6 xl:-translate-x-10">
+              <div className="relative w-full max-w-[700px] lg:max-w-[900px] xl:max-w-[1050px] overflow-visible py-4 sm:py-6">
+                <img
+                  src={getCloudinaryImageUrl('pharmacy_hero')}
+                  alt="Pet Pharmacy Essentials"
+                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none transition-transform duration-300 hover:scale-[1.02]"
+                />
               </div>
             </div>
           </div>
         </section>
 
-        {/* 5. Popular Products Grid */}
-        <section id="popular-products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
-              <div className="space-y-1">
-                <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#EF7C3C] uppercase tracking-wider">
-                  <Star className="w-3.5 h-3.5 fill-[#EF7C3C]" />
-                  <span>ALL PHARMACY PRODUCTS</span>
-                </span>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
-                  Loved by Pets, Recommended by Vets ({filteredProducts.length})
-                </h2>
-              </div>
-
-              {activeCategoryFilter !== 'All' && (
-                <button
-                  onClick={() => setActiveCategoryFilter('All')}
-                  className="text-xs font-bold text-[#3FA65C] hover:underline"
-                >
-                  Show All Categories
-                </button>
-              )}
+        {/* 3. Popular Products Grid */}
+        <section id="popular-products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#EF7C3C] uppercase tracking-wider">
+                <Star className="w-3.5 h-3.5 fill-[#EF7C3C]" />
+                <span>ALL PHARMACY PRODUCTS</span>
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
+                Loved by <span className="text-[#EF7C3C]">Pets,</span> Recommended by Vets
+              </h2>
             </div>
+
+            <button
+              onClick={() => setActiveCategoryFilter('All')}
+              className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            >
+              <span>View all products</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Category Filter Pills (Matching Image 2 Style) */}
+          <div className="flex items-center gap-2.5 sm:gap-3 lg:gap-3.5 w-full py-1 overflow-x-auto no-scrollbar scroll-smooth">
+            {pharmacyCategoryTabs.map((tab) => {
+              const TabIcon = tab.icon;
+              const isSelected =
+                activeCategoryFilter !== 'All' &&
+                tab.name.toLowerCase().includes(activeCategoryFilter.toLowerCase());
+
+              return (
+                <button
+                  key={tab.name}
+                  onClick={() => {
+                    if (tab.name.includes('Food')) {
+                      setActiveCategoryFilter('Food');
+                    } else if (tab.name.includes('Grooming')) {
+                      setActiveCategoryFilter('Grooming');
+                    } else if (tab.name.includes('Supplements')) {
+                      setActiveCategoryFilter('Supplements');
+                    } else if (tab.name.includes('Flea')) {
+                      setActiveCategoryFilter('Flea');
+                    } else {
+                      setActiveCategoryFilter(tab.name);
+                    }
+                  }}
+                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${
+                    isSelected
+                      ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41] shadow-xs ring-2 ring-[#3FA65C]/20'
+                      : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B] shadow-2xs'
+                  }`}
+                >
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                      isSelected ? 'bg-[#3FA65C] text-white' : `${tab.bg} ${tab.text}`
+                    }`}
+                  >
+                    <TabIcon className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="whitespace-nowrap">{tab.name}</span>
+                </button>
+              );
+            })}
+          </div>
 
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
@@ -485,14 +409,11 @@ export const PharmacyPage: React.FC = () => {
                       key={product.id}
                       className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
                     >
-                      <div className="relative w-full aspect-square rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3">
+                      <div className="relative w-full aspect-square rounded-[16px] overflow-hidden bg-white mb-3 p-2 border border-[#F0EAE1]">
                         <img
-                          src={
-                            product.imageUrl ||
-                            getCloudinaryImageUrl('service_04_pharmacy_cat_med')
-                          }
+                          src={resolveProductImageUrl(product)}
                           alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-contain rounded-[12px]"
                         />
                         <button
                           type="button"
@@ -501,11 +422,10 @@ export const PharmacyPage: React.FC = () => {
                           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs hover:scale-110 transition-transform cursor-pointer"
                         >
                           <Heart
-                            className={`w-3.5 h-3.5 ${
-                              isFavorited
-                                ? 'text-[#E11D48] fill-[#E11D48]'
-                                : 'text-[#88998C] hover:text-[#E11D48]'
-                            }`}
+                            className={`w-3.5 h-3.5 ${isFavorited
+                              ? 'text-[#E11D48] fill-[#E11D48]'
+                              : 'text-[#88998C] hover:text-[#E11D48]'
+                              }`}
                           />
                         </button>
                       </div>
@@ -537,20 +457,97 @@ export const PharmacyPage: React.FC = () => {
                           </span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleAddToCart(product)}
-                          className="px-3.5 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all flex items-center gap-1 cursor-pointer shrink-0"
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>Add to Cart</span>
-                        </button>
+                        {cartItems[product.id] ? (
+                          <div className="inline-flex items-center bg-[#E6F9EC] border border-[#3FA65C] rounded-full p-0.5 shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => handleDecreaseQuantity(product, cartItems[product.id])}
+                              disabled={updatingCart[product.id]}
+                              aria-label="Decrease quantity"
+                              className="w-7 h-7 rounded-full bg-white text-[#287A41] hover:bg-[#3FA65C] hover:text-white flex items-center justify-center font-bold text-sm shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="min-w-[28px] text-center text-xs font-black text-[#16241B] px-1">
+                              {cartItems[product.id].quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleIncreaseQuantity(product, cartItems[product.id])}
+                              disabled={
+                                updatingCart[product.id] ||
+                                cartItems[product.id].quantity >= product.stockQuantity
+                              }
+                              aria-label="Increase quantity"
+                              className="w-7 h-7 rounded-full bg-[#009E66] text-white hover:bg-[#008757] flex items-center justify-center font-bold text-sm shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleAddToCart(product)}
+                            disabled={updatingCart[product.id] || product.stockQuantity <= 0}
+                            className="px-3.5 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-50"
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            <span>Add to Cart</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
+        </section>
+
+        {/* 5. Special Care Section (Without Image) */}
+        <section id="special-care" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-10 lg:p-12 border border-[#E2EEDB] shadow-xs">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              {/* Left Column: Heading & Info */}
+              <div className="lg:col-span-5 space-y-4 text-center lg:text-left">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
+                  <Shield className="w-3.5 h-3.5 text-[#287A41]" />
+                  <span>Stay Prepared</span>
+                </span>
+
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight leading-tight">
+                  Special Care for<br className="hidden sm:inline" /> Their <span className="text-[#3FA65C]">Special Needs</span>
+                </h2>
+
+                <p className="text-sm sm:text-base text-[#556658] font-medium leading-relaxed max-w-md">
+                  Explore our verified range of medicines and wellness products for every stage of your pet's life.
+                </p>
+              </div>
+
+              {/* Right Column: 2x2 Cards Grid */}
+              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {specialCareItems.map((item, idx) => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-white rounded-2xl p-5 border border-[#EDE7D9] shadow-xs flex items-center gap-4 hover:shadow-md transition-all hover:-translate-y-0.5"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0 shadow-2xs">
+                        <ItemIcon className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm sm:text-base font-black text-[#16241B] leading-snug">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs text-[#556658] font-medium mt-0.5">
+                          {item.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -565,7 +562,12 @@ export const PharmacyPage: React.FC = () => {
 
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
                   Because They Deserve the{' '}
-                  <span className="text-[#3FA65C]">Best Care.</span>
+                  <span
+                    className="text-[#EF7C3C]"
+                    style={{ WebkitTextStroke: '0.75px #16241B' }}
+                  >
+                    Best Care.
+                  </span>
                 </h2>
 
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
