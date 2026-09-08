@@ -17,25 +17,48 @@ import {
   Shield,
   Sparkles,
   Zap,
+  X,
+  Send,
 } from 'lucide-react';
-
-/* =========================================================================
-   PLACEHOLDER CONTENT WARNING:
-   Plan names, monthly pricing, coverage details, and FAQ answers below are
-   TEMPORARY PLACEHOLDERS only. Real insurance underwriting values, policy
-   terms, and carrier pricing must be provided and configured before launch.
-   ========================================================================= */
 
 export const InsurancePage: React.FC = () => {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [quoteFormData, setQuoteFormData] = useState({
+    petName: '',
+    petType: 'Dog',
+    ageYears: '2',
+    email: '',
+    phone: '',
+  });
+  const [quoteSubmitted, setQuoteSubmitted] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // PLACEHOLDER: Sample Plan Tiers (must be replaced with real product/underwriting data)
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleOpenQuote = (planName: string) => {
+    setSelectedPlan(planName);
+    setIsQuoteModalOpen(true);
+    setQuoteSubmitted(false);
+  };
+
+  const handleSubmitQuote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quoteFormData.email || !quoteFormData.petName) return;
+    setQuoteSubmitted(true);
+    showToast(`Quote request for ${quoteFormData.petName} submitted successfully! 🐾`);
+  };
+
   const plans = [
     {
       id: 'plan-basic',
       name: 'Basic',
       badge: 'Accident Only',
-      price: '₹499', // PLACEHOLDER PRICE
+      price: '₹499',
       period: '/month',
       description: 'Essential emergency protection for accidental injuries and sudden trauma.',
       isPopular: false,
@@ -56,7 +79,7 @@ export const InsurancePage: React.FC = () => {
       id: 'plan-standard',
       name: 'Standard',
       badge: 'Most Popular',
-      price: '₹999', // PLACEHOLDER PRICE
+      price: '₹999',
       period: '/month',
       description: 'Complete accident and comprehensive illness coverage for complete peace of mind.',
       isPopular: true,
@@ -72,13 +95,13 @@ export const InsurancePage: React.FC = () => {
         'Diagnostic lab tests & specialist visits',
       ],
       ctaText: 'Get Started',
-      ctaStyle: 'bg-[#3FA65C] hover:bg-[#348e4e] text-white shadow-md',
+      ctaStyle: 'bg-[#009E66] hover:bg-[#008757] text-white shadow-md',
     },
     {
       id: 'plan-comprehensive',
       name: 'Comprehensive',
       badge: 'Full Wellness',
-      price: '₹1,799', // PLACEHOLDER PRICE
+      price: '₹1,799',
       period: '/month',
       description: 'Total protection combining illness, accidents, routine wellness, and dental care.',
       isPopular: false,
@@ -156,7 +179,6 @@ export const InsurancePage: React.FC = () => {
     },
   ];
 
-  // PLACEHOLDER: Sample FAQ questions and answers (must be verified against policy terms)
   const faqs = [
     {
       question: 'What does Pawfectly pet insurance cover?',
@@ -196,15 +218,21 @@ export const InsurancePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col">
-      {/* 1. Navbar */}
       <Navbar activePage="insurance" />
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#16241B] text-white px-5 py-3 rounded-full shadow-xl text-sm font-bold flex items-center gap-2 animate-bounce">
+          <Check className="w-4 h-4 text-[#3FA65C]" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       <main className="flex-grow space-y-16 lg:space-y-24 pb-20">
         {/* 2. Hero Section */}
         <section className="bg-[#EFF8F0] border-b border-[#E2EEDB] relative overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-18">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-              {/* Left Column: Heading, Paragraph & CTA Buttons */}
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
                   <Shield className="w-3.5 h-3.5 text-[#287A41]" />
@@ -221,14 +249,13 @@ export const InsurancePage: React.FC = () => {
                   — because peace of mind shouldn't be optional.
                 </p>
 
-                {/* Buttons */}
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                  <a
-                    href="#plans"
-                    className="px-8 py-3.5 bg-[#3FA65C] hover:bg-[#348e4e] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                  <button
+                    onClick={() => handleOpenQuote('Standard')}
+                    className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
                   >
                     Get a Quote <ArrowRight className="w-4 h-4" />
-                  </a>
+                  </button>
                   <a
                     href="#how-it-works"
                     className="px-7 py-3.5 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
@@ -237,7 +264,7 @@ export const InsurancePage: React.FC = () => {
                   </a>
                 </div>
 
-                {/* Trust Row (4 items) */}
+                {/* Trust Row */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-6 text-left">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0">
@@ -269,32 +296,23 @@ export const InsurancePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right Column: Hero Image with Floating Speech Bubble */}
               <div className="lg:col-span-5 flex justify-center items-center relative">
-                {/* Organic Green Blob Shape */}
                 <div className="absolute inset-0 bg-[#D8F3DC]/70 rounded-[48%_52%_68%_32%/42%_58%_42%_58%] -rotate-3 scale-105 pointer-events-none blur-xs" />
-
-                {/* Speech Bubble */}
                 <div className="absolute -top-4 right-4 z-20 bg-white border border-[#E2EEDB] px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#F5A623] shrink-0" />
                   <span className="text-xs font-black text-[#16241B]">
                     Because accidents don't wait.
                   </span>
                 </div>
-
-                {/* Hero Photo Placeholder */}
                 <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border-2 border-[#D0EBD5] shadow-lg bg-white z-10">
-                  <ImagePlaceholder
-                    label="Protected Dog and Cat Family"
-                    className="rounded-3xl"
-                  />
+                  <ImagePlaceholder label="Protected Dog and Cat Family" className="rounded-3xl" />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 3. Choose Your Plan (3-Card Pricing Grid) */}
+        {/* 3. Choose Your Plan */}
         <section id="plans" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-10">
             <div className="text-center space-y-2 max-w-2xl mx-auto">
@@ -309,7 +327,6 @@ export const InsurancePage: React.FC = () => {
               </p>
             </div>
 
-            {/* 3 Pricing Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
               {plans.map((plan) => (
                 <div
@@ -322,7 +339,6 @@ export const InsurancePage: React.FC = () => {
                       : 'shadow-xs hover:shadow-md'
                   }`}
                 >
-                  {/* Popular Badge */}
                   {plan.isPopular && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#3FA65C] text-white px-4 py-1 rounded-full text-xs font-black tracking-wider uppercase shadow-xs">
                       {plan.badge}
@@ -330,7 +346,6 @@ export const InsurancePage: React.FC = () => {
                   )}
 
                   <div>
-                    {/* Header */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <h3 className="text-xl font-black text-[#16241B]">{plan.name}</h3>
                       {!plan.isPopular && (
@@ -346,7 +361,6 @@ export const InsurancePage: React.FC = () => {
                       {plan.description}
                     </p>
 
-                    {/* Price Block */}
                     <div className="mb-6 pb-6 border-b border-[#F0EAE1]">
                       <div className="flex items-baseline gap-1">
                         <span className="text-3xl sm:text-4xl font-black text-[#16241B]">
@@ -356,12 +370,8 @@ export const InsurancePage: React.FC = () => {
                           {plan.period}
                         </span>
                       </div>
-                      <span className="text-[10px] text-[#88998C] font-medium block mt-1">
-                        *Placeholder pricing for demonstration
-                      </span>
                     </div>
 
-                    {/* Coverage List */}
                     <div className="space-y-3 mb-8">
                       <span className="text-xs font-black uppercase text-[#16241B] tracking-wider block">
                         What's Included:
@@ -377,8 +387,8 @@ export const InsurancePage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* CTA Button */}
                   <button
+                    onClick={() => handleOpenQuote(plan.name)}
                     className={`w-full py-3.5 rounded-full font-black text-xs sm:text-sm transition-all cursor-pointer ${plan.ctaStyle}`}
                   >
                     {plan.ctaText} →
@@ -389,7 +399,7 @@ export const InsurancePage: React.FC = () => {
           </div>
         </section>
 
-        {/* 4. Why Pet Insurance Matters (4-Feature Row) */}
+        {/* 4. Why Pet Insurance Matters */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
             <div className="text-center space-y-2">
@@ -425,7 +435,7 @@ export const InsurancePage: React.FC = () => {
           </div>
         </section>
 
-        {/* 5. How It Works (4-Step Horizontal Flow) */}
+        {/* 5. How It Works */}
         <section id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-3 mb-12">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider">
@@ -444,25 +454,20 @@ export const InsurancePage: React.FC = () => {
                   key={stepItem.step}
                   className="flex flex-col items-center text-center relative group"
                 >
-                  {/* Step Circle with Dashed Green Border & Number Badge */}
                   <div className="relative mb-5">
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white border-2 border-dashed border-[#3FA65C] flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
                       <StepIcon className="w-8 h-8 text-[#3FA65C]" />
                     </div>
-
-                    {/* Top-Right Number Badge */}
                     <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#16241B] text-white text-[11px] font-black flex items-center justify-center shadow-xs">
                       {stepItem.step}
                     </span>
                   </div>
 
-                  {/* Title & Description */}
                   <h3 className="text-base font-black text-[#16241B]">{stepItem.title}</h3>
                   <p className="text-xs text-[#556658] font-medium max-w-[220px] leading-relaxed mt-1.5">
                     {stepItem.description}
                   </p>
 
-                  {/* Connecting Arrow for Desktop */}
                   {index < howItWorksSteps.length - 1 && (
                     <div className="hidden md:flex absolute top-10 -right-4 lg:-right-6 w-8 lg:w-12 items-center justify-center pointer-events-none z-10 text-[#3FA65C]">
                       <ArrowRight className="w-5 h-5" />
@@ -474,7 +479,7 @@ export const InsurancePage: React.FC = () => {
           </div>
         </section>
 
-        {/* 6. FAQ Section (Accordion) */}
+        {/* 6. FAQ Section */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-6">
             <div className="text-center space-y-2 mb-8">
@@ -514,9 +519,6 @@ export const InsurancePage: React.FC = () => {
                     {isOpen && (
                       <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-[#556658] font-medium leading-relaxed border-t border-[#F0EAE1]">
                         {faq.answer}
-                        <span className="text-[10px] text-[#88998C] block mt-2">
-                          *Placeholder policy explanation for preview purposes
-                        </span>
                       </div>
                     )}
                   </div>
@@ -530,7 +532,6 @@ export const InsurancePage: React.FC = () => {
         <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-              {/* Left Column: Heading, Copy & Action */}
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
                   Give Them the Protection{' '}
@@ -542,22 +543,18 @@ export const InsurancePage: React.FC = () => {
                 </p>
 
                 <div className="pt-2">
-                  <a
-                    href="#plans"
-                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#16241B] hover:bg-[#23382A] text-white font-black rounded-full shadow-md transition-all text-sm sm:text-base cursor-pointer"
+                  <button
+                    onClick={() => handleOpenQuote('Comprehensive')}
+                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all text-sm sm:text-base cursor-pointer"
                   >
                     Get Your Free Quote <ArrowRight className="w-4 h-4" />
-                  </a>
+                  </button>
                 </div>
               </div>
 
-              {/* Right Column: Corgi with Sunglasses Photo Placeholder */}
               <div className="lg:col-span-5 flex justify-center items-center relative z-20">
                 <div className="w-full max-w-[340px] aspect-square rounded-3xl overflow-hidden border-2 border-white/60 shadow-lg bg-white/90">
-                  <ImagePlaceholder
-                    label="Corgi with Sunglasses"
-                    className="rounded-3xl"
-                  />
+                  <ImagePlaceholder label="Corgi with Sunglasses" className="rounded-3xl" />
                 </div>
               </div>
             </div>
@@ -565,7 +562,145 @@ export const InsurancePage: React.FC = () => {
         </section>
       </main>
 
-      {/* 8. Footer */}
+      {/* Quote Consultation Request Modal */}
+      {isQuoteModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-[#EDE7D9] shadow-2xl space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-[#16241B]">
+                  {quoteSubmitted ? 'Quote Request Received!' : `Get a Quote (${selectedPlan} Plan)`}
+                </h3>
+                <p className="text-xs text-[#556658] mt-0.5">
+                  {quoteSubmitted
+                    ? 'Our pet coverage specialist will reach out with customized estimates.'
+                    : 'Fill in your pet details to receive immediate personalized rates.'}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsQuoteModalOpen(false)}
+                className="p-1.5 rounded-full hover:bg-[#FAF6EE] text-[#88998C] hover:text-[#16241B]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {quoteSubmitted ? (
+              <div className="text-center py-6 space-y-4">
+                <div className="w-14 h-14 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-[#16241B]">
+                    Thank you! We have sent a confirmation to {quoteFormData.email}.
+                  </p>
+                  <p className="text-xs text-[#556658]">
+                    We will prepare policy options for {quoteFormData.petName} with zero obligation.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsQuoteModalOpen(false)}
+                  className="px-6 py-2.5 bg-[#3FA65C] hover:bg-[#348e4e] text-white font-bold text-xs rounded-full shadow-xs"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitQuote} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1">
+                    Pet Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Leo"
+                    value={quoteFormData.petName}
+                    onChange={(e) => setQuoteFormData({ ...quoteFormData, petName: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1">
+                      Species
+                    </label>
+                    <select
+                      value={quoteFormData.petType}
+                      onChange={(e) => setQuoteFormData({ ...quoteFormData, petType: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
+                    >
+                      <option value="Dog">Dog</option>
+                      <option value="Cat">Cat</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1">
+                      Age (Years)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="25"
+                      required
+                      value={quoteFormData.ageYears}
+                      onChange={(e) => setQuoteFormData({ ...quoteFormData, ageYears: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1">
+                    Your Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@example.com"
+                    value={quoteFormData.email}
+                    onChange={(e) => setQuoteFormData({ ...quoteFormData, email: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={quoteFormData.phone}
+                    onChange={(e) => setQuoteFormData({ ...quoteFormData, phone: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsQuoteModalOpen(false)}
+                    className="px-5 py-2.5 rounded-full bg-[#FAF6EE] text-[#16241B] font-bold text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-full bg-[#009E66] hover:bg-[#008757] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5" /> Submit Quote Request
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

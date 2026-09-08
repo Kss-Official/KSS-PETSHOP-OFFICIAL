@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Bell,
   User,
@@ -10,9 +10,12 @@ import {
   Calendar,
   Lock,
   LogOut,
+  ShieldCheck,
+  LogIn,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { getCloudinaryImageUrl } from '../../lib/utils';
+import { useAuth } from '../../features/auth/AuthContext';
 
 interface NavbarProps {
   activePage?:
@@ -30,18 +33,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
-
-  // Read saved user name and email or default
-  const userProfile = (() => {
-    try {
-      const saved = localStorage.getItem('pawfectly_user_profile');
-      return saved
-        ? JSON.parse(saved)
-        : { name: 'Alex Morgan', email: 'alex.morgan@example.com' };
-    } catch {
-      return { name: 'Alex Morgan', email: 'alex.morgan@example.com' };
-    }
-  })();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -75,11 +68,24 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
     { label: 'Change Password', href: '/profile?tab=security', icon: Lock },
   ];
 
+  const handleLogout = () => {
+    logout();
+    setProfileMenuOpen(false);
+    navigate('/login');
+  };
+
   return (
-    <header className="sticky top-0 z-50 bg-[#FAF6EE]/95 backdrop-blur-md border-b border-[#EAE3D2] transition-all">
-      <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-[#FAF6EE]/75 backdrop-blur-xl backdrop-saturate-150 border-b border-white/60 shadow-[0_4px_30px_rgba(0,0,0,0.03)] transition-all">
+      <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between relative">
         {/* Leftmost: Logo & Wordmark */}
-        <Link to="/" className="flex items-center gap-3 cursor-pointer shrink-0">
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.href = '/';
+          }}
+          className="flex items-center gap-3 cursor-pointer shrink-0"
+        >
           <img
             src={logoUrl}
             alt="Pawfectly Logo"
@@ -88,10 +94,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
           <span className="text-2xl font-black tracking-tight text-[#16241B] font-sans">
             Pawfectly<span className="text-[#EF7C3C]">.</span>
           </span>
-        </Link>
+        </a>
 
-        {/* Right-aligned: Desktop Navigation Links & Actions */}
-        <nav className="hidden lg:flex items-center gap-6 xl:gap-8 font-semibold text-sm ml-auto mr-8">
+        {/* Centered: Desktop Navigation Links */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8 font-semibold text-sm absolute left-1/2 -translate-x-1/2">
           {navLinks.map((link) => {
             const isActive = activePage === link.id;
             return (
@@ -108,11 +114,21 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
               </Link>
             );
           })}
+          {user?.role === 'ADMIN' && (
+            <Link
+              to="/admin/dashboard"
+              className="text-[#EF7C3C] hover:text-[#D66829] font-bold transition-colors flex items-center gap-1.5 px-2.5 py-1 bg-[#FFF4ED] border border-[#FCD4C2] rounded-full text-xs"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Admin Panel
+            </Link>
+          )}
         </nav>
 
         {/* Rightmost: Actions */}
         <div className="hidden sm:flex items-center gap-4 shrink-0">
           <button
+            onClick={() => navigate(isAuthenticated ? '/profile?tab=appointments' : '/login')}
             aria-label="Notifications"
             className="relative w-10 h-10 rounded-full bg-white border border-[#E5DFCE] flex items-center justify-center text-[#334437] hover:bg-[#F3EDE0] transition-colors cursor-pointer"
           >
@@ -122,77 +138,101 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
             </span>
           </button>
 
-          {/* Profile Button with Dropdown Card */}
-          <div className="relative" ref={profileDropdownRef}>
-            <button
-              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              aria-label="Profile"
-              aria-expanded={profileMenuOpen}
-              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${
-                profileMenuOpen || activePage === 'profile'
-                  ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41]'
-                  : 'bg-white border-[#E5DFCE] text-[#334437] hover:bg-[#F3EDE0]'
-              }`}
-            >
-              <User className="w-4 h-4" />
-            </button>
+          {/* Profile Dropdown / Login Button */}
+          {isAuthenticated ? (
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                aria-label="Profile"
+                aria-expanded={profileMenuOpen}
+                className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${
+                  profileMenuOpen || activePage === 'profile'
+                    ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41]'
+                    : 'bg-white border-[#E5DFCE] text-[#334437] hover:bg-[#F3EDE0]'
+                }`}
+              >
+                <span className="font-bold text-sm">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </span>
+              </button>
 
-            {/* Profile Dropdown Card */}
-            {profileMenuOpen && (
-              <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl border border-[#EDE7D9] shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                {/* User Info Header */}
-                <div className="px-4 py-3 border-b border-[#F0EAE1] flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#E6F9EC] text-[#287A41] font-black text-sm flex items-center justify-center shrink-0 border border-[#C3ECD0]">
-                    {userProfile.name ? userProfile.name.charAt(0) : 'U'}
+              {/* Profile Dropdown Card */}
+              {profileMenuOpen && (
+                <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl border border-[#EDE7D9] shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {/* User Info Header */}
+                  <div className="px-4 py-3 border-b border-[#F0EAE1] flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#E6F9EC] text-[#287A41] font-black text-sm flex items-center justify-center shrink-0 border border-[#C3ECD0]">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-black text-[#16241B] truncate">
+                        {user?.name || 'User'}
+                      </p>
+                      <p className="text-xs text-[#88998C] truncate">
+                        {user?.email || ''}
+                      </p>
+                      <span className="inline-block mt-0.5 px-2 py-0.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded text-[10px] font-bold text-[#334437]">
+                        {user?.role}
+                      </span>
+                    </div>
                   </div>
-                  <div className="overflow-hidden">
-                    <p className="text-sm font-black text-[#16241B] truncate">
-                      {userProfile.name}
-                    </p>
-                    <p className="text-xs text-[#88998C] truncate">
-                      {userProfile.email}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Navigation Items */}
-                <div className="py-1.5">
-                  {profileMenuItems.map((item) => {
-                    const ItemIcon = item.icon;
-                    return (
+                  {/* Navigation Items */}
+                  <div className="py-1.5">
+                    {user?.role === 'ADMIN' && (
                       <Link
-                        key={item.label}
-                        to={item.href}
+                        to="/admin/dashboard"
                         onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-[#334437] hover:bg-[#FAF6EE] hover:text-[#3FA65C] transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-[#EF7C3C] hover:bg-[#FFF4ED] transition-colors"
                       >
-                        <ItemIcon className="w-4 h-4 text-[#88998C]" />
-                        <span>{item.label}</span>
+                        <ShieldCheck className="w-4 h-4 text-[#EF7C3C]" />
+                        <span>Admin Dashboard</span>
                       </Link>
-                    );
-                  })}
-                </div>
+                    )}
+                    {profileMenuItems.map((item) => {
+                      const ItemIcon = item.icon;
+                      return (
+                        <Link
+                          key={item.label}
+                          to={item.href}
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-[#334437] hover:bg-[#FAF6EE] hover:text-[#3FA65C] transition-colors"
+                        >
+                          <ItemIcon className="w-4 h-4 text-[#88998C]" />
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
 
-                {/* Log Out */}
-                <div className="pt-1.5 border-t border-[#F0EAE1]">
-                  <button
-                    onClick={() => {
-                      setProfileMenuOpen(false);
-                      // Handled cleanly
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Log Out</span>
-                  </button>
+                  {/* Log Out */}
+                  <div className="pt-1.5 border-t border-[#F0EAE1]">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Log Out</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white border border-[#E5DFCE] text-[#16241B] hover:bg-[#F3EDE0] transition-colors shadow-xs"
+            >
+              <LogIn className="w-3.5 h-3.5 text-[#3FA65C]" />
+              Sign In
+            </Link>
+          )}
 
-          <Button variant="primary" size="md">
-            Book a Vet 🐾
-          </Button>
+          <Link to="/find-a-vet">
+            <Button variant="primary" size="md">
+              Book a Vet 🐾
+            </Button>
+          </Link>
         </div>
 
         {/* Mobile menu button */}

@@ -21,8 +21,8 @@ export const Button: React.FC<ButtonProps> = ({
     primary: 'bg-[#009E66] hover:bg-[#008757] text-white',
     secondary:
       'bg-white border border-[#E2DCCE] text-[#16241B] hover:bg-[#F8F5EE]',
-    orange: 'bg-[#EF7C3C] hover:bg-[#D9692A] text-white',
-    dark: 'bg-[#16241B] hover:bg-[#0E1711] text-white',
+    orange: 'bg-[#009E66] hover:bg-[#008757] text-white',
+    dark: 'bg-[#009E66] hover:bg-[#008757] text-white',
   };
 
   const sizeStyles = {

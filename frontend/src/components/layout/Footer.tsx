@@ -8,7 +8,14 @@ export const Footer: React.FC = () => {
     <footer className="bg-[#16241B] text-white py-4 sm:py-5 border-t border-[#23382A]">
       <div className="w-full px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Leftmost: Brand */}
-        <div className="flex items-center gap-2.5">
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.href = '/';
+          }}
+          className="flex items-center gap-2.5 hover:opacity-90 transition-opacity cursor-pointer"
+        >
           <img
             src={logoUrl}
             alt="Pawfectly Logo"
@@ -17,7 +24,7 @@ export const Footer: React.FC = () => {
           <span className="text-lg font-extrabold tracking-tight">
             Pawfectly<span className="text-[#EF7C3C]">.</span>
           </span>
-        </div>
+        </a>
 
         {/* Center: Copyright */}
         <p className="text-xs text-[#A3B3A6] text-center">
@@ -26,13 +33,13 @@ export const Footer: React.FC = () => {
 
         {/* Rightmost: Legal links & Social icons */}
         <div className="flex items-center gap-5 text-xs font-medium text-[#A3B3A6]">
-          <a href="#" className="hover:text-white transition-colors">
+          <a href="mailto:privacy@pawfectly.com?subject=Privacy%20Policy%20Inquiry" className="hover:text-white transition-colors">
             Privacy
           </a>
-          <a href="#" className="hover:text-white transition-colors">
+          <a href="mailto:terms@pawfectly.com?subject=Terms%20of%20Service%20Inquiry" className="hover:text-white transition-colors">
             Terms
           </a>
-          <a href="#" className="hover:text-white transition-colors">
+          <a href="mailto:support@pawfectly.com?subject=Pawfectly%20Support%20Request" className="hover:text-white transition-colors">
             Contact
           </a>
           <div className="flex items-center gap-3 border-l border-[#2B3E30] pl-4">
