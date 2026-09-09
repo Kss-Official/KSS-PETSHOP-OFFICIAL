@@ -33,7 +33,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   const effectiveRoles = allowedRoles || (requiredRole ? [requiredRole] : []);
-  if (effectiveRoles.length > 0 && user && !effectiveRoles.includes(user.role) && user.role !== 'ADMIN') {
+  if (effectiveRoles.length > 0 && user && !effectiveRoles.includes(user.role)) {
+    if (user.role === 'ADMIN') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 

@@ -10,4 +10,5 @@ import java.util.List;
 public interface VetRepository extends JpaRepository<Vet, Long> {
     List<Vet> findByIsActiveTrue();
     List<Vet> findBySpecializationAndIsActiveTrue(String specialization);
+    long countByIsActive(Boolean isActive);
 }

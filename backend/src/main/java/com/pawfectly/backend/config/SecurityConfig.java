@@ -96,6 +96,9 @@ public class SecurityConfig {
                         
                         // Customer scoped endpoints - strictly CUSTOMER role only
                         .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
+
+                        // Admin scoped endpoints - strictly ADMIN role only
+                        .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
                         
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
