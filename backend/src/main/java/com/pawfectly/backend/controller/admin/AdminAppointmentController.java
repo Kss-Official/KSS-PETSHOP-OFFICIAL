@@ -1,0 +1,144 @@
+package com.pawfectly.backend.controller.admin;
+
+import com.pawfectly.backend.entity.Appointment;
+import com.pawfectly.backend.entity.AppointmentStatus;
+import com.pawfectly.backend.entity.MedicalRecord;
+import com.pawfectly.backend.repository.AppointmentRepository;
+import com.pawfectly.backend.repository.MedicalRecordRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping({"/api/v1/admin/appointments", "/api/admin/appointments"})
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminAppointmentController {
+
+    private final AppointmentRepository appointmentRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
+
+    public AdminAppointmentController(AppointmentRepository appointmentRepository, MedicalRecordRepository medicalRecordRepository) {
+        this.appointmentRepository = appointmentRepository;
+        this.medicalRecordRepository = medicalRecordRepository;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Map<String, Object>>> getAppointments(
+            @RequestParam(required = false) String status) {
+
+        AppointmentStatus st = null;
+        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
+            try { st = AppointmentStatus.valueOf(status.toUpperCase()); } catch (Exception ignored) {}
+        }
+
+        List<Appointment> appointments = appointmentRepository.findFiltered(st);
+
+        List<Map<String, Object>> response = appointments.stream().map(apt -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", apt.getId());
+            map.put("petId", apt.getPet() != null ? apt.getPet().getId() : null);
+            map.put("petName", apt.getPet() != null ? apt.getPet().getName() : "Unknown");
+            map.put("petSpecies", apt.getPet() != null ? apt.getPet().getSpecies() : "");
+            map.put("petBreed", apt.getPet() != null ? apt.getPet().getBreed() : "");
+            String owner = apt.getPet() != null && apt.getPet().getOwner() != null ? apt.getPet().getOwner().getName() : "Customer";
+            String email = apt.getPet() != null && apt.getPet().getOwner() != null ? apt.getPet().getOwner().getEmail() : "";
+            String phone = apt.getPet() != null && apt.getPet().getOwner() != null ? apt.getPet().getOwner().getPhone() : "";
+            map.put("ownerName", owner);
+            map.put("ownerEmail", email);
+            map.put("ownerPhone", phone);
+            map.put("customerName", owner);
+            map.put("customerEmail", email);
+            map.put("customerPhone", phone);
+            map.put("vetId", apt.getVet() != null ? apt.getVet().getId() : null);
+            map.put("vetName", apt.getVet() != null ? apt.getVet().getName() : "General Vet");
+            map.put("serviceId", apt.getService() != null ? apt.getService().getId() : null);
+            map.put("serviceName", apt.getService() != null ? apt.getService().getName() : "Consultation");
+            Double fee = apt.getVet() != null && apt.getVet().getConsultationFee() != null ? apt.getVet().getConsultationFee() : 50.0;
+            map.put("fee", fee);
+            map.put("amount", fee);
+            map.put("consultationFee", fee);
+            map.put("dateTime", apt.getDateTime());
+            map.put("status", apt.getStatus().name());
+            map.put("hasMedicalRecord", medicalRecordRepository.findByAppointmentId(apt.getId()).isPresent());
+            return map;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+
+        String statusStr = body.get("status");
+        if (statusStr == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Status is required"));
+        }
+
+        try {
+            AppointmentStatus newStatus = AppointmentStatus.valueOf(statusStr.toUpperCase());
+            return appointmentRepository.findById(id).map(apt -> {
+                apt.setStatus(newStatus);
+                Appointment saved = appointmentRepository.save(apt);
+                return ResponseEntity.ok(Map.of(
+                        "id", saved.getId(),
+                        "status", saved.getStatus().name(),
+                        "message", "Appointment status updated to " + saved.getStatus().name()
+                ));
+            }).orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid status value"));
+        }
+    }
+
+    @GetMapping("/{id}/medical-record")
+    public ResponseEntity<?> getMedicalRecord(@PathVariable Long id) {
+        return medicalRecordRepository.findByAppointmentId(id)
+                .map(rec -> ResponseEntity.ok(Map.of(
+                        "id", rec.getId(),
+                        "appointmentId", id,
+                        "diagnosis", rec.getDiagnosis() != null ? rec.getDiagnosis() : "",
+                        "prescription", rec.getPrescription() != null ? rec.getPrescription() : "",
+                        "notes", rec.getNotes() != null ? rec.getNotes() : ""
+                )))
+                .orElse(ResponseEntity.ok(Map.of("appointmentId", id, "diagnosis", "", "prescription", "", "notes", "")));
+    }
+
+    @PostMapping("/{id}/medical-record")
+    public ResponseEntity<?> saveMedicalRecord(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElse(null);
+
+        if (appointment == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Medical records can only be created for completed appointments"));
+        }
+
+        MedicalRecord record = medicalRecordRepository.findByAppointmentId(id)
+                .orElse(MedicalRecord.builder().appointment(appointment).build());
+
+        record.setDiagnosis(body.get("diagnosis"));
+        record.setPrescription(body.get("prescription"));
+        record.setNotes(body.get("notes"));
+
+        MedicalRecord saved = medicalRecordRepository.save(record);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "id", saved.getId(),
+                "appointmentId", id,
+                "message", "Medical record saved successfully"
+        ));
+    }
+}

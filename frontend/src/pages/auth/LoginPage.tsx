@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../features/auth/AuthContext';
 import apiClient from '../../lib/axios';
 import type { AuthResponse } from '../../features/auth/types';
-import { Mail, Lock, User as UserIcon, Phone, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, Phone, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 
 export const LoginPage: React.FC = () => {
@@ -13,12 +13,23 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate('/profile', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +53,23 @@ export const LoginPage: React.FC = () => {
           role: 'CUSTOMER',
         });
         login(response.data);
+        if (response.data.role === 'ADMIN') {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
       } else {
         const response = await apiClient.post<AuthResponse>('/auth/login', {
           email,
           password,
         });
         login(response.data);
+        if (response.data.role === 'ADMIN') {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
       }
-      navigate('/profile', { replace: true });
     } catch (err: unknown) {
       const error = err as Error;
       setErrorMessage(error.message || 'Authentication failed. Please check your credentials.');
@@ -167,15 +187,27 @@ export const LoginPage: React.FC = () => {
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
+                  className="w-full pl-11 pr-11 py-3 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C] transition-colors"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#16241B] p-1 rounded-lg focus:outline-hidden transition-colors cursor-pointer"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
               {isRegister && (
                 <span className="text-[11px] text-[#88998C] font-medium block mt-1">

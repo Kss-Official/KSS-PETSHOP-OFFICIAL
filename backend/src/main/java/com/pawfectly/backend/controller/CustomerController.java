@@ -136,6 +136,13 @@ public class CustomerController {
         return new ResponseEntity<>(orderService.createOrderFromCart(userDetails.getId()), HttpStatus.CREATED);
     }
 
+    @RequestMapping(value = "/orders/{id}/cancel", method = {RequestMethod.PATCH, RequestMethod.POST, RequestMethod.PUT})
+    public ResponseEntity<OrderDto> cancelOrder(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(orderService.cancelCustomerOrder(id, userDetails.getId()));
+    }
+
     // --- Appointments ---
     @GetMapping("/appointments")
     public ResponseEntity<List<AppointmentDto>> getAppointments(@AuthenticationPrincipal CustomUserDetails userDetails) {

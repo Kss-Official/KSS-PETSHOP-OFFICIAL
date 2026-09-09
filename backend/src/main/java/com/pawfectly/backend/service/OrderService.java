@@ -104,6 +104,44 @@ public class OrderService {
     }
 
     @Transactional
+    public OrderDto cancelCustomerOrder(Long orderId, Long customerId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        if (!order.getCustomer().getId().equals(customerId)) {
+            throw new AccessDeniedException("You do not have permission to cancel this order.");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            return mapToDto(order);
+        }
+
+        if (order.getOrderStatus() == OrderStatus.COMPLETED) {
+            throw new BadRequestException("Completed orders cannot be cancelled.");
+        }
+
+        OrderStatus oldStatus = order.getOrderStatus();
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        Order updated = orderRepository.save(order);
+
+        // Restore stock for all order items since stock was deducted at placement
+        if (oldStatus != OrderStatus.CANCELLED) {
+            List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+            for (OrderItem item : items) {
+                if (item.getProduct() != null) {
+                    Product product = item.getProduct();
+                    int currentStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
+                    product.setStockQuantity(currentStock + item.getQuantity());
+                    productRepository.save(product);
+                }
+            }
+        }
+
+        log.info("Customer {} directly cancelled order {}", customerId, orderId);
+        return mapToDto(updated);
+    }
+
+    @Transactional
     public OrderDto updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));

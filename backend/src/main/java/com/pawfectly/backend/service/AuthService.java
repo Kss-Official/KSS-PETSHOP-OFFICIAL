@@ -74,10 +74,6 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        if (userDetails.getRole() != Role.CUSTOMER) {
-            throw new BadRequestException("Access denied: Only customer accounts can access the customer portal.");
-        }
-
         String jwt = jwtUtils.generateJwtToken(authentication);
 
         return AuthResponse.builder()

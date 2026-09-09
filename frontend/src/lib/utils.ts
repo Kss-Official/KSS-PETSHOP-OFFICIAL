@@ -32,74 +32,14 @@ export function getCloudinaryImageUrl(
   return `https://res.cloudinary.com/${cloudName}/image/upload/${options}/${version}${targetId}`;
 }
 
-const FEMALE_NAMES = [
-  'sarah', 'emily', 'sophia', 'priya', 'ananya', 'jessica', 'amanda', 
-  'laura', 'rachel', 'maria', 'lisa', 'elizabeth', 'jennifer', 'michelle', 
-  'hannah', 'chloe', 'clara', 'grace', 'victoria', 'olivia', 'emma', 'ava',
-  'neha', 'pooja', 'kavita', 'sneha', 'meera', 'shruti', 'divya', 'aditi'
-];
-
-const FEMALE_VET_IMAGES = [
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891282/high_resolution_professional_commercial_studio_portrait_of_a_young_female.png',
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891282/high_resolution_professional_commercial_studio_portrait_of_a_young_female_1.png',
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891265/high_resolution_professional_commercial_studio_portrait_of_a_female.png',
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891265/high_resolution_professional_studio_portrait_of_a_female_veterinarian_doctor_in.png',
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891264/high_resolution_professional_studio_portrait_of_a_senior_female_veterinary.png',
-];
-
-const MALE_VET_IMAGES = [
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891283/high_resolution_professional_studio_portrait_of_a_male_doctor_in_his_mid_40s.png',
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891283/high_resolution_professional_commercial_portrait_of_a_young_male_veterinarian.png',
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891265/high_resolution_professional_studio_portrait_of_a_male_doctor_in_his_late_30s.png',
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891263/high_resolution_professional_studio_portrait_of_an_east_asian_male_veterinary.png',
-  'https://res.cloudinary.com/vphylrop/image/upload/v1788891074/high_resolution_professional_commercial_studio_portrait_of_a_senior_male.png',
-];
-
-const OFFICIAL_VET_URLS = [...FEMALE_VET_IMAGES, ...MALE_VET_IMAGES];
-
-const NAME_TO_VET_IMAGE: Record<string, string> = {
-  sarah: FEMALE_VET_IMAGES[0],
-  priya: FEMALE_VET_IMAGES[1],
-  neha: FEMALE_VET_IMAGES[2],
-  emily: FEMALE_VET_IMAGES[3],
-  sophia: FEMALE_VET_IMAGES[4],
-
-  james: MALE_VET_IMAGES[0],
-  rahul: MALE_VET_IMAGES[1],
-  arjun: MALE_VET_IMAGES[2],
-  david: MALE_VET_IMAGES[3],
-  michael: MALE_VET_IMAGES[4],
-};
-
 /**
- * Returns a gender-matched real veterinarian doctor Cloudinary image URL.
- * Every doctor receives a unique dedicated high-resolution veterinarian photo without repetition.
+ * Returns the veterinarian photo URL if a real valid http(s) URL is provided; otherwise null.
  */
-export function getVetImageUrl(vetName: string = '', photoUrl?: string, vetId?: number | string): string {
-  // If photoUrl is already one of the official 10 high-resolution doctor URLs, return it
-  if (photoUrl && OFFICIAL_VET_URLS.some((u) => photoUrl.includes(u) || u.includes(photoUrl))) {
+export function getVetImageUrl(_vetName: string = '', photoUrl?: string, _vetId?: number | string): string | null {
+  if (photoUrl && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
     return photoUrl;
   }
-
-  const lowerName = (vetName || '').toLowerCase().trim();
-
-  // Check explicit name mapping first to guarantee fixed assignment
-  for (const [key, imageUrL] of Object.entries(NAME_TO_VET_IMAGE)) {
-    if (lowerName.includes(key)) {
-      return imageUrL;
-    }
-  }
-
-  // Fallback to gender-matched pool indexed deterministically by ID / Name hash
-  const isFemale = FEMALE_NAMES.some((fname) => lowerName.includes(fname));
-  const pool = isFemale ? FEMALE_VET_IMAGES : MALE_VET_IMAGES;
-
-  let num = Number(vetId) || 0;
-  for (let i = 0; i < lowerName.length; i++) {
-    num += lowerName.charCodeAt(i) * (i + 1);
-  }
-
-  return pool[Math.abs(num) % pool.length];
+  return null;
 }
 
 /**

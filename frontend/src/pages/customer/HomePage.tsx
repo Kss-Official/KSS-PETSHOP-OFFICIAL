@@ -459,18 +459,27 @@ export const HomePage: React.FC = () => {
                     </div>
                   ))
                 ) : filteredVets.length > 0 ? (
-                  filteredVets.map((vet) => (
+                  filteredVets.map((vet) => {
+                    const photo = getVetImageUrl(vet.name, vet.photoUrl, vet.id);
+                    return (
                     <Card
                       key={vet.id}
                       onClick={() => navigate(isAuthenticated ? `/profile?tab=appointments&vetId=${vet.id}` : '/login')}
                       className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group bg-white rounded-3xl p-5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all cursor-pointer"
                     >
-                      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
-                        <img
-                          src={getVetImageUrl(vet.name, vet.photoUrl, vet.id)}
-                          alt={vet.name}
-                          className="w-full h-full object-cover object-[center_20%] rounded-2xl group-hover:scale-105 transition-transform duration-300"
-                        />
+                      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#F4EFE6] flex items-center justify-center">
+                        {photo ? (
+                          <img
+                            src={photo}
+                            alt={vet.name}
+                            className="w-full h-full object-cover object-[center_20%] rounded-2xl group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-[#F4EFE6] text-[#16241B]">
+                            <span className="text-4xl font-black">{vet.name.charAt(0)}</span>
+                            <span className="text-xs text-gray-500 font-semibold mt-1">{vet.name}</span>
+                          </div>
+                        )}
                         <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
                           <span className="text-yellow-500">★</span> {vet.rating ? vet.rating.toFixed(1) : '4.9'}
                         </div>
@@ -491,7 +500,8 @@ export const HomePage: React.FC = () => {
                         </p>
                       </div>
                     </Card>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="w-full py-8 text-center text-[#5D6F63] text-sm font-semibold">
                     No veterinarians listed for {activeCategory} at this time.

@@ -36,6 +36,7 @@ import {
   ShoppingBag,
   Heart,
   Minus,
+  FileText,
 } from 'lucide-react';
 
 interface PetItem {
@@ -50,17 +51,24 @@ interface PetItem {
 
 interface OrderLineItem {
   id?: number;
+  productId?: number;
   productName: string;
+  productImageUrl?: string;
   quantity: number;
-  price: number;
+  price?: number;
+  priceAtPurchase?: number;
   totalPrice?: number;
 }
 
 interface OrderItem {
   id: number;
-  orderNumber: string;
+  customerId?: number;
+  customerName?: string;
+  orderNumber?: string;
   totalAmount: number;
-  status: string;
+  status?: string;
+  orderStatus?: string;
+  paymentStatus?: string;
   shippingAddress?: string;
   createdAt?: string;
   items: OrderLineItem[];
@@ -71,11 +79,15 @@ interface AppointmentItem {
   vetName?: string;
   serviceName?: string;
   petName?: string;
+  petSpecies?: string;
   petBreed?: string;
-  appointmentDate: string;
-  appointmentTime: string;
+  dateTime?: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
+  diagnosis?: string;
+  prescription?: string;
   createdAt?: string;
 }
 
@@ -294,6 +306,8 @@ export const ProfilePage: React.FC = () => {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
+  const [cancellingOrder, setCancellingOrder] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     setOrdersLoading(true);
@@ -312,6 +326,28 @@ export const ProfilePage: React.FC = () => {
     }
   }, []);
 
+  const handleCancelOrderConfirm = async (orderId: number) => {
+    setCancellingOrder(true);
+    try {
+      const res = await apiClient.patch<OrderItem>(`/customer/orders/${orderId}/cancel`);
+      const newStatus = res.data?.orderStatus || 'CANCELLED';
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? { ...o, status: newStatus, orderStatus: newStatus }
+            : o
+        )
+      );
+      showToast(`Order #${orderId} has been cancelled successfully.`);
+      setOrderToCancel(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to cancel order.';
+      showToast(msg, 'error');
+    } finally {
+      setCancellingOrder(false);
+    }
+  };
+
   useEffect(() => {
     if (currentTab === 'orders') {
       fetchOrders();
@@ -328,7 +364,10 @@ export const ProfilePage: React.FC = () => {
   // Booking Modal State (In Profile)
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [vetsList, setVetsList] = useState<VetDoctorItem[]>([]);
+  const [servicesList, setServicesList] = useState<{ id: number; name: string; description?: string }[]>([]);
   const [selectedVetId, setSelectedVetId] = useState<number | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
   const [bookingDate, setBookingDate] = useState(
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );
@@ -338,6 +377,49 @@ export const ProfilePage: React.FC = () => {
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingErrorMsg, setBookingErrorMsg] = useState<string | null>(null);
 
+  const convertTimeTo24h = (timeStr: string): string => {
+    if (!timeStr) return '10:00:00';
+    const parts = timeStr.trim().split(' ');
+    if (parts.length === 2) {
+      const [time, modifier] = parts;
+      const [hours, minutes] = time.split(':');
+      let h = parseInt(hours, 10);
+      if (modifier.toUpperCase() === 'PM' && h < 12) {
+        h += 12;
+      }
+      if (modifier.toUpperCase() === 'AM' && h === 12) {
+        h = 0;
+      }
+      const hStr = h < 10 ? `0${h}` : `${h}`;
+      return `${hStr}:${minutes || '00'}:00`;
+    }
+    if (timeStr.includes(':')) {
+      const [h, m] = timeStr.split(':');
+      return `${h.padStart(2, '0')}:${m.padStart(2, '0')}:00`;
+    }
+    return '10:00:00';
+  };
+
+  const formatAptDateTime = (apt: AppointmentItem) => {
+    if (apt.dateTime) {
+      try {
+        const d = new Date(apt.dateTime);
+        if (!isNaN(d.getTime())) {
+          return {
+            date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          };
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return {
+      date: apt.appointmentDate || 'Upcoming Date',
+      time: apt.appointmentTime || '',
+    };
+  };
+
   const fetchVetsList = useCallback(async () => {
     try {
       const res = await apiClient.get<VetDoctorItem[]>('/vets');
@@ -346,6 +428,19 @@ export const ProfilePage: React.FC = () => {
       // ignore
     }
   }, []);
+
+  const fetchServicesList = useCallback(async () => {
+    try {
+      const res = await apiClient.get<{ id: number; name: string; description?: string }[]>('/services');
+      const list = res.data || [];
+      setServicesList(list);
+      if (list.length > 0 && !selectedServiceId) {
+        setSelectedServiceId(list[0].id);
+      }
+    } catch {
+      // ignore
+    }
+  }, [selectedServiceId]);
 
   const fetchAppointments = useCallback(async () => {
     setAppointmentsLoading(true);
@@ -365,8 +460,16 @@ export const ProfilePage: React.FC = () => {
     if (currentTab === 'appointments') {
       fetchAppointments();
       fetchVetsList();
+      fetchServicesList();
+      fetchPets();
     }
-  }, [currentTab, fetchAppointments, fetchVetsList]);
+  }, [currentTab, fetchAppointments, fetchVetsList, fetchServicesList, fetchPets]);
+
+  useEffect(() => {
+    if (pets.length > 0 && (!selectedPetId || !pets.find((p) => p.id === selectedPetId))) {
+      setSelectedPetId(pets[0].id);
+    }
+  }, [pets, selectedPetId]);
 
   useEffect(() => {
     const vetIdParam = searchParams.get('vetId');
@@ -374,11 +477,13 @@ export const ProfilePage: React.FC = () => {
     if (currentTab === 'appointments' && (vetIdParam || bookParam === 'true')) {
       setIsBookingModalOpen(true);
       fetchVetsList();
+      fetchServicesList();
+      fetchPets();
       if (vetIdParam) {
         setSelectedVetId(Number(vetIdParam));
       }
     }
-  }, [currentTab, searchParams, fetchVetsList]);
+  }, [currentTab, searchParams, fetchVetsList, fetchServicesList, fetchPets]);
 
   const handleConfirmNewAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -391,13 +496,31 @@ export const ProfilePage: React.FC = () => {
     setBookingErrorMsg(null);
 
     try {
+      let petIdToUse = selectedPetId;
+
+      // If user chose to enter a new pet or has no pets yet
+      if (!petIdToUse || selectedPetId === -1) {
+        const petNameToUse = petNameInput.trim() || 'My Pet';
+        const petRes = await apiClient.post<PetItem>('/customer/pets', {
+          name: petNameToUse,
+          species: 'Dog',
+          breed: 'Mixed',
+          age: 2,
+        });
+        petIdToUse = petRes.data.id;
+        fetchPets();
+      }
+
+      const time24 = convertTimeTo24h(bookingTime);
+      const isoDateTime = `${bookingDate}T${time24}`;
+
       await apiClient.post('/customer/appointments', {
+        petId: petIdToUse,
         vetId: selectedVetId,
-        appointmentDate: bookingDate,
-        appointmentTime: bookingTime,
-        petName: petNameInput || 'My Pet',
-        reason: bookingNotesInput || 'Regular checkup',
+        serviceId: selectedServiceId || (servicesList[0]?.id || 1),
+        dateTime: isoDateTime,
       });
+
       showToast('Appointment booked successfully! 📅');
       setIsBookingModalOpen(false);
       setPetNameInput('');
@@ -582,6 +705,8 @@ export const ProfilePage: React.FC = () => {
       return 'bg-[#E6F9EC] text-[#287A41] border-[#C3ECD0]';
     } else if (s === 'READY_FOR_PICKUP' || s === 'SHIPPED' || s === 'PROCESSING') {
       return 'bg-[#FFF0E6] text-[#EF7C3C] border-[#FED7AA]';
+    } else if (s === 'PLACED') {
+      return 'bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]';
     } else if (s === 'CANCELLED') {
       return 'bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]';
     }
@@ -1261,6 +1386,9 @@ export const ProfilePage: React.FC = () => {
                   <div className="space-y-4">
                     {orders.map((order) => {
                       const isExpanded = expandedOrderId === order.id;
+                      const currentStatus = (order.orderStatus || order.status || 'PLACED').toUpperCase();
+                      const isCancellable = currentStatus === 'PLACED' || currentStatus === 'READY_FOR_PICKUP';
+
                       return (
                         <div
                           key={order.id}
@@ -1285,14 +1413,24 @@ export const ProfilePage: React.FC = () => {
                             <div className="flex items-center gap-3">
                               <span
                                 className={`px-3 py-1 rounded-full text-xs font-black border shadow-2xs ${getStatusBadge(
-                                  order.status
+                                  currentStatus
                                 )}`}
                               >
-                                {order.status ?? 'UNKNOWN'}
+                                {currentStatus}
                               </span>
                               <span className="text-sm font-black text-[#16241B]">
                                 ₹{order.totalAmount.toLocaleString('en-IN')}
                               </span>
+
+                              {isCancellable && (
+                                <button
+                                  onClick={() => setOrderToCancel(order.id)}
+                                  className="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                                >
+                                  Cancel Order
+                                </button>
+                              )}
+
                               <button
                                 onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
                                 aria-label="Toggle details"
@@ -1310,16 +1448,19 @@ export const ProfilePage: React.FC = () => {
                           {isExpanded && (
                             <div className="pt-3 border-t border-[#EAE3D4] space-y-2 text-xs">
                               {order.items && order.items.length > 0 ? (
-                                order.items.map((item, idx) => (
-                                  <div key={idx} className="flex items-center justify-between text-[#67796B]">
-                                    <span>
-                                      {item.quantity}x {item.productName}
-                                    </span>
-                                    <span className="font-bold text-[#16241B]">
-                                      ₹{(item.price * item.quantity).toLocaleString('en-IN')}
-                                    </span>
-                                  </div>
-                                ))
+                                order.items.map((item, idx) => {
+                                  const unitPrice = item.priceAtPurchase ?? item.price ?? 0;
+                                  return (
+                                    <div key={idx} className="flex items-center justify-between text-[#67796B]">
+                                      <span>
+                                        {item.quantity}x {item.productName}
+                                      </span>
+                                      <span className="font-bold text-[#16241B]">
+                                        ₹{(unitPrice * item.quantity).toLocaleString('en-IN')}
+                                      </span>
+                                    </div>
+                                  );
+                                })
                               ) : (
                                 <p className="text-[#88998C]">No item details available.</p>
                               )}
@@ -1328,6 +1469,43 @@ export const ProfilePage: React.FC = () => {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* Cancel Order Confirmation Modal */}
+                {orderToCancel !== null && (
+                  <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-[#EDE7D9] shadow-2xl text-center space-y-4">
+                      <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+                        <AlertCircle className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-black text-[#16241B]">Cancel Order?</h3>
+                      <p className="text-xs text-[#67796B] font-medium">
+                        Are you sure you want to cancel order #{orderToCancel}? Your order will be directly cancelled and reserved items restored to store inventory.
+                      </p>
+                      <div className="flex items-center justify-center gap-3 pt-2">
+                        <button
+                          onClick={() => setOrderToCancel(null)}
+                          disabled={cancellingOrder}
+                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-bold text-xs cursor-pointer"
+                        >
+                          Keep Order
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrderConfirm(orderToCancel)}
+                          disabled={cancellingOrder}
+                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                        >
+                          {cancellingOrder ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Cancelling...
+                            </>
+                          ) : (
+                            'Yes, Cancel Order'
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1411,12 +1589,15 @@ export const ProfilePage: React.FC = () => {
                                   {apt.serviceName || 'General Consultation'}
                                 </p>
                                 <p className="text-xs text-[#67796B] font-medium">
-                                  {apt.appointmentDate} at {apt.appointmentTime}
+                                  {(() => {
+                                    const { date, time } = formatAptDateTime(apt);
+                                    return `${date}${time ? ` at ${time}` : ''}`;
+                                  })()}
                                 </p>
                                 {apt.petName && (
                                   <p className="text-[11px] text-[#88998C] flex items-center gap-1">
                                     <MapPin className="w-3 h-3 text-[#548B60]" /> Pet: {apt.petName}{' '}
-                                    {apt.petBreed ? `(${apt.petBreed})` : ''}
+                                    {apt.petSpecies ? `(${apt.petSpecies})` : (apt.petBreed ? `(${apt.petBreed})` : '')}
                                   </p>
                                 )}
                               </div>
@@ -1447,23 +1628,68 @@ export const ProfilePage: React.FC = () => {
                           .map((apt) => (
                             <div
                               key={apt.id}
-                              className="bg-white rounded-2xl p-4 border border-[#EAE3D4] flex items-center justify-between gap-4"
+                              className="bg-white rounded-2xl p-4 border border-[#EAE3D4] space-y-3"
                             >
-                              <div className="space-y-0.5">
-                                <h4 className="text-sm font-black text-[#16241B]">
-                                  {apt.vetName || 'Veterinary Consultation'}
-                                </h4>
-                                <p className="text-xs text-[#67796B]">
-                                  {apt.serviceName || 'Consultation'} • {apt.appointmentDate} at {apt.appointmentTime}
-                                </p>
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="space-y-0.5 text-left">
+                                  <h4 className="text-sm font-black text-[#16241B]">
+                                    {apt.vetName || 'Veterinary Consultation'}
+                                  </h4>
+                                  <p className="text-xs text-[#67796B]">
+                                    {apt.serviceName || 'Consultation'} • {(() => {
+                                      const { date, time } = formatAptDateTime(apt);
+                                      return `${date}${time ? ` at ${time}` : ''}`;
+                                    })()}
+                                  </p>
+                                  {apt.petName && (
+                                    <p className="text-[11px] text-[#88998C]">
+                                      Patient: <span className="font-bold text-[#16241B]">{apt.petName}</span>{' '}
+                                      {apt.petSpecies ? `(${apt.petSpecies})` : ''}
+                                    </p>
+                                  )}
+                                </div>
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${getAptStatusBadge(
+                                    apt.status
+                                  )}`}
+                                >
+                                  {apt.status}
+                                </span>
                               </div>
-                              <span
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${getAptStatusBadge(
-                                  apt.status
-                                )}`}
-                              >
-                                {apt.status}
-                              </span>
+
+                              {/* Clinical Medical Record (if added by Doctor/Admin) */}
+                              {(apt.diagnosis || apt.prescription || apt.notes) && (
+                                <div className="pt-3 border-t border-[#F2ECE0] bg-[#FBF9F4] p-3 rounded-xl space-y-2 text-left">
+                                  <div className="flex items-center gap-1.5 text-xs font-black text-[#287A41]">
+                                    <FileText className="w-3.5 h-3.5" />
+                                    <span>Medical Record</span>
+                                  </div>
+                                  {apt.diagnosis && (
+                                    <div>
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#67796B] block">
+                                        Diagnosis
+                                      </span>
+                                      <p className="text-xs font-bold text-[#16241B]">{apt.diagnosis}</p>
+                                    </div>
+                                  )}
+                                  {apt.prescription && (
+                                    <div>
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#67796B] block">
+                                        Prescription & Treatment
+                                      </span>
+                                      <p className="text-xs text-[#334437] font-medium whitespace-pre-line">{apt.prescription}</p>
+                                    </div>
+                                  )}
+                                  {apt.notes && (
+                                    <div>
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#67796B] block">
+                                        Clinical Notes
+                                      </span>
+                                      <p className="text-xs text-[#556658] italic">{apt.notes}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           ))
                       )}
@@ -1550,22 +1776,58 @@ export const ProfilePage: React.FC = () => {
                           </select>
                         </div>
 
+                        {/* Service Selection */}
+                        <div className="space-y-1 text-left">
+                          <label className="text-xs font-bold text-[#334437]">Select Service</label>
+                          <select
+                            required
+                            value={selectedServiceId || (servicesList[0]?.id || '')}
+                            onChange={(e) => setSelectedServiceId(Number(e.target.value))}
+                            className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                          >
+                            {servicesList.map((service) => (
+                              <option key={service.id} value={service.id}>
+                                {service.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
                         {/* Pet Name */}
                         <div className="space-y-1 text-left">
-                          <label className="text-xs font-bold text-[#334437]">Pet Name</label>
+                          <label className="text-xs font-bold text-[#334437]">Pet Selection</label>
                           {pets.length > 0 ? (
-                            <select
-                              value={petNameInput}
-                              onChange={(e) => setPetNameInput(e.target.value)}
-                              className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
-                            >
-                              <option value="">-- Select or enter pet name --</option>
-                              {pets.map((p) => (
-                                <option key={p.id} value={p.name}>
-                                  {p.name} ({p.species})
-                                </option>
-                              ))}
-                            </select>
+                            <div className="space-y-2">
+                              <select
+                                value={selectedPetId || ''}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  setSelectedPetId(val);
+                                  if (val !== -1) {
+                                    const found = pets.find((p) => p.id === val);
+                                    if (found) setPetNameInput(found.name);
+                                  }
+                                }}
+                                className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                              >
+                                {pets.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.name} ({p.species}{p.breed ? ` - ${p.breed}` : ''})
+                                  </option>
+                                ))}
+                                <option value={-1}>+ Add a new pet name</option>
+                              </select>
+                              {selectedPetId === -1 && (
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Enter new pet's name"
+                                  value={petNameInput}
+                                  onChange={(e) => setPetNameInput(e.target.value)}
+                                  className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                                />
+                              )}
+                            </div>
                           ) : (
                             <input
                               type="text"

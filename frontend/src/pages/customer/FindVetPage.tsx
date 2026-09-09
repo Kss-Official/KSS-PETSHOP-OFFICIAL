@@ -432,12 +432,18 @@ export const FindVetPage: React.FC = () => {
                         className="bg-white rounded-2xl p-4 sm:p-5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden shrink-0 border-2 border-[#E5DFCE] shadow-xs bg-[#F4EFE6]">
-                            <img
-                              src={photo}
-                              alt={displayName}
-                              className="w-full h-full object-cover object-[center_20%]"
-                            />
+                          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden shrink-0 border-2 border-[#E5DFCE] shadow-xs bg-[#F4EFE6] flex items-center justify-center">
+                            {photo ? (
+                              <img
+                                src={photo}
+                                alt={displayName}
+                                className="w-full h-full object-cover object-[center_20%]"
+                              />
+                            ) : (
+                              <span className="text-xl sm:text-2xl font-black text-[#1B2B1E]">
+                                {displayName.charAt(0)}
+                              </span>
+                            )}
                           </div>
 
                           <div className="space-y-1">

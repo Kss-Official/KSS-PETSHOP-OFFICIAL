@@ -514,7 +514,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
               {/* Profile Button */}
               {isAuthenticated ? (
                 <button
-                  onClick={() => navigate('/profile')}
+                  onClick={() => navigate(user?.role === 'ADMIN' ? '/admin/dashboard' : '/profile')}
                   aria-label="Profile"
                   className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors cursor-pointer bg-white border-[#E5DFCE] text-[#334437] hover:bg-[#F3EDE0]"
                 >
@@ -598,13 +598,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                 {link.label}
               </Link>
             ))}
-            <Link
-              to="/profile"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-[#334437] hover:text-[#3FA65C] font-bold pt-2 border-t border-[#EAE3D2]"
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate(user?.role === 'ADMIN' ? '/admin/dashboard' : '/profile');
+              }}
+              className="text-left text-[#334437] hover:text-[#3FA65C] font-bold pt-2 border-t border-[#EAE3D2] cursor-pointer"
             >
-              My Profile
-            </Link>
+              {user?.role === 'ADMIN' ? 'Admin Portal' : 'My Profile'}
+            </button>
           </nav>
           <div className="pt-4 border-t border-[#EAE3D2] flex flex-col gap-3">
             <Button

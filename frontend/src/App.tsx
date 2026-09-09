@@ -10,7 +10,18 @@ import { InsurancePage } from './pages/customer/InsurancePage';
 import { ProfilePage } from './pages/customer/ProfilePage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
+import { AdminVetsPage } from './pages/admin/AdminVetsPage';
+import { AdminServicesPage } from './pages/admin/AdminServicesPage';
+import { AdminProductsPage } from './pages/admin/AdminProductsPage';
+import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
+import { AdminCustomersPage } from './pages/admin/AdminCustomersPage';
+import { AdminArticlesPage } from './pages/admin/AdminArticlesPage';
+import { AdminNewsletterPage } from './pages/admin/AdminNewsletterPage';
+import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AuthProvider } from './features/auth/AuthContext';
+import { AdminToastProvider } from './components/admin/AdminLayout';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { ErrorBoundary } from './components/feedback/ErrorBoundary';
 
@@ -64,6 +75,7 @@ function AnimatedRoutes() {
         <Route path="/insurance" element={<InsurancePage />} />
         <Route path="/pet-insurance" element={<InsurancePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin/login" element={<LoginPage />} />
 
         {/* Customer Protected Routes */}
         <Route
@@ -71,6 +83,96 @@ function AnimatedRoutes() {
           element={
             <ProtectedRoute allowedRoles={['CUSTOMER']}>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Protected Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/appointments"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminAppointmentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/vets"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminVetsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/services"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminServicesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/products"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminProductsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminOrdersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/customers"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminCustomersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/articles"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminArticlesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/newsletter"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminNewsletterPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminSettingsPage />
             </ProtectedRoute>
           }
         />
@@ -86,10 +188,12 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <AnimatedRoutes />
-        </BrowserRouter>
+        <AdminToastProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <AnimatedRoutes />
+          </BrowserRouter>
+        </AdminToastProvider>
       </AuthProvider>
     </ErrorBoundary>
   );
