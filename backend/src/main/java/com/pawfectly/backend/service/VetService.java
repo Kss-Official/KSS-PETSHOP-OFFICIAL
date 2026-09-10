@@ -96,6 +96,7 @@ public class VetService {
                 .photoUrl(dto.getPhotoUrl())
                 .rating(dto.getRating() != null ? dto.getRating() : 5.0)
                 .address(dto.getAddress())
+                .bio(dto.getBio())
                 .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
                 .build();
 
@@ -125,6 +126,7 @@ public class VetService {
         if (dto.getPhotoUrl() != null) vet.setPhotoUrl(dto.getPhotoUrl());
         if (dto.getRating() != null) vet.setRating(dto.getRating());
         if (dto.getAddress() != null) vet.setAddress(dto.getAddress());
+        if (dto.getBio() != null) vet.setBio(dto.getBio());
         if (dto.getIsActive() != null) vet.setIsActive(dto.getIsActive());
 
         Vet updated = vetRepository.save(vet);
@@ -155,6 +157,7 @@ public class VetService {
                 .photoUrl(vet.getPhotoUrl())
                 .rating(vet.getRating())
                 .address(vet.getAddress())
+                .bio(vet.getBio())
                 .isActive(vet.getIsActive())
                 .build();
     }

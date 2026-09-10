@@ -3,13 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { CtaBanner } from '../../components/layout/CtaBanner';
-import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency, getConsultationFeeINR } from '../../lib/utils';
+import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { apiClient } from '../../lib/axios';
-import { useAuth } from '../../features/auth/AuthContext';
 import {
   ChevronRight,
   Stethoscope,
@@ -53,7 +52,6 @@ export const HomePage: React.FC = () => {
   const [vets, setVets] = useState<VetItem[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
   const [loadingVets, setLoadingVets] = useState(true);
-  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Cloudinary image assets
@@ -468,7 +466,7 @@ export const HomePage: React.FC = () => {
                     return (
                     <Card
                       key={vet.id}
-                      onClick={() => navigate(isAuthenticated ? `/profile?tab=appointments&vetId=${vet.id}` : '/login')}
+                      onClick={() => navigate(`/vets/${vet.id}`)}
                       className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group bg-white rounded-3xl p-5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all cursor-pointer"
                     >
                       <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#F4EFE6] flex items-center justify-center">
@@ -485,7 +483,13 @@ export const HomePage: React.FC = () => {
                           </div>
                         )}
                         <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
-                          <span className="text-yellow-500">★</span> {vet.rating ? vet.rating.toFixed(1) : '4.9'}
+                          {vet.reviewsCount && vet.reviewsCount > 0 && vet.rating ? (
+                            <>
+                              <span className="text-yellow-500">★</span> {vet.rating.toFixed(1)}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-[11px] font-bold">No reviews</span>
+                          )}
                         </div>
                       </div>
                       <div>
@@ -503,15 +507,21 @@ export const HomePage: React.FC = () => {
                       </div>
                       <div className="space-y-1 text-xs text-[#556658]">
                         <div className="flex items-center gap-1.5 flex-wrap font-semibold">
-                          <span className="text-[#F5A623] font-extrabold flex items-center gap-0.5">
-                            ★ {vet.rating ? vet.rating.toFixed(1) : '4.7'}
-                          </span>
-                          <span>({vet.reviewsCount || 58} reviews)</span>
+                          {vet.reviewsCount && vet.reviewsCount > 0 && vet.rating ? (
+                            <>
+                              <span className="text-[#F5A623] font-extrabold flex items-center gap-0.5">
+                                ★ {vet.rating.toFixed(1)}
+                              </span>
+                              <span>({vet.reviewsCount} review{vet.reviewsCount > 1 ? 's' : ''})</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-400">No reviews yet</span>
+                          )}
                           <span>•</span>
                           <span>{vet.experienceYears || 7}+ yrs exp</span>
                         </div>
                         <p className="font-bold text-[#287A41] pt-0.5 text-xs">
-                          {formatCurrency(getConsultationFeeINR(vet.experienceYears))} / visit
+                          {formatCurrency(vet.consultationFee ?? 500)} / visit
                         </p>
                       </div>
                     </Card>

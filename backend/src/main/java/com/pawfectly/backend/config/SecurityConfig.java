@@ -95,8 +95,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/newsletter/subscribe").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/insurance/quote").permitAll()
                         
-                        // Customer scoped endpoints - strictly CUSTOMER role only
-                        .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
+                        // Customer scoped endpoints - allows CUSTOMER and ADMIN roles
+                        .requestMatchers("/api/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
 
                         // Admin scoped endpoints - strictly ADMIN role only
                         .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")

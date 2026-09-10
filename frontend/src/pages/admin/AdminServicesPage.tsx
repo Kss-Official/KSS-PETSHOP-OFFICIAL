@@ -282,13 +282,13 @@ export const AdminServicesPage: React.FC = () => {
 
           <div>
             <label className="block text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider mb-1.5">
-              Cloudinary Icon Key / Image URL
+              Icon Key / Image URL
             </label>
             <input
               type="text"
               value={formData.iconUrl}
               onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
-              placeholder="service_01_vet_care / https://res.cloudinary.com/..."
+              placeholder="service_01_vet_care / https://..."
               className="w-full px-3 py-2 bg-[#F9FAF8] border border-[#E5E7EB] rounded-lg text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/20 focus:border-[#3FA65C] transition-all"
             />
           </div>

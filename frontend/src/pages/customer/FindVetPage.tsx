@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency, getConsultationFeeINR } from '../../lib/utils';
+import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
 import L from 'leaflet';
@@ -262,14 +262,6 @@ export const FindVetPage: React.FC = () => {
     };
   }, []);
 
-  const handleOpenBooking = (vet: VetDoctor) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    } else {
-      navigate(`/profile?tab=appointments&vetId=${vet.id}`);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#1B2B1E] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C]">
       {/* 1. Navbar */}
@@ -492,10 +484,10 @@ export const FindVetPage: React.FC = () => {
 
                             {/* 4. Review, Experience, Species */}
                             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#556658] pt-1">
-                              {doc.reviewsCount && doc.reviewsCount > 0 ? (
+                              {doc.reviewsCount && doc.reviewsCount > 0 && doc.rating ? (
                                 <>
                                   <span className="flex items-center gap-1 text-[#F5A623] font-extrabold">
-                                    <Star className="w-3.5 h-3.5 fill-current" /> {doc.rating ? doc.rating.toFixed(1) : '5.0'}
+                                    <Star className="w-3.5 h-3.5 fill-current" /> {doc.rating.toFixed(1)}
                                   </span>
                                   <button
                                     type="button"
@@ -512,25 +504,22 @@ export const FindVetPage: React.FC = () => {
                               <span>{doc.experienceYears || 1}+ yrs exp</span>
                             </div>
 
-                            {/* 5. Consultation Fee (₹500–₹800, derived from experience) */}
+                            {/* 5. Consultation Fee (real per-vet database value) */}
                             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#556658] pt-0.5">
                               <span className="font-bold text-[#287A41]">
-                                {formatCurrency(getConsultationFeeINR(doc.experienceYears))} / visit
+                                {formatCurrency(doc.consultationFee ?? 500)} / visit
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
-                          <span className="text-[11px] font-bold text-[#287A41] bg-[#E3F3E9] px-2.5 py-1 rounded-full whitespace-nowrap">
-                            Available Today
-                          </span>
+                        <div className="flex sm:flex-col items-center sm:items-end justify-center w-full sm:w-auto shrink-0">
                           <button
                             type="button"
-                            onClick={() => handleOpenBooking(doc)}
-                            className="px-3.5 py-1.5 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                            onClick={() => navigate(`/vets/${doc.id}`)}
+                            className="px-4 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all whitespace-nowrap shrink-0 cursor-pointer"
                           >
-                            Book Appointment
+                            View Profile
                           </button>
                         </div>
                       </div>

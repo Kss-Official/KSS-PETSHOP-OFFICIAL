@@ -5,7 +5,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
 import { useAuth } from '../../features/auth/AuthContext';
-import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getWishlistItems, formatCurrency, getConsultationFeeINR, type WishlistItem } from '../../lib/utils';
+import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getWishlistItems, formatCurrency, type WishlistItem } from '../../lib/utils';
 import apiClient from '../../lib/axios';
 import {
   User,
@@ -601,6 +601,7 @@ export const ProfilePage: React.FC = () => {
     try {
       await apiClient.patch(`/customer/notifications/${id}/read`);
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+      window.dispatchEvent(new Event('notifications-updated'));
     } catch {
       // ignore
     }
@@ -611,6 +612,7 @@ export const ProfilePage: React.FC = () => {
       await apiClient.delete(`/customer/notifications/${id}`);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
       showToast('Notification removed.');
+      window.dispatchEvent(new Event('notifications-updated'));
     } catch {
       showToast('Failed to delete notification.', 'error');
     }
@@ -832,11 +834,10 @@ export const ProfilePage: React.FC = () => {
 
   const navTabs = [
     { id: 'overview', label: 'Overview', icon: User },
-    { id: 'cart', label: 'My Cart', icon: ShoppingBag },
     { id: 'pets', label: 'My Pets', icon: PawPrint },
+    { id: 'cart', label: 'My Cart', icon: ShoppingBag },
     { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'appointments', label: 'My Appointments', icon: Calendar },
-    { id: 'notifications', label: 'Announcements & Notifications', icon: Bell },
     { id: 'wishlist', label: 'Wishlist', icon: Heart },
     { id: 'settings', label: 'Settings', icon: Sliders },
   ];
@@ -1833,9 +1834,6 @@ export const ProfilePage: React.FC = () => {
                               >
                                 {currentStatus}
                               </span>
-                              <span className="text-sm font-black text-[#16241B]">
-                                ₹{order.totalAmount.toLocaleString('en-IN')}
-                              </span>
 
                               {isCancellable && (
                                 <button
@@ -1879,6 +1877,11 @@ export const ProfilePage: React.FC = () => {
                               ) : (
                                 <p className="text-[#88998C]">No item details available.</p>
                               )}
+
+                              <div className="flex items-center justify-between pt-2.5 border-t border-[#EAE3D4] mt-2 text-sm font-black text-[#16241B]">
+                                <span>Total Amount:</span>
+                                <span>₹{order.totalAmount.toLocaleString('en-IN')}</span>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -2221,7 +2224,7 @@ export const ProfilePage: React.FC = () => {
                             <option value="">-- Choose a Veterinarian --</option>
                             {vetsList.map((vet) => (
                               <option key={vet.id} value={vet.id}>
-                                {vet.name || vet.fullName} ({vet.specialization} - {formatCurrency(getConsultationFeeINR(vet.experienceYears))})
+                                {vet.name || vet.fullName} ({vet.specialization} - {formatCurrency(vet.consultationFee ?? 50)})
                               </option>
                             ))}
                           </select>
@@ -2327,7 +2330,7 @@ export const ProfilePage: React.FC = () => {
                           <div className="p-3 bg-[#EFF8F0] border border-[#D5EAD9] rounded-xl flex items-center justify-between text-xs font-bold text-[#16241B]">
                             <span>Consultation Fee:</span>
                             <span className="text-sm font-black text-[#287A41]">
-                              {formatCurrency(getConsultationFeeINR(vetsList.find((v) => v.id === selectedVetId)?.experienceYears))}
+                              {formatCurrency(vetsList.find((v) => v.id === selectedVetId)?.consultationFee ?? 50)}
                             </span>
                           </div>
                         )}

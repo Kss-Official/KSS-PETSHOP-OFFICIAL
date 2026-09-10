@@ -371,13 +371,13 @@ export const AdminArticlesPage: React.FC = () => {
 
             <div>
               <label className="block text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider mb-1.5">
-                Thumbnail Key / URL (Cloudinary)
+                Thumbnail Key / Image URL
               </label>
               <input
                 type="text"
                 value={formData.imageUrl}
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="service_02_pet_food_rabbit_bowl / https://res.cloudinary.com/..."
+                placeholder="service_02_pet_food_rabbit_bowl / https://..."
                 className="w-full px-3 py-2 bg-[#F9FAF8] border border-[#E5E7EB] rounded-lg text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/20 focus:border-[#3FA65C] transition-all"
               />
             </div>

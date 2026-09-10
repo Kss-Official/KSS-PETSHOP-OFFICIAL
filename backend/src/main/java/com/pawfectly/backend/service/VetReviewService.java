@@ -64,7 +64,7 @@ public class VetReviewService {
         Double avgRating = vetReviewRepository.getAverageRatingForVet(vet.getId());
         Long reviewCount = vetReviewRepository.getReviewCountForVet(vet.getId());
 
-        vet.setRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 5.0);
+        vet.setRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : null);
         vet.setReviewsCount(reviewCount != null ? reviewCount.intValue() : 0);
         vetRepository.save(vet);
 
@@ -88,16 +88,26 @@ public class VetReviewService {
     }
 
     private VetReviewDto mapToDto(VetReview review) {
+        String fullName = review.getCustomer() != null ? review.getCustomer().getName() : "Anonymous";
+        String displayName = formatCustomerDisplayName(fullName);
+
         return VetReviewDto.builder()
                 .id(review.getId())
                 .appointmentId(review.getAppointment().getId())
                 .vetId(review.getVet().getId())
                 .vetName(review.getVet().getName())
-                .customerId(review.getCustomer().getId())
-                .customerName(review.getCustomer().getName())
+                .customerId(review.getCustomer() != null ? review.getCustomer().getId() : null)
+                .customerName(displayName)
                 .rating(review.getRating())
                 .reviewText(review.getReviewText())
                 .createdAt(review.getCreatedAt())
                 .build();
+    }
+
+    private String formatCustomerDisplayName(String fullName) {
+        if (fullName == null || fullName.isBlank()) return "Anonymous";
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length == 1) return parts[0];
+        return parts[0] + " " + parts[parts.length - 1].substring(0, 1).toUpperCase() + ".";
     }
 }

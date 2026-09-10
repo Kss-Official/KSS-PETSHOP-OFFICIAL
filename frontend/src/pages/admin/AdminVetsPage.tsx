@@ -4,14 +4,16 @@ import { AdminLayout, useAdminToast } from '../../components/admin/AdminLayout';
 import { DataTable, type Column } from '../../components/admin/DataTable';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminStatusBadge } from '../../components/admin/AdminStatusBadge';
-import { getVetImageUrl } from '../../lib/utils';
+import { getVetImageUrl, formatCurrency } from '../../lib/utils';
 import api from '../../lib/axios';
 
 interface Vet {
   id: number;
   name: string;
   specialization: string;
-  rating: number;
+  rating?: number;
+  reviewsCount?: number;
+  consultationFee?: number;
   photoUrl: string;
   address: string;
   isActive: boolean;
@@ -33,6 +35,7 @@ export const AdminVetsPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     specialization: '',
+    consultationFee: 500,
     photoUrl: '',
     address: '',
     isActive: true,
@@ -62,6 +65,7 @@ export const AdminVetsPage: React.FC = () => {
     setFormData({
       name: '',
       specialization: '',
+      consultationFee: 500,
       photoUrl: '',
       address: '',
       isActive: true,
@@ -76,6 +80,7 @@ export const AdminVetsPage: React.FC = () => {
     setFormData({
       name: vet.name,
       specialization: vet.specialization || '',
+      consultationFee: vet.consultationFee ?? 500,
       photoUrl: vet.photoUrl || '',
       address: vet.address || '',
       isActive: vet.isActive,
@@ -131,6 +136,7 @@ export const AdminVetsPage: React.FC = () => {
       const payload = {
         name: formData.name,
         specialization: formData.specialization,
+        consultationFee: formData.consultationFee,
         photoUrl: formData.photoUrl,
         address: formData.address,
         isActive: formData.isActive,
@@ -138,7 +144,7 @@ export const AdminVetsPage: React.FC = () => {
 
       if (isEditing && currentId) {
         await api.put(`/admin/vets/${currentId}`, payload);
-        showToast('Veterinarian profile updated successfully!');
+        showToast('Veterinarian profile and consultation fee updated successfully!');
       } else {
         await api.post('/admin/vets', payload);
         showToast('Veterinarian profile created successfully!');
@@ -188,13 +194,29 @@ export const AdminVetsPage: React.FC = () => {
       ),
     },
     {
+      key: 'consultationFee',
+      header: 'Consultation Fee',
+      sortable: true,
+      render: (row) => (
+        <span className="text-xs font-bold text-[#287A41]">
+          {formatCurrency(row.consultationFee ?? 500)}
+        </span>
+      ),
+    },
+    {
       key: 'rating',
       header: 'Rating',
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-1 text-xs font-semibold text-amber-600">
-          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-          <span>{row.rating ? row.rating.toFixed(1) : '5.0'}</span>
+          {row.reviewsCount && row.reviewsCount > 0 ? (
+            <>
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span>{row.rating ? row.rating.toFixed(1) : '5.0'}</span>
+            </>
+          ) : (
+            <span className="text-gray-400 font-normal">No reviews</span>
+          )}
         </div>
       ),
     },
@@ -270,7 +292,7 @@ export const AdminVetsPage: React.FC = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         title={isEditing ? 'Edit Veterinarian' : 'Add New Veterinarian'}
-        subtitle={isEditing ? 'Update doctor credentials' : 'Register a new clinical vet'}
+        subtitle={isEditing ? 'Update doctor credentials & consultation fee' : 'Register a new clinical vet'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -310,13 +332,29 @@ export const AdminVetsPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Photo URL (Cloudinary)
+              Consultation Fee (₹) *
+            </label>
+            <input
+              type="number"
+              required
+              min={100}
+              max={10000}
+              value={formData.consultationFee}
+              onChange={(e) => setFormData({ ...formData, consultationFee: Number(e.target.value) })}
+              placeholder="500"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/30 focus:border-[#3FA65C]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              Photo URL
             </label>
             <input
               type="url"
               value={formData.photoUrl}
               onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
-              placeholder="https://res.cloudinary.com/..."
+              placeholder="https://..."
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/30 focus:border-[#3FA65C]"
             />
           </div>

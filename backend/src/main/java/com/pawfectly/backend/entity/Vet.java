@@ -45,13 +45,13 @@ public class Vet {
 
     @Column(name = "reviews_count")
     @Builder.Default
-    private Integer reviewsCount = 45;
+    private Integer reviewsCount = 0;
 
     private String city;
 
     @Column(name = "consultation_fee")
     @Builder.Default
-    private Double consultationFee = 50.0;
+    private Double consultationFee = 500.0;
 
     @Column(name = "photo_url", length = 512)
     private String photoUrl;
@@ -60,6 +60,9 @@ public class Vet {
 
     @Column(length = 512)
     private String address;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
 
     @Builder.Default
     @Column(name = "is_active", nullable = false)
