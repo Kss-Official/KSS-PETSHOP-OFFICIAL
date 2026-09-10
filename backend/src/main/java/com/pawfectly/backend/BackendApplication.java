@@ -16,6 +16,14 @@ public class BackendApplication {
     }
 
     @Bean
+    public org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy flywayMigrationStrategy() {
+        return flyway -> {
+            flyway.repair();
+            flyway.migrate();
+        };
+    }
+
+    @Bean
     public CommandLineRunner seedDefaultUsers(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> {
             // Ensure default admin user exists

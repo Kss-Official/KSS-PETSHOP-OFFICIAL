@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @RestController
@@ -42,6 +43,26 @@ public class AdminCustomerController {
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getCustomers() {
         List<User> customers = userRepository.findByRole(Role.CUSTOMER);
+        List<Long> customerIds = customers.stream().map(User::getId).collect(Collectors.toList());
+
+        if (customerIds.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        CompletableFuture<Map<Long, Integer>> petsFuture = CompletableFuture.supplyAsync(() ->
+                petRepository.findByOwnerIdIn(customerIds).stream()
+                        .collect(Collectors.groupingBy(p -> p.getOwner().getId(), Collectors.summingInt(p -> 1)))
+        );
+
+        CompletableFuture<Map<Long, Integer>> ordersFuture = CompletableFuture.supplyAsync(() ->
+                orderRepository.findByCustomerIdIn(customerIds).stream()
+                        .collect(Collectors.groupingBy(o -> o.getCustomer().getId(), Collectors.summingInt(o -> 1)))
+        );
+
+        CompletableFuture.allOf(petsFuture, ordersFuture).join();
+
+        Map<Long, Integer> petsCountByCust = petsFuture.join();
+        Map<Long, Integer> ordersCountByCust = ordersFuture.join();
 
         List<Map<String, Object>> list = customers.stream().map(cust -> {
             Map<String, Object> map = new HashMap<>();
@@ -51,8 +72,8 @@ public class AdminCustomerController {
             map.put("phone", cust.getPhone() != null ? cust.getPhone() : "");
             map.put("isActive", true);
             map.put("createdAt", cust.getCreatedAt());
-            map.put("petsCount", petRepository.findByOwnerId(cust.getId()).size());
-            map.put("ordersCount", orderRepository.findByCustomerId(cust.getId()).size());
+            map.put("petsCount", petsCountByCust.getOrDefault(cust.getId(), 0));
+            map.put("ordersCount", ordersCountByCust.getOrDefault(cust.getId(), 0));
             return map;
         }).collect(Collectors.toList());
 
@@ -62,9 +83,15 @@ public class AdminCustomerController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getCustomerDetails(@PathVariable Long id) {
         return userRepository.findById(id).map(cust -> {
-            List<Pet> pets = petRepository.findByOwnerId(cust.getId());
-            List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(cust.getId());
-            List<Appointment> appointments = appointmentRepository.findByCustomerId(cust.getId());
+            CompletableFuture<List<Pet>> petsFuture = CompletableFuture.supplyAsync(() -> petRepository.findByOwnerId(cust.getId()));
+            CompletableFuture<List<Order>> ordersFuture = CompletableFuture.supplyAsync(() -> orderRepository.findByCustomerIdOrderByCreatedAtDesc(cust.getId()));
+            CompletableFuture<List<Appointment>> apptsFuture = CompletableFuture.supplyAsync(() -> appointmentRepository.findByCustomerId(cust.getId()));
+
+            CompletableFuture.allOf(petsFuture, ordersFuture, apptsFuture).join();
+
+            List<Pet> pets = petsFuture.join();
+            List<Order> orders = ordersFuture.join();
+            List<Appointment> appointments = apptsFuture.join();
 
             Map<String, Object> details = new HashMap<>();
             details.put("id", cust.getId());

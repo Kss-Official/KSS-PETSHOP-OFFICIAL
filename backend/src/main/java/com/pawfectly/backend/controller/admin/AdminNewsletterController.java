@@ -23,7 +23,7 @@ public class AdminNewsletterController {
         this.newsletterSubscriberRepository = newsletterSubscriberRepository;
     }
 
-    @GetMapping
+    @GetMapping({"", "/subscribers"})
     public ResponseEntity<List<NewsletterSubscriber>> getSubscribers() {
         return ResponseEntity.ok(newsletterSubscriberRepository.findAll());
     }

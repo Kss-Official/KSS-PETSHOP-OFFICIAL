@@ -1,20 +1,13 @@
 import axios, { AxiosError } from 'axios';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL;
-
-if (!baseURL) {
-  throw new Error(
-    '[axios] VITE_API_BASE_URL is not set. ' +
-      'Add it to your frontend/.env file (e.g. VITE_API_BASE_URL=http://localhost:8080/api).'
-  );
-}
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 export const apiClient = axios.create({
   baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 30000,
 });
 
 // Request interceptor to attach JWT token
@@ -38,23 +31,29 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('pawfectly_token');
       localStorage.removeItem('pawfectly_user');
       window.dispatchEvent(new Event('auth-unauthorized'));
-      return Promise.reject(
-        new Error('Session expired or authentication failed. Please log in again.')
-      );
+      const authErr = new Error('Session expired or authentication failed. Please log in again.');
+      (authErr as any).response = error.response;
+      (authErr as any).status = 401;
+      return Promise.reject(authErr);
     }
 
     if (!error.response) {
-      // Network failure / server unreachable
-      return Promise.reject(new Error('Network error: Unable to connect to server. Please check your connection.'));
+      if (error.code === 'ECONNABORTED') {
+        return Promise.reject(new Error('Request timeout: The server took too long to respond. Please check your connection.'));
+      }
+      return Promise.reject(new Error(error.message || 'Network error: Unable to connect to server. Please check your connection.'));
     }
 
     const message =
       error.response.data?.message ||
       (error.response.status === 403
         ? 'You do not have permission to perform this action.'
-        : 'An unexpected error occurred. Please try again.');
+        : `Server error (${error.response.status}): An unexpected error occurred. Please try again.`);
 
-    return Promise.reject(new Error(message));
+    const customError = new Error(message);
+    (customError as any).response = error.response;
+    (customError as any).status = error.response.status;
+    return Promise.reject(customError);
   }
 );
 

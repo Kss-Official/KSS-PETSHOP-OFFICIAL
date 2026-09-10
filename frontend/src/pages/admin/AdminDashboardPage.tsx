@@ -119,20 +119,16 @@ export const AdminDashboardPage: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
-        const [statsRes, monthlyRes, ordersRes, appointmentsRes] = await Promise.all([
-          api.get('/admin/dashboard/stats'),
-          api.get('/admin/dashboard/monthly-revenue'),
-          api.get('/admin/dashboard/recent-orders'),
-          api.get('/admin/dashboard/recent-appointments'),
-        ]);
-
-        setStats(statsRes.data);
-        setMonthlyRevenue(monthlyRes.data || []);
-        setRecentOrders(ordersRes.data || []);
-        setRecentAppointments(appointmentsRes.data || []);
+        const res = await api.get('/admin/dashboard/summary');
+        if (res.data) {
+          setStats(res.data.stats || null);
+          setMonthlyRevenue(res.data.monthlyRevenue || []);
+          setRecentOrders(res.data.recentOrders || []);
+          setRecentAppointments(res.data.recentAppointments || []);
+        }
       } catch (err: any) {
         console.error('Failed to load dashboard data:', err);
-        const msg = err.response?.data?.message || 'Failed to load dashboard data.';
+        const msg = err.response?.data?.message || err.message || 'Failed to load dashboard data.';
         showToast(msg, 'error');
       } finally {
         setIsLoading(false);

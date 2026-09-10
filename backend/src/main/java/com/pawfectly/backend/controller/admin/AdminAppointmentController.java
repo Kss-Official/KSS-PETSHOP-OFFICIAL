@@ -38,6 +38,11 @@ public class AdminAppointmentController {
         }
 
         List<Appointment> appointments = appointmentRepository.findFiltered(st);
+        List<Long> apptIds = appointments.stream().map(Appointment::getId).collect(Collectors.toList());
+
+        java.util.Set<Long> apptIdsWithRecords = apptIds.isEmpty()
+                ? java.util.Set.of()
+                : new java.util.HashSet<>(medicalRecordRepository.findAppointmentIdsByAppointmentIdIn(apptIds));
 
         List<Map<String, Object>> response = appointments.stream().map(apt -> {
             Map<String, Object> map = new HashMap<>();
@@ -66,7 +71,7 @@ public class AdminAppointmentController {
             map.put("dateTime", apt.getDateTime());
             map.put("status", apt.getStatus().name());
             map.put("paymentStatus", apt.getPaymentStatus() != null ? apt.getPaymentStatus() : "UNPAID");
-            map.put("hasMedicalRecord", medicalRecordRepository.findByAppointmentId(apt.getId()).isPresent());
+            map.put("hasMedicalRecord", apptIdsWithRecords.contains(apt.getId()));
             return map;
         }).collect(Collectors.toList());
 

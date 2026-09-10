@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/insurance-quotes")
+@RequestMapping({"/api/v1/admin/insurance-quotes", "/api/admin/insurance-quotes"})
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminInsuranceController {

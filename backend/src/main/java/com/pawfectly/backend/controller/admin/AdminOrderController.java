@@ -53,6 +53,12 @@ public class AdminOrderController {
         }
 
         List<Order> orders = orderRepository.findFiltered(os, ps);
+        List<Long> orderIds = orders.stream().map(Order::getId).collect(Collectors.toList());
+
+        Map<Long, Integer> itemCountByOrderId = orderIds.isEmpty()
+                ? Map.of()
+                : orderItemRepository.findByOrderIdIn(orderIds).stream()
+                        .collect(Collectors.groupingBy(oi -> oi.getOrder().getId(), Collectors.summingInt(oi -> 1)));
 
         List<Map<String, Object>> response = orders.stream().map(order -> {
             Map<String, Object> map = new HashMap<>();
@@ -66,7 +72,7 @@ public class AdminOrderController {
             map.put("paymentStatus", order.getPaymentStatus().name());
             map.put("pickupCode", String.format("PICKUP-%04d", order.getId()));
             map.put("createdAt", order.getCreatedAt());
-            map.put("itemCount", orderItemRepository.findByOrderId(order.getId()).size());
+            map.put("itemCount", itemCountByOrderId.getOrDefault(order.getId(), 0));
             return map;
         }).collect(Collectors.toList());
 
