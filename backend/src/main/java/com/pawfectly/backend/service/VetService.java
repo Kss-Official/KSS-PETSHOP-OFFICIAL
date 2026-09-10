@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class VetService {
 
     private final VetRepository vetRepository;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<VetDto> getActiveVets(String specialization, String petType, String search, Integer limit) {
@@ -74,6 +75,74 @@ public class VetService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<VetDto> getAllVetsAdmin() {
+        return vetRepository.findAll().stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public VetDto createVet(VetDto dto) {
+        Vet vet = Vet.builder()
+                .name(dto.getName())
+                .specialization(dto.getSpecialization())
+                .secondarySpecialization(dto.getSecondarySpecialization())
+                .petTypes(dto.getPetTypes())
+                .experienceYears(dto.getExperienceYears())
+                .reviewsCount(dto.getReviewsCount() != null ? dto.getReviewsCount() : 0)
+                .city(dto.getCity())
+                .consultationFee(dto.getConsultationFee())
+                .photoUrl(dto.getPhotoUrl())
+                .rating(dto.getRating() != null ? dto.getRating() : 5.0)
+                .address(dto.getAddress())
+                .bio(dto.getBio())
+                .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
+                .build();
+
+        Vet saved = vetRepository.save(vet);
+        log.info("Created vet: {}", saved.getName());
+        try {
+            notificationService.createNewVetNotification(saved);
+        } catch (Exception e) {
+            log.error("Failed to send new vet notification: {}", e.getMessage());
+        }
+        return mapToDto(saved);
+    }
+
+    @Transactional
+    public VetDto updateVet(Long id, VetDto dto) {
+        Vet vet = vetRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vet not found with id: " + id));
+
+        if (dto.getName() != null) vet.setName(dto.getName());
+        if (dto.getSpecialization() != null) vet.setSpecialization(dto.getSpecialization());
+        if (dto.getSecondarySpecialization() != null) vet.setSecondarySpecialization(dto.getSecondarySpecialization());
+        if (dto.getPetTypes() != null) vet.setPetTypes(dto.getPetTypes());
+        if (dto.getExperienceYears() != null) vet.setExperienceYears(dto.getExperienceYears());
+        if (dto.getReviewsCount() != null) vet.setReviewsCount(dto.getReviewsCount());
+        if (dto.getCity() != null) vet.setCity(dto.getCity());
+        if (dto.getConsultationFee() != null) vet.setConsultationFee(dto.getConsultationFee());
+        if (dto.getPhotoUrl() != null) vet.setPhotoUrl(dto.getPhotoUrl());
+        if (dto.getRating() != null) vet.setRating(dto.getRating());
+        if (dto.getAddress() != null) vet.setAddress(dto.getAddress());
+        if (dto.getBio() != null) vet.setBio(dto.getBio());
+        if (dto.getIsActive() != null) vet.setIsActive(dto.getIsActive());
+
+        Vet updated = vetRepository.save(vet);
+        log.info("Updated vet id: {}", id);
+        return mapToDto(updated);
+    }
+
+    @Transactional
+    public void deleteVet(Long id) {
+        Vet vet = vetRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vet not found with id: " + id));
+        vet.setIsActive(false);
+        vetRepository.save(vet);
+        log.info("Soft-deleted vet id: {}", id);
+    }
+
     private VetDto mapToDto(Vet vet) {
         return VetDto.builder()
                 .id(vet.getId())
@@ -88,6 +157,7 @@ public class VetService {
                 .photoUrl(vet.getPhotoUrl())
                 .rating(vet.getRating())
                 .address(vet.getAddress())
+                .bio(vet.getBio())
                 .isActive(vet.getIsActive())
                 .build();
     }

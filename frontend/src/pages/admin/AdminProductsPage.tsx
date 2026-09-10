@@ -378,13 +378,13 @@ export const AdminProductsPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Image URL (Cloudinary)
+                Image URL
               </label>
               <input
                 type="url"
                 value={formData.imageUrl}
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="https://res.cloudinary.com/..."
+                placeholder="https://..."
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/30 focus:border-[#3FA65C]"
               />
             </div>

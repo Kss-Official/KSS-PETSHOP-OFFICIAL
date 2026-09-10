@@ -52,6 +52,12 @@ public class AdminVetController {
                 .map(vet -> {
                     vet.setName(vetDetails.getName());
                     vet.setSpecialization(vetDetails.getSpecialization());
+                    vet.setSecondarySpecialization(vetDetails.getSecondarySpecialization());
+                    vet.setPetTypes(vetDetails.getPetTypes());
+                    vet.setExperienceYears(vetDetails.getExperienceYears());
+                    vet.setReviewsCount(vetDetails.getReviewsCount());
+                    vet.setCity(vetDetails.getCity());
+                    vet.setConsultationFee(vetDetails.getConsultationFee());
                     vet.setPhotoUrl(vetDetails.getPhotoUrl());
                     vet.setAddress(vetDetails.getAddress());
                     if (vetDetails.getRating() != null) vet.setRating(vetDetails.getRating());

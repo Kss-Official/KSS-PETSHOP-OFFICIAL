@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl } from '../../lib/utils';
+import { getCloudinaryImageUrl, getArticleImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import {
   Search,
@@ -35,18 +36,33 @@ interface ArticleDto {
   imageUrl?: string;
   publishedAt?: string;
   readTimeMinutes?: number;
-  featured?: boolean;
+  isFeatured?: boolean;
 }
 
-const resolveArticleImageUrl = (photoUrl?: string): string => {
-  if (!photoUrl) return getCloudinaryImageUrl('health_tips_hero');
-  if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-    return photoUrl;
-  }
-  return getCloudinaryImageUrl(photoUrl);
+const resolveArticleImageUrl = (photoUrl?: string, title?: string): string => {
+  return getArticleImageUrl(title, photoUrl);
+};
+
+const computeReadTime = (content?: string, excerpt?: string): number => {
+  const text = (content || excerpt || '').trim();
+  if (!text) return 3;
+  const words = text.split(/\s+/).length;
+  return Math.max(1, Math.ceil(words / 200));
+};
+
+const resolveCategory = (title?: string, cat?: string): string => {
+  if (cat && cat !== 'Preventive Care') return cat;
+  const t = (title || '').toLowerCase();
+  if (t.includes('nutrition') || t.includes('food') || t.includes('diet')) return 'Nutrition';
+  if (t.includes('vaccin') || t.includes('shot')) return 'Vaccination';
+  if (t.includes('groom') || t.includes('bath') || t.includes('wash')) return 'Grooming';
+  if (t.includes('sign') || t.includes('sick') || t.includes('emergenc')) return 'Emergency Care';
+  if (t.includes('cat') || t.includes('indoor') || t.includes('play') || t.includes('behaviour')) return 'Behaviour';
+  return cat || 'Preventive Care';
 };
 
 export const HealthTipsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('All Tips');
   const [searchQuery, setSearchQuery] = useState('');
   const [emailInput, setEmailInput] = useState('');
@@ -121,7 +137,7 @@ export const HealthTipsPage: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const featuredList = filteredArticles.filter((a) => a.featured).slice(0, 3);
+  const featuredList = filteredArticles.filter((a) => a.isFeatured).slice(0, 3);
 
   const petTypeFilteredArticles = articles.filter((art) => {
     if (!selectedPetType) return true;
@@ -380,7 +396,7 @@ export const HealthTipsPage: React.FC = () => {
                 setActiveTab('All Tips');
                 setSearchQuery('');
               }}
-              className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+              className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
             >
               <span>View all</span>
             </button>
@@ -442,26 +458,29 @@ export const HealthTipsPage: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {(featuredList.length > 0 ? featuredList : filteredArticles.slice(0, 4)).map((tip) => {
-                  const colors = categoryColorMap[tip.category] || {
+                  const category = resolveCategory(tip.title, tip.category);
+                  const colors = categoryColorMap[category] || {
                     bg: 'bg-[#E6F9EC]',
                     text: 'text-[#287A41]',
                   };
+                  const readTime = computeReadTime(tip.content, tip.excerpt);
 
                   return (
                     <div
                       key={tip.id}
-                      className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
+                      onClick={() => navigate(`/health-tips/${tip.id}`)}
+                      className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group cursor-pointer"
                     >
                       <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3">
                         <img
-                          src={resolveArticleImageUrl(tip.imageUrl)}
+                          src={resolveArticleImageUrl(tip.imageUrl, tip.title)}
                           alt={tip.title}
                           className="w-full h-full object-cover"
                         />
                         <span
                           className={`absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
                         >
-                          {tip.category}
+                          {category}
                         </span>
                       </div>
 
@@ -471,7 +490,14 @@ export const HealthTipsPage: React.FC = () => {
 
                       <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#88998C] font-semibold mt-3">
                         <div className="flex items-center gap-3">
-                          <span>{tip.readTimeMinutes || 5} min read</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-[#3FA65C]" />
+                            {tip.publishedAt ? new Date(tip.publishedAt).toLocaleDateString() : 'Recent'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-[#287A41]" />
+                            {readTime} min read
+                          </span>
                         </div>
                         <div className="w-6 h-6 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -539,7 +565,7 @@ export const HealthTipsPage: React.FC = () => {
                 onClick={() => {
                   setSelectedPetType(null);
                 }}
-                className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+                className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
               >
                 <span>View all articles</span>
               </button>
@@ -610,26 +636,29 @@ export const HealthTipsPage: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {petTypeFilteredArticles.map((tip) => {
-                    const colors = categoryColorMap[tip.category] || {
+                    const category = resolveCategory(tip.title, tip.category);
+                    const colors = categoryColorMap[category] || {
                       bg: 'bg-[#E6F9EC]',
                       text: 'text-[#287A41]',
                     };
+                    const readTime = computeReadTime(tip.content, tip.excerpt);
 
                     return (
                       <div
                         key={tip.id}
-                        className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group"
+                        onClick={() => navigate(`/health-tips/${tip.id}`)}
+                        className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group cursor-pointer"
                       >
                         <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3 border border-[#F0EAE1]">
                           <img
-                            src={resolveArticleImageUrl(tip.imageUrl)}
+                            src={resolveArticleImageUrl(tip.imageUrl, tip.title)}
                             alt={tip.title}
                             className="w-full h-full object-cover"
                           />
                           <span
                             className={`absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
                           >
-                            {tip.category}
+                            {category}
                           </span>
                         </div>
 
@@ -645,7 +674,7 @@ export const HealthTipsPage: React.FC = () => {
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3 text-[#287A41]" />
-                              {tip.readTimeMinutes || 5} min read
+                              {readTime} min read
                             </span>
                           </div>
                           <div className="w-6 h-6 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">

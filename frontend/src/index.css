@@ -38,7 +38,39 @@ html {
   }
 }
 
-/* Custom scrollbar for horizontal vet cards */
+/* Minimal, Clean Custom Scrollbar for all scrollable containers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 158, 102, 0.25);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 158, 102, 0.5);
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 158, 102, 0.25) transparent;
+}
+
+/* Custom utility class to completely hide scrollbar when requested */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

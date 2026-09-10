@@ -13,17 +13,17 @@ import { useAuth } from '../../features/auth/AuthContext';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
-  MapPin,
   Search,
   Stethoscope,
   Scissors,
   Sparkles,
   ShieldCheck,
+  MapPin,
+  X,
   AlertCircle,
   Heart,
   Pill,
   Bird,
-  PawPrint,
   Star,
   Calendar,
   CheckCircle2,
@@ -64,8 +64,7 @@ const CLINIC_LOCATION = {
   hours: 'Mon-Sun: 8:00 AM - 9:00 PM (24/7 Emergency)',
 };
 
-/** Fallback consultation fee in ₹ when a vet record has no fee set. */
-const DEFAULT_CONSULTATION_FEE = 500;
+
 
 export const FindVetPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -83,6 +82,24 @@ export const FindVetPage: React.FC = () => {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Vet Reviews Modal State
+  const [selectedVetForReviews, setSelectedVetForReviews] = useState<VetDoctor | null>(null);
+  const [vetReviewsList, setVetReviewsList] = useState<{ id: number; customerName?: string; rating: number; reviewText?: string; createdAt?: string }[]>([]);
+  const [vetReviewsLoading, setVetReviewsLoading] = useState(false);
+
+  const handleViewVetReviews = async (vet: VetDoctor) => {
+    setSelectedVetForReviews(vet);
+    setVetReviewsLoading(true);
+    try {
+      const res = await apiClient.get(`/vets/${vet.id}/reviews`);
+      setVetReviewsList(res.data || []);
+    } catch {
+      setVetReviewsList([]);
+    } finally {
+      setVetReviewsLoading(false);
+    }
+  };
 
   const specializations = [
     { name: 'General Veterinarian', icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]', border: 'border-[#C3ECD0]' },
@@ -244,14 +261,6 @@ export const FindVetPage: React.FC = () => {
       }
     };
   }, []);
-
-  const handleOpenBooking = (vet: VetDoctor) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    } else {
-      navigate(`/profile?tab=appointments&vetId=${vet.id}`);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#1B2B1E] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C]">
@@ -475,47 +484,42 @@ export const FindVetPage: React.FC = () => {
 
                             {/* 4. Review, Experience, Species */}
                             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#556658] pt-1">
-                              <span className="flex items-center gap-1 text-[#F5A623] font-extrabold">
-                                <Star className="w-3.5 h-3.5 fill-current" /> {doc.rating ? doc.rating.toFixed(1) : '4.7'}
-                              </span>
-                              <span>({doc.reviewsCount || 58} reviews)</span>
-                              <span>•</span>
-                              <span>{doc.experienceYears || 7}+ yrs exp</span>
-                              {doc.petTypes && (
+                              {doc.reviewsCount && doc.reviewsCount > 0 && doc.rating ? (
                                 <>
-                                  <span>•</span>
-                                  <span className="text-[#287A41] font-bold flex items-center gap-1">
-                                    <PawPrint className="w-3 h-3 text-[#287A41]" />
-                                    <span>{doc.petTypes}</span>
+                                  <span className="flex items-center gap-1 text-[#F5A623] font-extrabold">
+                                    <Star className="w-3.5 h-3.5 fill-current" /> {doc.rating.toFixed(1)}
                                   </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewVetReviews(doc)}
+                                    className="text-xs text-[#009E66] font-bold hover:underline cursor-pointer"
+                                  >
+                                    ({doc.reviewsCount} review{doc.reviewsCount > 1 ? 's' : ''})
+                                  </button>
                                 </>
+                              ) : (
+                                <span className="text-[#88998C] text-xs font-medium">No reviews yet</span>
                               )}
+                              <span>•</span>
+                              <span>{doc.experienceYears || 1}+ yrs exp</span>
                             </div>
 
-                            {/* 5. Location and Price */}
+                            {/* 5. Consultation Fee (real per-vet database value) */}
                             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#556658] pt-0.5">
-                              <span className="flex items-center gap-1 text-[#1B2B1E] font-medium">
-                                <MapPin className="w-3.5 h-3.5 text-[#3FA65C]" />
-                                <span>{doc.city || 'Bangalore, India'}</span>
-                              </span>
-                              <span>•</span>
                               <span className="font-bold text-[#287A41]">
-                                {doc.consultationFee ? formatCurrency(doc.consultationFee) : formatCurrency(DEFAULT_CONSULTATION_FEE)} / visit
+                                {formatCurrency(doc.consultationFee ?? 500)} / visit
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
-                          <span className="text-[11px] font-bold text-[#287A41] bg-[#E3F3E9] px-2.5 py-1 rounded-full whitespace-nowrap">
-                            Available Today
-                          </span>
+                        <div className="flex sm:flex-col items-center sm:items-end justify-center w-full sm:w-auto shrink-0">
                           <button
                             type="button"
-                            onClick={() => handleOpenBooking(doc)}
-                            className="px-3.5 py-1.5 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                            onClick={() => navigate(`/vets/${doc.id}`)}
+                            className="px-4 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all whitespace-nowrap shrink-0 cursor-pointer"
                           >
-                            Book Appointment
+                            View Profile
                           </button>
                         </div>
                       </div>
@@ -661,7 +665,68 @@ export const FindVetPage: React.FC = () => {
 
       </main>
 
-      {/* 8. Footer */}
+      {/* 8. Vet Reviews Modal */}
+      {selectedVetForReviews && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-[#EDE7D9] shadow-2xl space-y-4 relative">
+            <button
+              onClick={() => setSelectedVetForReviews(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <span className="text-xs font-bold text-[#EF7C3C] uppercase tracking-wider">Customer Feedback</span>
+              <h3 className="text-xl font-black text-[#16241B] mt-0.5">
+                Reviews for {selectedVetForReviews.name || selectedVetForReviews.fullName}
+              </h3>
+              <p className="text-xs text-[#556658]">
+                {selectedVetForReviews.specialization} • Real verified appointment reviews
+              </p>
+            </div>
+
+            {vetReviewsLoading ? (
+              <div className="py-8 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-[#009E66] border-t-transparent rounded-full animate-spin" />
+                <span>Loading reviews...</span>
+              </div>
+            ) : vetReviewsList.length === 0 ? (
+              <div className="py-8 text-center bg-[#FAF6EE] rounded-2xl p-4 border border-[#EDE7D9]">
+                <p className="text-xs text-[#556658] font-medium">No written reviews yet for this veterinarian.</p>
+              </div>
+            ) : (
+              <div className="max-h-80 overflow-y-auto space-y-3 pr-1">
+                {vetReviewsList.map((rev) => (
+                  <div key={rev.id} className="p-3.5 bg-[#FAF6EE] rounded-2xl border border-[#EDE7D9] space-y-1.5 text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-[#16241B]">
+                        {rev.customerName || 'Verified Customer'}
+                      </span>
+                      <div className="flex items-center gap-1 text-[#F5A623] text-xs font-bold">
+                        <Star className="w-3.5 h-3.5 fill-current" />
+                        <span>{rev.rating} / 5</span>
+                      </div>
+                    </div>
+                    {rev.reviewText && (
+                      <p className="text-xs text-[#334437] font-medium leading-relaxed">
+                        "{rev.reviewText}"
+                      </p>
+                    )}
+                    {rev.createdAt && (
+                      <p className="text-[10px] text-[#88998C] font-semibold">
+                        {new Date(rev.createdAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 9. Footer */}
       <Footer />
     </div>
   );

@@ -49,40 +49,76 @@ export function getCloudinaryImageUrl(
   return `https://res.cloudinary.com/${cloudName}/image/upload/${options}/${version}${targetId}`;
 }
 
-const VET_DATABASE_PHOTO_MAP: Record<string, string> = {
-  vet_dr_sarah_mitchell: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600',
-  vet_dr_james_carter: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=600',
-  avatar_user_1: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=600',
-  avatar_user_2: 'https://images.unsplash.com/photo-1594824813571-24a69c100d47?auto=format&fit=crop&q=80&w=600',
-  avatar_user_3: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=600',
-  avatar_user_4: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=600',
+const ARTICLE_IMAGE_MAP: Record<string, string> = {
+  'Grooming Tips for a Cleaner and Healthier Pet': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896776/Golden_retriever_getting_a_bath_with_bubbles_and_rubber_duck.png',
+  'Common Signs Your Pet Might Be Sick': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896775/Sick_dog_with_ice_pack_on_head.png',
+  'Essential Vaccinations for Dogs and Cats': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896780/Vet_examining_a_cat_with_stethoscope.png',
+  'The Right Nutrition for a Healthier, Happier Pet': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png',
+  'How to Keep Your Indoor Cat Active and Engaged': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896779/Playful_cat_with_colorful_ball.png',
+  'service_03_grooming_puppy_tub': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896776/Golden_retriever_getting_a_bath_with_bubbles_and_rubber_duck.png',
+  'service_04_pharmacy_cat_med': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896775/Sick_dog_with_ice_pack_on_head.png',
+  'service_01_vet_care': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896780/Vet_examining_a_cat_with_stethoscope.png',
+  'service_02_pet_food_rabbit_bowl': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png',
+  'service_05_toys_kittens_play': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896779/Playful_cat_with_colorful_ball.png',
 };
 
-const DEFAULT_VET_IMAGES: string[] = [
-  'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1594824813571-24a69c100d47?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=600',
-];
+export function getArticleImageUrl(title?: string, imageUrl?: string): string {
+  if (title && ARTICLE_IMAGE_MAP[title]) {
+    return ARTICLE_IMAGE_MAP[title];
+  }
+  if (imageUrl && ARTICLE_IMAGE_MAP[imageUrl]) {
+    return ARTICLE_IMAGE_MAP[imageUrl];
+  }
+  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+    return imageUrl;
+  }
+  return getCloudinaryImageUrl(imageUrl || 'health_tips_hero');
+}
 
 /**
- * Returns a high-resolution veterinarian photo URL.
+ * Fixed Cloudinary image URLs for known veterinarians.
+ * These are permanent and must not be changed.
  */
-export function getVetImageUrl(vetName: string = '', photoUrl?: string, vetId?: number | string): string {
-  if (photoUrl && photoUrl.trim() !== '') {
-    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-      return photoUrl;
-    }
-    if (VET_DATABASE_PHOTO_MAP[photoUrl]) {
-      return VET_DATABASE_PHOTO_MAP[photoUrl];
-    }
-    return getCloudinaryImageUrl(photoUrl);
+const VET_NAME_PHOTO_MAP: Record<string, string> = {
+  'Dr. Sarah Mitchell':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891282/high_resolution_professional_commercial_studio_portrait_of_a_young_female.png',
+  'Dr. James Carter':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891283/high_resolution_professional_studio_portrait_of_a_male_doctor_in_his_mid_40s.png',
+  'Dr. Rahul Sharma':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891283/high_resolution_professional_commercial_portrait_of_a_young_male_veterinarian.png',
+  'Dr. Priya Mehta':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891282/high_resolution_professional_commercial_studio_portrait_of_a_young_female_1.png',
+  'Dr. Arjun Verma':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891265/high_resolution_professional_studio_portrait_of_a_male_doctor_in_his_late_30s.png',
+  'Dr. Neha Kapoor':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891265/high_resolution_professional_commercial_studio_portrait_of_a_female.png',
+  'Dr. David Chen':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891263/high_resolution_professional_studio_portrait_of_an_east_asian_male_veterinary.png',
+  'Dr. Emily Watson':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891264/high_resolution_professional_studio_portrait_of_a_senior_female_veterinary.png',
+  'Dr. Michael Roberts':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891074/high_resolution_professional_commercial_studio_portrait_of_a_senior_male.png',
+  'Dr. Sophia Martinez':
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788891265/high_resolution_professional_studio_portrait_of_a_female_veterinarian_doctor_in.png',
+};
+
+/**
+ * Returns the photo URL for a veterinarian.
+ * Priority: (1) valid URL from DB, (2) fixed Cloudinary map by name, (3) SVG placeholder.
+ */
+export function getVetImageUrl(vetName: string = '', photoUrl?: string, _vetId?: number | string): string {
+  // 1. Use the URL from the database if it is a valid absolute URL
+  if (photoUrl && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
+    return photoUrl;
   }
-  const idNum = typeof vetId === 'number' ? vetId : (vetName.length || 1);
-  return DEFAULT_VET_IMAGES[Math.abs(Number(idNum)) % DEFAULT_VET_IMAGES.length];
+  // 2. Fall back to the fixed Cloudinary map by vet name
+  const trimmedName = vetName.trim();
+  if (trimmedName && VET_NAME_PHOTO_MAP[trimmedName]) {
+    return VET_NAME_PHOTO_MAP[trimmedName];
+  }
+  // 3. Final fallback: branded SVG placeholder
+  const displayName = trimmedName || 'Veterinarian';
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="%23FAF6EE"/><rect x="12" y="12" width="576" height="376" rx="20" fill="none" stroke="%23E5DFCE" stroke-width="2" stroke-dasharray="8 8"/><g transform="translate(260, 115)" fill="none" stroke="%23548B60" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><circle cx="40" cy="30" r="24"/><path d="M5 95c0-20 18-34 35-34s35 14 35 34"/><path d="M40 70v30M25 85h30"/></g><text x="50%" y="68%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="18" fill="%23334437">${encodeURIComponent(displayName)}</text><text x="50%" y="76%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="13" fill="%2367796B">Veterinarian Profile Photo</text></svg>`;
 }
 
 /**
@@ -153,6 +189,22 @@ export function getPetSpeciesImage(species?: string, customImage?: string): stri
  */
 export function formatCurrency(amount: number): string {
   return `₹${amount.toLocaleString('en-IN')}`;
+}
+
+/**
+ * Derives a vet's consultation fee in INR (₹500–₹800) based on years of experience.
+ * - 0–3 yrs  → ₹500
+ * - 4–7 yrs  → ₹600
+ * - 8–12 yrs → ₹700
+ * - 13+ yrs  → ₹800
+ * Falls back to ₹500 when experience is unknown.
+ */
+export function getConsultationFeeINR(experienceYears?: number | null): number {
+  const yrs = experienceYears ?? 0;
+  if (yrs >= 13) return 800;
+  if (yrs >= 8)  return 700;
+  if (yrs >= 4)  return 600;
+  return 500;
 }
 
 export interface WishlistItem {

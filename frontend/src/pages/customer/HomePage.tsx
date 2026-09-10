@@ -9,7 +9,6 @@ import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { apiClient } from '../../lib/axios';
-import { useAuth } from '../../features/auth/AuthContext';
 import {
   ChevronRight,
   Stethoscope,
@@ -53,7 +52,6 @@ export const HomePage: React.FC = () => {
   const [vets, setVets] = useState<VetItem[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
   const [loadingVets, setLoadingVets] = useState(true);
-  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Cloudinary image assets
@@ -101,16 +99,20 @@ export const HomePage: React.FC = () => {
     fetchHomeData();
   }, []);
 
-  const filteredVets = vets.filter((vet) => {
-    if (activeCategory === 'All') return true;
-    const petLower = activeCategory.toLowerCase();
-    if (vet.petTypes && vet.petTypes.toLowerCase().includes(petLower)) return true;
-    if (activeCategory === 'Exotic Pets' && (
-      (vet.specialization && vet.specialization.toLowerCase().includes('exotic')) ||
-      (vet.petTypes && (vet.petTypes.toLowerCase().includes('bird') || vet.petTypes.toLowerCase().includes('rabbit') || vet.petTypes.toLowerCase().includes('exotic')))
-    )) return true;
-    return false;
-  });
+  const filteredVets = (() => {
+    const matched = vets.filter((vet) => {
+      if (activeCategory === 'All') return true;
+      const petLower = activeCategory.toLowerCase();
+      // Primary: match against petTypes string from DB
+      if (vet.petTypes && vet.petTypes.toLowerCase().includes(petLower)) return true;
+      // Secondary: for Exotic Pets, also match by specialization keyword
+      if (activeCategory === 'Exotic Pets' &&
+        vet.specialization && vet.specialization.toLowerCase().includes('exotic')) return true;
+      return false;
+    });
+    // 'All' shows every vet; individual species tabs are capped at 4
+    return activeCategory === 'All' ? matched : matched.slice(0, 4);
+  })();
 
   const handleVetScroll = () => {
     if (vetScrollRef.current) {
@@ -158,7 +160,7 @@ export const HomePage: React.FC = () => {
       defaultImg = avatar4Url;
     }
 
-    const img = iconUrl ? getCloudinaryImageUrl(iconUrl) : defaultImg;
+    const img = defaultImg || (iconUrl ? getCloudinaryImageUrl(iconUrl) : '');
     return { icon, badgeBg, img };
   };
 
@@ -464,7 +466,7 @@ export const HomePage: React.FC = () => {
                     return (
                     <Card
                       key={vet.id}
-                      onClick={() => navigate(isAuthenticated ? `/profile?tab=appointments&vetId=${vet.id}` : '/login')}
+                      onClick={() => navigate(`/vets/${vet.id}`)}
                       className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group bg-white rounded-3xl p-5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all cursor-pointer"
                     >
                       <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#F4EFE6] flex items-center justify-center">
@@ -481,7 +483,13 @@ export const HomePage: React.FC = () => {
                           </div>
                         )}
                         <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
-                          <span className="text-yellow-500">★</span> {vet.rating ? vet.rating.toFixed(1) : '4.9'}
+                          {vet.reviewsCount && vet.reviewsCount > 0 && vet.rating ? (
+                            <>
+                              <span className="text-yellow-500">★</span> {vet.rating.toFixed(1)}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-[11px] font-bold">No reviews</span>
+                          )}
                         </div>
                       </div>
                       <div>
@@ -499,21 +507,21 @@ export const HomePage: React.FC = () => {
                       </div>
                       <div className="space-y-1 text-xs text-[#556658]">
                         <div className="flex items-center gap-1.5 flex-wrap font-semibold">
-                          <span className="text-[#F5A623] font-extrabold flex items-center gap-0.5">
-                            ★ {vet.rating ? vet.rating.toFixed(1) : '4.7'}
-                          </span>
-                          <span>({vet.reviewsCount || 58} reviews)</span>
+                          {vet.reviewsCount && vet.reviewsCount > 0 && vet.rating ? (
+                            <>
+                              <span className="text-[#F5A623] font-extrabold flex items-center gap-0.5">
+                                ★ {vet.rating.toFixed(1)}
+                              </span>
+                              <span>({vet.reviewsCount} review{vet.reviewsCount > 1 ? 's' : ''})</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-400">No reviews yet</span>
+                          )}
                           <span>•</span>
                           <span>{vet.experienceYears || 7}+ yrs exp</span>
-                          {vet.petTypes && (
-                            <>
-                              <span>•</span>
-                              <span className="text-[#287A41] font-bold">🐾 {vet.petTypes}</span>
-                            </>
-                          )}
                         </div>
-                        <p className="font-semibold text-[#16241B] pt-0.5 flex items-center gap-1">
-                          <span className="text-[#3FA65C]">📍</span> {vet.city || 'Bangalore, KA'} • <span className="font-bold text-[#287A41]">{vet.consultationFee ? formatCurrency(vet.consultationFee) : '₹40 / visit'}</span>
+                        <p className="font-bold text-[#287A41] pt-0.5 text-xs">
+                          {formatCurrency(vet.consultationFee ?? 500)} / visit
                         </p>
                       </div>
                     </Card>

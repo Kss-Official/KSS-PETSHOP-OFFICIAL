@@ -65,6 +65,7 @@ public class AdminAppointmentController {
             map.put("consultationFee", fee);
             map.put("dateTime", apt.getDateTime());
             map.put("status", apt.getStatus().name());
+            map.put("paymentStatus", apt.getPaymentStatus() != null ? apt.getPaymentStatus() : "UNPAID");
             map.put("hasMedicalRecord", medicalRecordRepository.findByAppointmentId(apt.getId()).isPresent());
             return map;
         }).collect(Collectors.toList());
@@ -96,6 +97,45 @@ public class AdminAppointmentController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid status value"));
         }
+    }
+
+    @RequestMapping(value = "/{id}/payment-status", method = {RequestMethod.PATCH, RequestMethod.PUT})
+    public ResponseEntity<?> updatePaymentStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+
+        String paymentStatusStr = body.get("paymentStatus");
+        if (paymentStatusStr == null) {
+            paymentStatusStr = body.get("status");
+        }
+        if (paymentStatusStr == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Payment status is required"));
+        }
+
+        Appointment apt = appointmentRepository.findById(id).orElse(null);
+        if (apt == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String currentStatus = apt.getPaymentStatus() != null ? apt.getPaymentStatus().toUpperCase() : "UNPAID";
+        if ("PAID".equals(currentStatus) || "FAILED".equals(currentStatus)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Payment status is already in terminal state '" + currentStatus + "' and cannot be modified."
+            ));
+        }
+
+        String targetStatus = paymentStatusStr.toUpperCase();
+        if (!"PAID".equals(targetStatus) && !"FAILED".equals(targetStatus) && !"UNPAID".equals(targetStatus)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid payment status. Allowed: UNPAID, PAID, FAILED"));
+        }
+
+        apt.setPaymentStatus(targetStatus);
+        Appointment saved = appointmentRepository.save(apt);
+        return ResponseEntity.ok(Map.of(
+                "id", saved.getId(),
+                "paymentStatus", saved.getPaymentStatus(),
+                "message", "Payment status updated to " + saved.getPaymentStatus()
+        ));
     }
 
     @GetMapping("/{id}/medical-record")

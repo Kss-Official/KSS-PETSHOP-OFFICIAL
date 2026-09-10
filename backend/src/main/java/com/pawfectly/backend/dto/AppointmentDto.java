@@ -25,6 +25,8 @@ public class AppointmentDto {
     private String serviceName;
     private LocalDateTime dateTime;
     private AppointmentStatus status;
+    @Builder.Default
+    private String paymentStatus = "UNPAID";
     private LocalDateTime createdAt;
     private String diagnosis;
     private String prescription;

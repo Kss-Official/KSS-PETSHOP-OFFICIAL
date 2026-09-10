@@ -29,6 +29,7 @@ public class VetDto {
     private String photoUrl;
     private Double rating;
     private String address;
+    private String bio;
 
     @Builder.Default
     private Boolean isActive = true;

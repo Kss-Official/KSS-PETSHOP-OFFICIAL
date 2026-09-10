@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -17,9 +17,11 @@ import {
 import { Button } from '../ui/Button';
 import { getCloudinaryImageUrl, getWishlistItems } from '../../lib/utils';
 import { useAuth } from '../../features/auth/AuthContext';
+import { apiClient } from '../../lib/axios';
 
 interface NotificationItem {
   id: string;
+  numericId?: number;
   title: string;
   message: string;
   time: string;
@@ -27,32 +29,19 @@ interface NotificationItem {
   type: 'admin' | 'appointment' | 'order' | 'promo';
 }
 
-const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    title: 'Admin Announcement',
-    message: 'Weekend Special: 20% off all wellness pet checkups with code PAWFECT20!',
-    time: '15m ago',
-    isRead: false,
-    type: 'admin',
-  },
-  {
-    id: 'notif-2',
-    title: 'New Specialist Available',
-    message: 'Dr. Sarah Mitchell (Avian & Exotic Care) is now accepting appointments.',
-    time: '2h ago',
-    isRead: false,
-    type: 'admin',
-  },
-  {
-    id: 'notif-3',
-    title: 'Clinic Schedule Notice',
-    message: 'Pawfectly Central Clinic emergency helpline is active 24/7 at 9080876747.',
-    time: '1d ago',
-    isRead: true,
-    type: 'admin',
-  },
-];
+function formatRelativeTime(dateStr?: string): string {
+  if (!dateStr) return 'Just now';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 'Just now';
+  const diffMs = Date.now() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
 
 interface NavbarProps {
   activePage?:
@@ -68,15 +57,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('pawfectly_notifications');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // fallback
-    }
-    return DEFAULT_NOTIFICATIONS;
-  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
@@ -84,6 +65,47 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const { user, isAuthenticated, logout } = useAuth();
 
   const [wishlistCount, setWishlistCount] = useState<number>(0);
+
+  const fetchBackendNotifications = useCallback(async () => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      return;
+    }
+    try {
+      const res = await apiClient.get('/customer/notifications');
+      const backendData: any[] = res.data || [];
+      const mapped: NotificationItem[] = backendData.map((n: any) => ({
+        id: n.id ? n.id.toString() : Math.random().toString(),
+        numericId: n.id,
+        title: n.title || 'Notification',
+        message: n.message || '',
+        time: formatRelativeTime(n.createdAt),
+        isRead: !!n.isRead,
+        type: n.type === 'ANNOUNCEMENT' ? 'admin' : n.type === 'APPOINTMENT' ? 'appointment' : n.type === 'ORDER' ? 'order' : 'admin',
+      }));
+      setNotifications(mapped);
+    } catch {
+      // ignore
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    fetchBackendNotifications();
+  }, [fetchBackendNotifications]);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      fetchBackendNotifications();
+    };
+    window.addEventListener('notifications-updated', handleUpdate);
+    return () => window.removeEventListener('notifications-updated', handleUpdate);
+  }, [fetchBackendNotifications]);
+
+  useEffect(() => {
+    if (notificationMenuOpen) {
+      fetchBackendNotifications();
+    }
+  }, [notificationMenuOpen, fetchBackendNotifications]);
 
   useEffect(() => {
     const syncCount = () => {
@@ -96,35 +118,58 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const saveNotifications = (updated: NotificationItem[]) => {
-    setNotifications(updated);
-    try {
-      localStorage.setItem('pawfectly_notifications', JSON.stringify(updated));
-    } catch {
-      // ignore
+  const markAsRead = async (id: string) => {
+    const item = notifications.find((n) => n.id === id);
+    if (item && item.numericId) {
+      try {
+        await apiClient.patch(`/customer/notifications/${item.numericId}/read`);
+      } catch {
+        // ignore
+      }
     }
-  };
-
-  const markAsRead = (id: string) => {
-    const updated = notifications.map((n) =>
-      n.id === id ? { ...n, isRead: true } : n
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
-    saveNotifications(updated);
+    window.dispatchEvent(new Event('notifications-updated'));
   };
 
-  const markAllAsRead = () => {
-    const updated = notifications.map((n) => ({ ...n, isRead: true }));
-    saveNotifications(updated);
+  const markAllAsRead = async () => {
+    const unread = notifications.filter((n) => !n.isRead);
+    await Promise.all(
+      unread.map((n) =>
+        n.numericId
+          ? apiClient.patch(`/customer/notifications/${n.numericId}/read`).catch(() => {})
+          : Promise.resolve()
+      )
+    );
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    window.dispatchEvent(new Event('notifications-updated'));
   };
 
-  const clearAllNotifications = () => {
-    saveNotifications([]);
+  const clearAllNotifications = async () => {
+    await Promise.all(
+      notifications.map((n) =>
+        n.numericId
+          ? apiClient.delete(`/customer/notifications/${n.numericId}`).catch(() => {})
+          : Promise.resolve()
+      )
+    );
+    setNotifications([]);
+    window.dispatchEvent(new Event('notifications-updated'));
   };
 
-  const deleteNotification = (id: string, e: React.MouseEvent) => {
+  const deleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = notifications.filter((n) => n.id !== id);
-    saveNotifications(updated);
+    const item = notifications.find((n) => n.id === id);
+    if (item && item.numericId) {
+      try {
+        await apiClient.delete(`/customer/notifications/${item.numericId}`);
+      } catch {
+        // ignore
+      }
+    }
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    window.dispatchEvent(new Event('notifications-updated'));
   };
 
   const handleNotificationClick = (notif: NotificationItem) => {

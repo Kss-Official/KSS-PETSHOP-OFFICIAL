@@ -5,7 +5,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
 import { useAuth } from '../../features/auth/AuthContext';
-import { getCloudinaryImageUrl, getPetSpeciesImage, getWishlistItems, type WishlistItem } from '../../lib/utils';
+import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getWishlistItems, formatCurrency, type WishlistItem } from '../../lib/utils';
 import apiClient from '../../lib/axios';
 import {
   User,
@@ -28,18 +28,17 @@ import {
   Mail,
   ShieldCheck,
   Clock,
+  Star,
+  Stethoscope,
   MapPin,
   Phone,
   AlertCircle,
   Loader2,
-  Info,
   ShoppingBag,
   Heart,
   Minus,
   FileText,
   BookOpen,
-  RotateCcw,
-  Sparkles,
   ArrowRight,
 } from 'lucide-react';
 
@@ -103,6 +102,7 @@ interface VetDoctorItem {
   secondarySpecialization?: string;
   city?: string;
   consultationFee?: number;
+  experienceYears?: number;
 }
 
 interface CartItemData {
@@ -124,6 +124,20 @@ interface ArticleItem {
   isFeatured?: boolean;
   publishedAt?: string;
 }
+
+const getRelativeTimeString = (dateStr?: string): string => {
+  if (!dateStr) return 'Just now';
+  const now = new Date().getTime();
+  const past = new Date(dateStr).getTime();
+  const diffSec = Math.floor((now - past) / 1000);
+  if (diffSec < 60) return 'Just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}d ago`;
+};
 
 export const ProfilePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -506,24 +520,16 @@ export const ProfilePage: React.FC = () => {
       return;
     }
 
+    const petIdToUse = selectedPetId || (pets.length > 0 ? pets[0].id : null);
+    if (!petIdToUse) {
+      setBookingErrorMsg('No registered pet selected. Please add a pet under "My Pets" tab first.');
+      return;
+    }
+
     setBookingSubmitting(true);
     setBookingErrorMsg(null);
 
     try {
-      let petIdToUse = selectedPetId;
-
-      if (!petIdToUse || selectedPetId === -1) {
-        const petNameToUse = petNameInput.trim() || 'My Pet';
-        const petRes = await apiClient.post<PetItem>('/customer/pets', {
-          name: petNameToUse,
-          species: 'Dog',
-          breed: 'Mixed',
-          age: 2,
-        });
-        petIdToUse = petRes.data.id;
-        fetchPets();
-      }
-
       const time24 = convertTimeTo24h(bookingTime);
       const isoDateTime = `${bookingDate}T${time24}`;
 
@@ -536,7 +542,6 @@ export const ProfilePage: React.FC = () => {
 
       showToast('Appointment booked successfully! 📅');
       setIsBookingModalOpen(false);
-      setPetNameInput('');
       setBookingNotesInput('');
       fetchAppointments();
     } catch (err: unknown) {
@@ -563,6 +568,94 @@ export const ProfilePage: React.FC = () => {
       setCancellingAppointment(false);
     }
   };
+
+  // 4b. Notifications & Reviews State
+  const [notifications, setNotifications] = useState<{ id: number; customerId: number; type: string; title: string; message: string; relatedEntityId?: number; isRead: boolean; createdAt?: string }[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  const [userReviews, setUserReviews] = useState<{ id: number; appointmentId: number; vetId: number; rating: number; reviewText?: string; createdAt?: string }[]>([]);
+  const [reviewModalApt, setReviewModalApt] = useState<AppointmentItem | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewText, setReviewText] = useState<string>('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
+  const handleOpenReviewModal = (apt: AppointmentItem) => {
+    setReviewModalApt(apt);
+    setReviewRating(5);
+    setReviewText('');
+  };
+
+  const fetchNotifications = useCallback(async () => {
+    setNotificationsLoading(true);
+    try {
+      const res = await apiClient.get('/customer/notifications');
+      setNotifications(res.data || []);
+    } catch {
+      // ignore
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, []);
+
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      await apiClient.patch(`/customer/notifications/${id}/read`);
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+      window.dispatchEvent(new Event('notifications-updated'));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDeleteNotification = async (id: number) => {
+    try {
+      await apiClient.delete(`/customer/notifications/${id}`);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      showToast('Notification removed.');
+      window.dispatchEvent(new Event('notifications-updated'));
+    } catch {
+      showToast('Failed to delete notification.', 'error');
+    }
+  };
+
+  const fetchUserReviews = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/customer/reviews');
+      setUserReviews(res.data || []);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewModalApt) return;
+    setReviewSubmitting(true);
+    try {
+      const res = await apiClient.post('/customer/reviews', {
+        appointmentId: reviewModalApt.id,
+        rating: reviewRating,
+        reviewText: reviewText.trim() || undefined,
+      });
+      setUserReviews((prev) => [...prev, res.data]);
+      showToast('Thank you for rating your appointment!');
+      setReviewModalApt(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit review.';
+      showToast(msg, 'error');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentTab === 'notifications' || currentTab === 'overview') {
+      fetchNotifications();
+    }
+    if (currentTab === 'appointments' || currentTab === 'overview') {
+      fetchUserReviews();
+    }
+  }, [currentTab, fetchNotifications, fetchUserReviews]);
 
   // 5. Wishlist State
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
@@ -737,55 +830,12 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  // Quick Action Reorder Handler
-  const [reordering, setReordering] = useState(false);
-  const completedOrders = orders.filter(
-    (o) => (o.orderStatus || o.status || '').toUpperCase() === 'COMPLETED'
-  );
-  const lastCompletedOrder = completedOrders.length > 0 ? completedOrders[0] : null;
 
-  const handleReorderLastOrder = async () => {
-    if (!lastCompletedOrder || !lastCompletedOrder.items || lastCompletedOrder.items.length === 0) {
-      showToast('No completed order items to reorder.', 'error');
-      return;
-    }
-
-    setReordering(true);
-    let addedCount = 0;
-    const skippedItems: string[] = [];
-
-    for (const item of lastCompletedOrder.items) {
-      if (!item.productId) continue;
-      try {
-        await apiClient.post('/customer/cart', {
-          productId: item.productId,
-          quantity: item.quantity || 1,
-        });
-        addedCount++;
-      } catch {
-        skippedItems.push(item.productName || 'An item');
-      }
-    }
-
-    setReordering(false);
-    window.dispatchEvent(new Event('cart-updated'));
-
-    if (addedCount > 0 && skippedItems.length === 0) {
-      showToast(`Reordered ${addedCount} ${addedCount === 1 ? 'item' : 'items'} to cart! 🛒`);
-    } else if (addedCount > 0 && skippedItems.length > 0) {
-      showToast(
-        `Added ${addedCount} items. ${skippedItems.join(', ')} currently out of stock.`,
-        'error'
-      );
-    } else if (skippedItems.length > 0) {
-      showToast(`Could not reorder: ${skippedItems.join(', ')} currently out of stock.`, 'error');
-    }
-  };
 
   const navTabs = [
     { id: 'overview', label: 'Overview', icon: User },
-    { id: 'cart', label: 'My Cart', icon: ShoppingBag },
     { id: 'pets', label: 'My Pets', icon: PawPrint },
+    { id: 'cart', label: 'My Cart', icon: ShoppingBag },
     { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'appointments', label: 'My Appointments', icon: Calendar },
     { id: 'wishlist', label: 'Wishlist', icon: Heart },
@@ -840,25 +890,31 @@ export const ProfilePage: React.FC = () => {
   );
   const recentPrescriptions = appointmentsWithPrescriptions.slice(0, 4);
 
-  // Recommended Health Tips calculation — sorted by pet species match
+  // Recommended Health Tips calculation — strictly filtered by customer's pet species
   const userPetSpeciesList = pets.map((p) => (p.species || '').trim().toLowerCase()).filter(Boolean);
 
-  const recommendedArticles = [...articles]
-    .sort((a, b) => {
-      const aType = (a.petType || '').trim().toLowerCase();
-      const bType = (b.petType || '').trim().toLowerCase();
+  const isSpeciesMatch = (articlePetType?: string, speciesList: string[] = []): boolean => {
+    if (!speciesList || speciesList.length === 0) return true;
+    const type = (articlePetType || '').trim().toLowerCase();
+    if (!type || type === 'all' || type === 'general' || type === 'both' || type === 'pets') {
+      return true;
+    }
 
-      const aSpeciesMatchIndex = userPetSpeciesList.indexOf(aType);
-      const bSpeciesMatchIndex = userPetSpeciesList.indexOf(bType);
-
-      const aScore = aSpeciesMatchIndex !== -1 ? 100 - aSpeciesMatchIndex : (aType === 'all' || aType === 'general' || !aType ? 10 : 0);
-      const bScore = bSpeciesMatchIndex !== -1 ? 100 - bSpeciesMatchIndex : (bType === 'all' || bType === 'general' || !bType ? 10 : 0);
-
-      if (aScore !== bScore) {
-        return bScore - aScore; // Higher score first
+    return speciesList.some((species) => {
+      const s = species.trim().toLowerCase();
+      if (s.startsWith('dog') || s === 'canine') {
+        return type.startsWith('dog') || type === 'canine';
       }
-      return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
-    })
+      if (s.startsWith('cat') || s === 'feline') {
+        return type.startsWith('cat') || type === 'feline';
+      }
+      return type.includes(s) || s.includes(type);
+    });
+  };
+
+  const recommendedArticles = articles
+    .filter((a) => isSpeciesMatch(a.petType, userPetSpeciesList))
+    .sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0))
     .slice(0, 4);
 
   return (
@@ -1122,42 +1178,6 @@ export const ProfilePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* QUICK ACTIONS ROW */}
-                <div className="space-y-3 pt-2">
-                  <h2 className="text-xs font-black uppercase tracking-wider text-[#16241B] flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-[#009E66]" />
-                    <span>Quick Actions</span>
-                  </h2>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Action: Reorder */}
-                    <button
-                      onClick={handleReorderLastOrder}
-                      disabled={!lastCompletedOrder || reordering}
-                      className={`bg-[#FAF8F3] border rounded-2xl p-4 flex items-center gap-3.5 text-left transition-all group shadow-2xs ${
-                        lastCompletedOrder && !reordering
-                          ? 'border-[#E8E4D8] hover:border-[#EF7C3C]/50 hover:bg-[#FFF5EE]/30 cursor-pointer'
-                          : 'border-[#E8E4D8]/60 opacity-60 cursor-not-allowed'
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-[#FFF5EE] border border-[#FED7AA] flex items-center justify-center text-[#EF7C3C] shrink-0 group-hover:scale-105 transition-transform">
-                        {reordering ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <RotateCcw className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-black text-[#16241B]">Reorder Purchase</h3>
-                        <p className="text-xs text-[#556658] font-medium mt-0.5 truncate max-w-[200px]">
-                          {lastCompletedOrder
-                            ? `Order #${lastCompletedOrder.id}`
-                            : 'No past completed orders'}
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
 
                 {/* RECENT PRESCRIPTIONS SECTION */}
                 <div className="space-y-4 pt-4 border-t border-[#E8E4D8]">
@@ -1288,7 +1308,7 @@ export const ProfilePage: React.FC = () => {
                             {article.imageUrl && (
                               <div className="h-32 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] mb-3">
                                 <img
-                                  src={getCloudinaryImageUrl(article.imageUrl)}
+                                  src={getArticleImageUrl(article.title, article.imageUrl)}
                                   alt={article.title}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
@@ -1814,9 +1834,6 @@ export const ProfilePage: React.FC = () => {
                               >
                                 {currentStatus}
                               </span>
-                              <span className="text-sm font-black text-[#16241B]">
-                                ₹{order.totalAmount.toLocaleString('en-IN')}
-                              </span>
 
                               {isCancellable && (
                                 <button
@@ -1860,6 +1877,11 @@ export const ProfilePage: React.FC = () => {
                               ) : (
                                 <p className="text-[#88998C]">No item details available.</p>
                               )}
+
+                              <div className="flex items-center justify-between pt-2.5 border-t border-[#EAE3D4] mt-2 text-sm font-black text-[#16241B]">
+                                <span>Total Amount:</span>
+                                <span>₹{order.totalAmount.toLocaleString('en-IN')}</span>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -2086,6 +2108,42 @@ export const ProfilePage: React.FC = () => {
                                   )}
                                 </div>
                               )}
+
+                              {/* Customer Rating & Review Section */}
+                              {apt.status === 'COMPLETED' && (
+                                <div className="pt-2 border-t border-[#F2ECE0]">
+                                  {(() => {
+                                    const existingRev = userReviews.find((r) => r.appointmentId === apt.id);
+                                    if (existingRev) {
+                                      return (
+                                        <div className="flex items-center justify-between bg-[#FEFCE8] p-2.5 rounded-xl border border-[#FEF08A] text-xs">
+                                          <div className="flex items-center gap-1.5 font-extrabold text-[#B45309]">
+                                            <Star className="w-4 h-4 fill-current text-[#F5A623]" />
+                                            <span>Your Rating: {existingRev.rating} / 5</span>
+                                          </div>
+                                          {existingRev.reviewText && (
+                                            <span className="text-[#556658] italic truncate max-w-[200px]">
+                                              "{existingRev.reviewText}"
+                                            </span>
+                                          )}
+                                          <span className="text-[10px] text-[#88998C] font-semibold">Reviewed ✓</span>
+                                        </div>
+                                      );
+                                    }
+
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenReviewModal(apt)}
+                                        className="px-3.5 py-1.5 bg-[#FEF9C3] hover:bg-[#FDE047] text-[#B45309] text-xs font-bold rounded-full border border-[#FDE047] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                      >
+                                        <Star className="w-3.5 h-3.5 fill-current" />
+                                        <span>Rate & Review Visit</span>
+                                      </button>
+                                    );
+                                  })()}
+                                </div>
+                              )}
                             </div>
                           ))
                       )}
@@ -2166,7 +2224,7 @@ export const ProfilePage: React.FC = () => {
                             <option value="">-- Choose a Veterinarian --</option>
                             {vetsList.map((vet) => (
                               <option key={vet.id} value={vet.id}>
-                                {vet.name || vet.fullName} ({vet.specialization} - ${vet.consultationFee ? vet.consultationFee.toFixed(2) : '50.00'})
+                                {vet.name || vet.fullName} ({vet.specialization} - {formatCurrency(vet.consultationFee ?? 50)})
                               </option>
                             ))}
                           </select>
@@ -2197,48 +2255,32 @@ export const ProfilePage: React.FC = () => {
                               <Loader2 className="w-3.5 h-3.5 animate-spin text-[#009E66]" /> Loading your pets...
                             </div>
                           ) : pets.length > 0 ? (
-                            <div className="space-y-2">
-                              <select
-                                value={selectedPetId ?? pets[0]?.id ?? ''}
-                                onChange={(e) => {
-                                  const val = Number(e.target.value);
-                                  setSelectedPetId(val);
-                                  if (val !== -1) {
-                                    const found = pets.find((p) => p.id === val);
-                                    if (found) setPetNameInput(found.name);
-                                  } else {
-                                    setPetNameInput('');
-                                  }
-                                }}
-                                className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C] cursor-pointer"
-                              >
-                                {pets.map((p) => (
-                                  <option key={p.id} value={p.id}>
-                                    {p.name} ({p.species}{p.breed ? ` - ${p.breed}` : ''})
-                                  </option>
-                                ))}
-                                <option value={-1}>+ Add a new pet name</option>
-                              </select>
-                              {selectedPetId === -1 && (
-                                <input
-                                  type="text"
-                                  required
-                                  placeholder="Enter new pet's name"
-                                  value={petNameInput}
-                                  onChange={(e) => setPetNameInput(e.target.value)}
-                                  className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
-                                />
-                              )}
-                            </div>
+                            <select
+                              value={selectedPetId ?? pets[0]?.id ?? ''}
+                              onChange={(e) => setSelectedPetId(Number(e.target.value))}
+                              className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C] cursor-pointer"
+                            >
+                              {pets.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name} ({p.species}{p.breed ? ` - ${p.breed}` : ''})
+                                </option>
+                              ))}
+                            </select>
                           ) : (
-                            <input
-                              type="text"
-                              required
-                              placeholder="Enter pet's name (e.g. Bella)"
-                              value={petNameInput}
-                              onChange={(e) => setPetNameInput(e.target.value)}
-                              className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
-                            />
+                            <div className="p-3 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs text-[#556658]">
+                              No registered pets found. Please{' '}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsBookingModalOpen(false);
+                                  setSearchParams({ tab: 'pets' });
+                                }}
+                                className="text-[#009E66] font-bold underline cursor-pointer"
+                              >
+                                add a pet under 'My Pets' tab
+                              </button>{' '}
+                              first.
+                            </div>
                           )}
                         </div>
 
@@ -2288,7 +2330,7 @@ export const ProfilePage: React.FC = () => {
                           <div className="p-3 bg-[#EFF8F0] border border-[#D5EAD9] rounded-xl flex items-center justify-between text-xs font-bold text-[#16241B]">
                             <span>Consultation Fee:</span>
                             <span className="text-sm font-black text-[#287A41]">
-                              ${vetsList.find((v) => v.id === selectedVetId)?.consultationFee ? vetsList.find((v) => v.id === selectedVetId)?.consultationFee?.toFixed(2) : '50.00'}
+                              {formatCurrency(vetsList.find((v) => v.id === selectedVetId)?.consultationFee ?? 50)}
                             </span>
                           </div>
                         )}
@@ -2308,6 +2350,87 @@ export const ProfilePage: React.FC = () => {
                         </button>
                       </form>
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* NOTIFICATIONS & ANNOUNCEMENTS TAB */}
+            {currentTab === 'notifications' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">Announcements & Notifications</h1>
+                  <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                    System updates, appointment confirmations, and platform announcements for your account.
+                  </p>
+                </div>
+
+                {notificationsLoading ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-20 rounded-2xl" />
+                    <Skeleton className="h-20 rounded-2xl" />
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <EmptyState
+                    icon={Bell}
+                    title="No Notifications Yet"
+                    description="You're all caught up! System announcements and booking updates will appear here."
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {notifications.map((n) => {
+                      const getIcon = () => {
+                        if (n.type === 'APPOINTMENT_CONFIRMED') return <CheckCircle2 className="w-5 h-5 text-[#287A41]" />;
+                        if (n.type === 'APPOINTMENT_REJECTED') return <AlertCircle className="w-5 h-5 text-[#DC2626]" />;
+                        if (n.type === 'NEW_VET') return <Stethoscope className="w-5 h-5 text-[#0284C7]" />;
+                        return <Bell className="w-5 h-5 text-[#EF7C3C]" />;
+                      };
+
+                      return (
+                        <div
+                          key={n.id}
+                          onClick={() => {
+                            if (!n.isRead) handleMarkAsRead(n.id);
+                          }}
+                          className={`p-4 rounded-2xl border transition-all flex items-start justify-between gap-4 cursor-pointer ${
+                            n.isRead
+                              ? 'bg-white border-[#EAE3D4]'
+                              : 'bg-[#FEFCE8] border-[#FEF08A] shadow-xs'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            <div className="p-2.5 rounded-xl bg-white border border-gray-100 shadow-2xs shrink-0">
+                              {getIcon()}
+                            </div>
+                            <div className="space-y-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-black text-[#16241B]">{n.title}</h4>
+                                {!n.isRead && (
+                                  <span className="w-2 h-2 rounded-full bg-[#009E66] shrink-0" title="Unread" />
+                                )}
+                              </div>
+                              <p className="text-xs text-[#556658] font-medium leading-relaxed">
+                                {n.message}
+                              </p>
+                              <span className="text-[10px] text-[#88998C] font-semibold block pt-0.5">
+                                {getRelativeTimeString(n.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteNotification(n.id);
+                            }}
+                            className="p-1.5 rounded-lg text-[#88998C] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                            title="Delete notification"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -2425,12 +2548,6 @@ export const ProfilePage: React.FC = () => {
                             onChange={(e) => setFormProfile({ ...formProfile, email: e.target.value })}
                             className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
                           />
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-[#556658] font-normal font-sans">
-                          <Info className="w-4 h-4 text-[#556658] shrink-0" />
-                          <span>
-                            Changing your email may require re-verification. You will be notified if additional steps are needed.
-                          </span>
                         </div>
                       </div>
 
@@ -2729,6 +2846,87 @@ export const ProfilePage: React.FC = () => {
           </section>
         </div>
       </main>
+
+      {/* Review Modal */}
+      {reviewModalApt && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-[#EDE7D9] shadow-2xl space-y-4 relative">
+            <button
+              onClick={() => setReviewModalApt(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <span className="text-xs font-bold text-[#EF7C3C] uppercase tracking-wider">Rate & Review Visit</span>
+              <h3 className="text-xl font-black text-[#16241B] mt-0.5">
+                How was your appointment?
+              </h3>
+              <p className="text-xs text-[#556658]">
+                Dr. {reviewModalApt.vetName || 'Veterinarian'} • {reviewModalApt.serviceName || 'Consultation'}
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] mb-2">
+                  Star Rating *
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="p-1 cursor-pointer transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`w-7 h-7 ${
+                          star <= reviewRating
+                            ? 'text-[#F5A623] fill-[#F5A623]'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm font-black text-[#16241B]">{reviewRating} / 5</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] mb-1.5">
+                  Written Review (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Share details about your experience..."
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-xs font-medium text-[#16241B] focus:outline-none focus:ring-2 focus:ring-[#009E66]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setReviewModalApt(null)}
+                  className="px-4 py-2 text-xs font-bold text-[#67796B] hover:bg-[#FAF8F3] rounded-full cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reviewSubmitting}
+                  className="px-6 py-2.5 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-full text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

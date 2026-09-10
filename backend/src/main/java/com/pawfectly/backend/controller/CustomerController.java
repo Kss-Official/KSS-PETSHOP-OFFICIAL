@@ -16,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customer")
-@PreAuthorize("hasRole('CUSTOMER')")
+@PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
 @RequiredArgsConstructor
 public class CustomerController {
 
@@ -141,6 +141,45 @@ public class CustomerController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(orderService.cancelCustomerOrder(id, userDetails.getId()));
+    }
+
+    private final VetReviewService vetReviewService;
+    private final NotificationService notificationService;
+
+    // --- Notifications ---
+    @GetMapping("/notifications")
+    public ResponseEntity<List<NotificationDto>> getNotifications(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(notificationService.getCustomerNotifications(userDetails.getId()));
+    }
+
+    @PatchMapping("/notifications/{id}/read")
+    public ResponseEntity<NotificationDto> markNotificationAsRead(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(notificationService.markAsRead(userDetails.getId(), id));
+    }
+
+    @DeleteMapping("/notifications/{id}")
+    public ResponseEntity<Map<String, Object>> deleteNotification(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        notificationService.deleteNotification(userDetails.getId(), id);
+        return ResponseEntity.ok(Map.of("message", "Notification deleted successfully.", "id", id));
+    }
+
+    // --- Reviews ---
+    @PostMapping("/reviews")
+    public ResponseEntity<VetReviewDto> createReview(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody VetReviewDto request) {
+        return new ResponseEntity<>(vetReviewService.createReview(userDetails.getId(), request), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/appointments/{id}/review")
+    public ResponseEntity<VetReviewDto> getReviewForAppointment(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(vetReviewService.getReviewForAppointment(id));
     }
 
     // --- Appointments ---

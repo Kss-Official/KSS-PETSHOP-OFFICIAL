@@ -23,6 +23,8 @@ public class ArticleDto {
 
     private String imageUrl;
     private String petType;
+    private String category;
+    private String excerpt;
 
     @Builder.Default
     private Boolean isFeatured = false;

@@ -46,6 +46,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     initAuth();
+
+    const handleUnauthorized = () => {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('pawfectly_token');
+      localStorage.removeItem('pawfectly_user');
+    };
+
+    window.addEventListener('auth-unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth-unauthorized', handleUnauthorized);
   }, []);
 
   const login = (authData: AuthResponse) => {

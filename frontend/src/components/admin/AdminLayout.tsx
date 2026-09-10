@@ -13,6 +13,7 @@ import {
   Users,
   BookOpen,
   Mail,
+  ShieldCheck,
   LogOut,
   User,
   ChevronDown,
@@ -310,14 +311,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
 
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Customers', path: '/admin/customers', icon: Users },
     { label: 'Products', path: '/admin/products', icon: Package },
     { label: 'Vets', path: '/admin/vets', icon: Stethoscope },
     { label: 'Services', path: '/admin/services', icon: Sparkles },
     { label: 'Orders', path: '/admin/orders', icon: ShoppingBag },
     { label: 'Appointments', path: '/admin/appointments', icon: Calendar },
-    { label: 'Customers', path: '/admin/customers', icon: Users },
     { label: 'Health Tips', path: '/admin/articles', icon: BookOpen },
     { label: 'Newsletter', path: '/admin/newsletter', icon: Mail },
+    { label: 'Insurance Quotes', path: '/admin/quotes', icon: ShieldCheck },
     { label: 'Profile', path: '/admin/settings', icon: User },
   ];
 

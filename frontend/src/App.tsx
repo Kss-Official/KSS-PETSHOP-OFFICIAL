@@ -3,8 +3,10 @@ import { flushSync } from 'react-dom';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import HomePage from './pages/customer/HomePage';
 import { FindVetPage } from './pages/customer/FindVetPage';
+import { VetProfilePage } from './pages/customer/VetProfilePage';
 import { ServicesPage } from './pages/customer/ServicesPage';
 import { HealthTipsPage } from './pages/customer/HealthTipsPage';
+import { ArticleDetailPage } from './pages/customer/ArticleDetailPage';
 import { PharmacyPage } from './pages/customer/PharmacyPage';
 import { InsurancePage } from './pages/customer/InsurancePage';
 import { ProfilePage } from './pages/customer/ProfilePage';
@@ -19,6 +21,7 @@ import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminCustomersPage } from './pages/admin/AdminCustomersPage';
 import { AdminArticlesPage } from './pages/admin/AdminArticlesPage';
 import { AdminNewsletterPage } from './pages/admin/AdminNewsletterPage';
+import { AdminInsuranceQuotesPage } from './pages/admin/AdminInsuranceQuotesPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AuthProvider } from './features/auth/AuthContext';
 import { AdminToastProvider } from './components/admin/AdminLayout';
@@ -69,8 +72,11 @@ function AnimatedRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/find-a-vet" element={<FindVetPage />} />
         <Route path="/vets" element={<FindVetPage />} />
+        <Route path="/vets/:id" element={<VetProfilePage />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/health-tips" element={<HealthTipsPage />} />
+        <Route path="/health-tips/:id" element={<ArticleDetailPage />} />
+        <Route path="/articles/:id" element={<ArticleDetailPage />} />
         <Route path="/pharmacy" element={<PharmacyPage />} />
         <Route path="/insurance" element={<InsurancePage />} />
         <Route path="/pet-insurance" element={<InsurancePage />} />
@@ -166,6 +172,14 @@ function AnimatedRoutes() {
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminNewsletterPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/quotes"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminInsuranceQuotesPage />
             </ProtectedRoute>
           }
         />
