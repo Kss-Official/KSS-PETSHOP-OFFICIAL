@@ -33,18 +33,19 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message?: string; status?: number }>) => {
-    if (!error.response) {
-      // Network failure / server unreachable
-      return Promise.reject(new Error('Network error: Unable to connect to server. Please check your connection.'));
-    }
-
-    if (error.response.status === 401) {
+    if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('pawfectly_token');
       localStorage.removeItem('pawfectly_user');
-      if (!window.location.pathname.includes('/login')) {
-        // Optionally redirect or dispatch event
-      }
+      window.dispatchEvent(new Event('auth-unauthorized'));
+      return Promise.reject(
+        new Error('Session expired or authentication failed. Please log in again.')
+      );
+    }
+
+    if (!error.response) {
+      // Network failure / server unreachable
+      return Promise.reject(new Error('Network error: Unable to connect to server. Please check your connection.'));
     }
 
     const message =

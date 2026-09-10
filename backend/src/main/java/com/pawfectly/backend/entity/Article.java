@@ -36,6 +36,12 @@ public class Article {
     @Column(name = "pet_type")
     private String petType;
 
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "excerpt", columnDefinition = "TEXT")
+    private String excerpt;
+
     @Builder.Default
     @Column(name = "is_featured", nullable = false)
     private Boolean isFeatured = false;

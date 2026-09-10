@@ -2,7 +2,6 @@ package com.pawfectly.backend.controller.admin;
 
 import com.pawfectly.backend.entity.NewsletterSubscriber;
 import com.pawfectly.backend.repository.NewsletterSubscriberRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

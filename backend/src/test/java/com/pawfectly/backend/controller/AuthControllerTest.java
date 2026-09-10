@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pawfectly.backend.dto.AuthRequest;
 import com.pawfectly.backend.dto.RegisterRequest;
 import com.pawfectly.backend.entity.Role;
-import com.pawfectly.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,8 +31,6 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +46,7 @@ class AuthControllerTest {
                 .email(uniqueEmail)
                 .password("testPassword123")
                 .role(Role.CUSTOMER)
-                .phone("+15551234567")
+                .phone("9555123456")
                 .build();
 
         mockMvc.perform(post("/api/auth/register")

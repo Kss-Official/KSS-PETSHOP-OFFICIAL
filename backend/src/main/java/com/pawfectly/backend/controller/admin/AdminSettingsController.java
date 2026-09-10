@@ -2,7 +2,6 @@ package com.pawfectly.backend.controller.admin;
 
 import com.pawfectly.backend.entity.User;
 import com.pawfectly.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

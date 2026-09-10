@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { getCloudinaryImageUrl } from '../../lib/utils';
+import { useAuth } from '../../features/auth/AuthContext';
+import api from '../../lib/axios';
 import {
   ShieldCheck,
   Clock,
@@ -22,10 +24,12 @@ import {
 } from 'lucide-react';
 
 export const InsurancePage: React.FC = () => {
+  const { user } = useAuth();
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [quoteFormData, setQuoteFormData] = useState({
+    customerName: '',
     petName: '',
     petType: 'Dog',
     ageYears: '2',
@@ -49,19 +53,43 @@ export const InsurancePage: React.FC = () => {
 
   const handleOpenQuote = (planName: string) => {
     setSelectedPlan(planName);
+    setQuoteFormData({
+      customerName: user?.name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      petName: '',
+      petType: 'Dog',
+      ageYears: '2',
+    });
     setIsQuoteModalOpen(true);
     setQuoteSubmitted(false);
   };
 
-  const handleSubmitQuote = (e: React.FormEvent) => {
+  const handleSubmitQuote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!quoteFormData.email || !quoteFormData.petName) return;
+    if (!quoteFormData.email || !quoteFormData.petName || !quoteFormData.customerName) {
+      showToast('Please fill in all required fields.');
+      return;
+    }
     setQuoteSubmitting(true);
-    setTimeout(() => {
-      setQuoteSubmitting(false);
+    try {
+      await api.post('/insurance/quote', {
+        customerName: quoteFormData.customerName,
+        customerEmail: quoteFormData.email,
+        customerPhone: quoteFormData.phone,
+        petName: quoteFormData.petName,
+        petSpecies: quoteFormData.petType,
+        petAge: parseInt(quoteFormData.ageYears) || 0,
+        selectedPlan: selectedPlan || 'Standard',
+      });
       setQuoteSubmitted(true);
       showToast(`Quote request for ${quoteFormData.petName} submitted successfully!`);
-    }, 500);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to submit quote request. Please try again.';
+      showToast(errorMsg);
+    } finally {
+      setQuoteSubmitting(false);
+    }
   };
 
   const plans = [
@@ -640,6 +668,20 @@ export const InsurancePage: React.FC = () => {
               </div>
             ) : (
               <form onSubmit={handleSubmitQuote} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1">
+                    Your Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Jane Doe"
+                    value={quoteFormData.customerName}
+                    onChange={(e) => setQuoteFormData({ ...quoteFormData, customerName: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1">
                     Pet Name

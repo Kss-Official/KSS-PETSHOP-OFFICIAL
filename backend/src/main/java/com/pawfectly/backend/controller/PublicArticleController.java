@@ -18,9 +18,10 @@ public class PublicArticleController {
     @GetMapping
     public ResponseEntity<List<ArticleDto>> getArticles(
             @RequestParam(required = false) String petType,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) Boolean featured,
             @RequestParam(required = false) String search) {
-        return ResponseEntity.ok(articleService.getArticles(petType, featured, search));
+        return ResponseEntity.ok(articleService.getArticles(petType, category, featured, search));
     }
 
     @GetMapping("/{id}")

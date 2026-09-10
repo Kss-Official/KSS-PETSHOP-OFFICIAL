@@ -68,6 +68,7 @@ export const AdminCustomersPage: React.FC = () => {
   const fetchCustomers = async () => {
     try {
       setIsLoading(true);
+      const res = await api.get('/admin/customers');
       const data = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
       setCustomers(data);
     } catch (err: any) {

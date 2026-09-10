@@ -52,6 +52,10 @@ public class Appointment {
     @Column(nullable = false)
     private AppointmentStatus status;
 
+    @Builder.Default
+    @Column(name = "payment_status", nullable = false)
+    private String paymentStatus = "UNPAID";
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

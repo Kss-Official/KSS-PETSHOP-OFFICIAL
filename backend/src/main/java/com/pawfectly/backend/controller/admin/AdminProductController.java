@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping({"/api/v1/admin/products", "/api/admin/products"})
+@RequestMapping("/api/v1/admin/products")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminProductController {
 

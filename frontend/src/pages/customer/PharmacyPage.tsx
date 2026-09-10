@@ -14,6 +14,7 @@ import {
   Heart,
   Pill,
   ShoppingBag,
+  ShoppingCart,
   Utensils,
   Scissors,
   Shield,
@@ -346,7 +347,7 @@ export const PharmacyPage: React.FC = () => {
 
             <button
               onClick={() => setActiveCategoryFilter('All')}
-              className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+              className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
             >
               <span>View all products</span>
             </button>
@@ -451,14 +452,6 @@ export const PharmacyPage: React.FC = () => {
                       <h3 className="text-xs sm:text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 leading-snug">
                         {product.name}
                       </h3>
-
-                      <div className="flex items-center gap-1.5 text-xs text-[#556658] pt-0.5">
-                        <Star className="w-3.5 h-3.5 fill-[#F5A623] text-[#F5A623]" />
-                        <span className="font-extrabold text-[#16241B]">
-                          {product.rating ? product.rating.toFixed(1) : '4.8'}
-                        </span>
-                        <span className="text-[11px]">({product.reviewsCount || 50})</span>
-                      </div>
                     </div>
 
                     <div className="pt-3 mt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2">
@@ -615,6 +608,22 @@ export const PharmacyPage: React.FC = () => {
 
       {/* 7. Footer */}
       <Footer />
+      {/* Floating Cart Button — only visible when cart has items */}
+      {isAuthenticated && Object.keys(cartItems).length > 0 && (() => {
+        const totalCount = Object.values(cartItems).reduce((sum, item) => sum + item.quantity, 0);
+        return (
+          <button
+            type="button"
+            onClick={() => navigate('/profile?tab=cart')}
+            aria-label={`View cart — ${totalCount} item${totalCount !== 1 ? 's' : ''}`}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#009E66] hover:bg-[#007A4F] text-white pl-3.5 pr-4 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 group"
+          >
+            <ShoppingCart className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-black tabular-nums">{totalCount}</span>
+          </button>
+        );
+      })()}
+
     </div>
   );
 };

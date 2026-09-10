@@ -93,6 +93,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/services/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/newsletter/subscribe").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/insurance/quote").permitAll()
                         
                         // Customer scoped endpoints - strictly CUSTOMER role only
                         .requestMatchers("/api/customer/**").hasRole("CUSTOMER")

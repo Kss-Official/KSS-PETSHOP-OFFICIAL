@@ -22,6 +22,7 @@ interface AppointmentRecord {
   consultationFee?: number;
   dateTime: string;
   status: string;
+  paymentStatus?: string;
   notes: string;
   hasMedicalRecord: boolean;
 }
@@ -70,6 +71,18 @@ export const AdminAppointmentsPage: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to update appointment status', err);
       const msg = err.response?.data?.message || 'Failed to update appointment status.';
+      showToast(msg, 'error');
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (id: number, paymentStatus: string) => {
+    try {
+      const res = await api.patch(`/admin/appointments/${id}/payment-status`, { paymentStatus });
+      showToast(res.data?.message || `Payment status updated to ${paymentStatus}.`);
+      fetchAppointments();
+    } catch (err: any) {
+      console.error('Failed to update payment status', err);
+      const msg = err.response?.data?.message || 'Failed to update payment status.';
       showToast(msg, 'error');
     }
   };
@@ -177,6 +190,42 @@ export const AdminAppointmentsPage: React.FC = () => {
       header: 'Status',
       sortable: true,
       render: (row) => <AdminStatusBadge status={row.status} />,
+    },
+    {
+      key: 'paymentStatus',
+      header: 'Payment Status',
+      sortable: true,
+      render: (row) => {
+        const ps = (row.paymentStatus || 'UNPAID').toUpperCase();
+        const isTerminal = ps === 'PAID' || ps === 'FAILED';
+
+        if (isTerminal) {
+          return (
+            <span
+              title={`Terminal state '${ps}' cannot be modified.`}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${
+                ps === 'PAID'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-red-50 text-red-700 border-red-200'
+              }`}
+            >
+              🔒 {ps}
+            </span>
+          );
+        }
+
+        return (
+          <select
+            value={ps}
+            onChange={(e) => handleUpdatePaymentStatus(row.id, e.target.value)}
+            className="text-xs font-bold px-2 py-1 bg-amber-50 text-amber-700 border border-amber-300 rounded-md focus:outline-none cursor-pointer"
+          >
+            <option value="UNPAID">UNPAID</option>
+            <option value="PAID">PAID</option>
+            <option value="FAILED">FAILED</option>
+          </select>
+        );
+      },
     },
     {
       key: 'actions',

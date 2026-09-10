@@ -46,7 +46,7 @@ class CustomerControllerTest {
                 .email(email)
                 .password("testPassword123")
                 .role(Role.CUSTOMER)
-                .phone("+1555" + (int)(Math.random() * 8999999 + 1000000))
+                .phone("955" + (int)(Math.random() * 8999999 + 1000000))
                 .build();
 
         MvcResult result = mockMvc.perform(post("/api/auth/register")
@@ -71,7 +71,7 @@ class CustomerControllerTest {
         UserProfileDto updateDto = UserProfileDto.builder()
                 .name("User A Updated")
                 .email("userA_updated_" + System.currentTimeMillis() + "@pawfectly.test")
-                .phone("+91 99999 88888")
+                .phone("9999988888")
                 .build();
 
         mockMvc.perform(put("/api/customer/profile")
@@ -80,7 +80,7 @@ class CustomerControllerTest {
                         .content(objectMapper.writeValueAsString(updateDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name", is("User A Updated")))
-                .andExpect(jsonPath("$.phone", is("+91 99999 88888")));
+                .andExpect(jsonPath("$.phone", is("9999988888")));
     }
 
     // --- Pets CRUD & Anti-IDOR ---

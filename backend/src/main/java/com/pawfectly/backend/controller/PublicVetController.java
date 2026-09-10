@@ -1,6 +1,8 @@
 package com.pawfectly.backend.controller;
 
 import com.pawfectly.backend.dto.VetDto;
+import com.pawfectly.backend.dto.VetReviewDto;
+import com.pawfectly.backend.service.VetReviewService;
 import com.pawfectly.backend.service.VetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import java.util.List;
 public class PublicVetController {
 
     private final VetService vetService;
+    private final VetReviewService vetReviewService;
 
     @GetMapping
     public ResponseEntity<List<VetDto>> getVets(
@@ -27,6 +30,11 @@ public class PublicVetController {
     @GetMapping("/{id}")
     public ResponseEntity<VetDto> getVetById(@PathVariable Long id) {
         return ResponseEntity.ok(vetService.getVetById(id));
+    }
+
+    @GetMapping("/{id}/reviews")
+    public ResponseEntity<List<VetReviewDto>> getReviewsForVet(@PathVariable Long id) {
+        return ResponseEntity.ok(vetReviewService.getReviewsForVet(id));
     }
 
     @GetMapping("/specializations")

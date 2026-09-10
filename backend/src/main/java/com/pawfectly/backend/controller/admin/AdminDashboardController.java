@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import java.util.concurrent.CompletableFuture;
+
 @RestController
 @RequestMapping({"/api/v1/admin/dashboard", "/api/admin/dashboard"})
 @PreAuthorize("hasRole('ADMIN')")
@@ -60,19 +62,33 @@ public class AdminDashboardController {
     public ResponseEntity<?> getStats() {
         LocalDateTime startOfMonth = LocalDateTime.now().with(TemporalAdjusters.firstDayOfMonth()).withHour(0).withMinute(0).withSecond(0);
 
-        long totalOrdersThisMonth = orderRepository.countOrdersSince(startOfMonth);
-        long pendingAppointments = appointmentRepository.countByStatus(AppointmentStatus.PENDING);
-        long totalCustomers = userRepository.countByRole(Role.CUSTOMER);
-        
-        BigDecimal orderRevenueThisMonth = orderRepository.sumRevenueSince(startOfMonth);
-        Double apptRevenueThisMonth = appointmentRepository.sumCompletedAppointmentRevenueSince(startOfMonth);
+        CompletableFuture<Long> totalOrdersFuture = CompletableFuture.supplyAsync(() -> orderRepository.countOrdersSince(startOfMonth));
+        CompletableFuture<Long> pendingApptsFuture = CompletableFuture.supplyAsync(() -> appointmentRepository.countByStatus(AppointmentStatus.PENDING));
+        CompletableFuture<Long> totalCustomersFuture = CompletableFuture.supplyAsync(() -> userRepository.countByRole(Role.CUSTOMER));
+        CompletableFuture<BigDecimal> orderRevFuture = CompletableFuture.supplyAsync(() -> orderRepository.sumRevenueSince(startOfMonth));
+        CompletableFuture<Double> apptRevFuture = CompletableFuture.supplyAsync(() -> appointmentRepository.sumCompletedAppointmentRevenueSince(startOfMonth));
+        CompletableFuture<Long> activeVetsFuture = CompletableFuture.supplyAsync(() -> vetRepository.countByIsActive(true));
+        CompletableFuture<Long> inactiveVetsFuture = CompletableFuture.supplyAsync(() -> vetRepository.countByIsActive(false));
+        CompletableFuture<List<Product>> lowStockFuture = CompletableFuture.supplyAsync(() -> productRepository.findLowStockProducts());
+
+        CompletableFuture.allOf(
+                totalOrdersFuture, pendingApptsFuture, totalCustomersFuture,
+                orderRevFuture, apptRevFuture, activeVetsFuture, inactiveVetsFuture, lowStockFuture
+        ).join();
+
+        long totalOrdersThisMonth = totalOrdersFuture.join();
+        long pendingAppointments = pendingApptsFuture.join();
+        long totalCustomers = totalCustomersFuture.join();
+
+        BigDecimal orderRevenueThisMonth = orderRevFuture.join();
+        Double apptRevenueThisMonth = apptRevFuture.join();
         BigDecimal totalRevenueThisMonth = (orderRevenueThisMonth != null ? orderRevenueThisMonth : BigDecimal.ZERO)
                 .add(BigDecimal.valueOf(apptRevenueThisMonth != null ? apptRevenueThisMonth : 0.0));
 
-        long activeVets = vetRepository.countByIsActive(true);
-        long inactiveVets = vetRepository.countByIsActive(false);
+        long activeVets = activeVetsFuture.join();
+        long inactiveVets = inactiveVetsFuture.join();
+        List<Product> lowStock = lowStockFuture.join();
 
-        List<Product> lowStock = productRepository.findLowStockProducts();
         List<Map<String, Object>> lowStockList = lowStock.stream().map(p -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", p.getId());
@@ -101,50 +117,60 @@ public class AdminDashboardController {
 
     @GetMapping("/monthly-revenue")
     public ResponseEntity<List<Map<String, Object>>> getMonthlyRevenue() {
-        List<Map<String, Object>> monthlyData = new ArrayList<>();
         YearMonth currentYearMonth = YearMonth.now();
         DateTimeFormatter shortMonthFormatter = DateTimeFormatter.ofPattern("MMM");
         DateTimeFormatter fullMonthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy");
 
-        // Last 6 months (5 months ago up to current month)
+        List<CompletableFuture<Map<String, Object>>> futures = new ArrayList<>();
+
+        // Parallelize 6-month calculation to eliminate sequential network latency
         for (int i = 5; i >= 0; i--) {
-            YearMonth targetMonth = currentYearMonth.minusMonths(i);
-            LocalDateTime start = targetMonth.atDay(1).atStartOfDay();
-            LocalDateTime end = targetMonth.plusMonths(1).atDay(1).atStartOfDay();
+            final int monthOffset = i;
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                YearMonth targetMonth = currentYearMonth.minusMonths(monthOffset);
+                LocalDateTime start = targetMonth.atDay(1).atStartOfDay();
+                LocalDateTime end = targetMonth.plusMonths(1).atDay(1).atStartOfDay();
 
-            List<Order> paidOrders = orderRepository.findPaidOrdersBetween(start, end);
-            BigDecimal orderRev = paidOrders.stream()
-                    .map(Order::getTotalAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                List<Order> paidOrders = orderRepository.findPaidOrdersBetween(start, end);
+                BigDecimal orderRev = paidOrders.stream()
+                        .map(Order::getTotalAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            List<Appointment> completedAppts = appointmentRepository.findCompletedAppointmentsBetween(start, end);
-            BigDecimal apptRev = completedAppts.stream()
-                    .map(a -> BigDecimal.valueOf(a.getVet() != null && a.getVet().getConsultationFee() != null ? a.getVet().getConsultationFee() : 50.0))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                List<Appointment> completedAppts = appointmentRepository.findCompletedAppointmentsBetween(start, end);
+                BigDecimal apptRev = completedAppts.stream()
+                        .map(a -> BigDecimal.valueOf(a.getVet() != null && a.getVet().getConsultationFee() != null ? a.getVet().getConsultationFee() : 50.0))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal totalRev = orderRev.add(apptRev);
+                BigDecimal totalRev = orderRev.add(apptRev);
 
-            Map<String, Object> monthMap = new HashMap<>();
-            monthMap.put("month", targetMonth.format(shortMonthFormatter));
-            monthMap.put("fullMonth", targetMonth.format(fullMonthFormatter));
-            monthMap.put("orderRevenue", orderRev);
-            monthMap.put("appointmentRevenue", apptRev);
-            monthMap.put("totalRevenue", totalRev);
-            monthMap.put("orderCount", paidOrders.size());
-            monthMap.put("appointmentCount", completedAppts.size());
-
-            monthlyData.add(monthMap);
+                Map<String, Object> monthMap = new HashMap<>();
+                monthMap.put("month", targetMonth.format(shortMonthFormatter));
+                monthMap.put("fullMonth", targetMonth.format(fullMonthFormatter));
+                monthMap.put("orderRevenue", orderRev);
+                monthMap.put("appointmentRevenue", apptRev);
+                monthMap.put("totalRevenue", totalRev);
+                monthMap.put("orderCount", paidOrders.size());
+                monthMap.put("appointmentCount", completedAppts.size());
+                return monthMap;
+            }));
         }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        List<Map<String, Object>> monthlyData = futures.stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(monthlyData);
     }
 
     @GetMapping("/recent-orders")
     public ResponseEntity<?> getRecentOrders() {
-        List<Map<String, Object>> recentOrders = orderRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
-                .limit(8)
-                .map(order -> {
+        List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc();
+        List<Order> limitedOrders = orders.stream().limit(8).collect(Collectors.toList());
+
+        List<CompletableFuture<Map<String, Object>>> futures = limitedOrders.stream()
+                .map(order -> CompletableFuture.supplyAsync(() -> {
                     List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
                     String itemName = "General Order";
                     if (!items.isEmpty() && items.get(0).getProduct() != null) {
@@ -164,7 +190,13 @@ public class AdminDashboardController {
                     map.put("itemCount", totalUnits > 0 ? totalUnits : items.size());
                     map.put("lineItemCount", items.size());
                     return map;
-                })
+                }))
+                .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        List<Map<String, Object>> recentOrders = futures.stream()
+                .map(CompletableFuture::join)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(recentOrders);

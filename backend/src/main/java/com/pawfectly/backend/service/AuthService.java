@@ -38,9 +38,12 @@ public class AuthService {
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
         String rawPhone = request.getPhone();
-        String cleanPhone = rawPhone != null ? rawPhone.replaceAll("\\D", "") : "";
-        if (cleanPhone.length() != 10) {
-            throw new BadRequestException("Phone number must be exactly 10 digits.");
+        String cleanPhone = null;
+        if (rawPhone != null && !rawPhone.isBlank()) {
+            cleanPhone = rawPhone.replaceAll("\\D", "");
+            if (cleanPhone.length() != 10) {
+                throw new BadRequestException("Phone number must be exactly 10 digits.");
+            }
         }
 
         User user = User.builder()

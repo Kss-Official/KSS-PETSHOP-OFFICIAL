@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,7 +57,6 @@ public class OrderService {
         }
 
         BigDecimal total = BigDecimal.ZERO;
-        List<OrderItem> orderItems = new ArrayList<>();
 
         for (CartItem item : cartItems) {
             Product product = item.getProduct();

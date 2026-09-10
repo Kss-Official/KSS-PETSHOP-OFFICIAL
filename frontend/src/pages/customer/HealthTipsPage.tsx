@@ -4,7 +4,7 @@ import { Footer } from '../../components/layout/Footer';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl } from '../../lib/utils';
+import { getCloudinaryImageUrl, getArticleImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import {
   Search,
@@ -35,15 +35,11 @@ interface ArticleDto {
   imageUrl?: string;
   publishedAt?: string;
   readTimeMinutes?: number;
-  featured?: boolean;
+  isFeatured?: boolean;
 }
 
-const resolveArticleImageUrl = (photoUrl?: string): string => {
-  if (!photoUrl) return getCloudinaryImageUrl('health_tips_hero');
-  if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-    return photoUrl;
-  }
-  return getCloudinaryImageUrl(photoUrl);
+const resolveArticleImageUrl = (photoUrl?: string, title?: string): string => {
+  return getArticleImageUrl(title, photoUrl);
 };
 
 export const HealthTipsPage: React.FC = () => {
@@ -380,7 +376,7 @@ export const HealthTipsPage: React.FC = () => {
                 setActiveTab('All Tips');
                 setSearchQuery('');
               }}
-              className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+              className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
             >
               <span>View all</span>
             </button>
@@ -454,7 +450,7 @@ export const HealthTipsPage: React.FC = () => {
                     >
                       <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3">
                         <img
-                          src={resolveArticleImageUrl(tip.imageUrl)}
+                          src={resolveArticleImageUrl(tip.imageUrl, tip.title)}
                           alt={tip.title}
                           className="w-full h-full object-cover"
                         />
@@ -539,7 +535,7 @@ export const HealthTipsPage: React.FC = () => {
                 onClick={() => {
                   setSelectedPetType(null);
                 }}
-                className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+                className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
               >
                 <span>View all articles</span>
               </button>
@@ -622,7 +618,7 @@ export const HealthTipsPage: React.FC = () => {
                       >
                         <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3 border border-[#F0EAE1]">
                           <img
-                            src={resolveArticleImageUrl(tip.imageUrl)}
+                            src={resolveArticleImageUrl(tip.imageUrl, tip.title)}
                             alt={tip.title}
                             className="w-full h-full object-cover"
                           />

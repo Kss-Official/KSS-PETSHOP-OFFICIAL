@@ -21,24 +21,31 @@ public class ArticleService {
     private final ArticleRepository articleRepository;
 
     @Transactional(readOnly = true)
-    public List<ArticleDto> getArticles(String petType, Boolean featured, String search) {
+    public List<ArticleDto> getArticles(String petType, String category, Boolean featured, String search) {
         List<Article> articles = articleRepository.findAll();
 
         if (featured != null && featured) {
-            articles = articles.stream().filter(Article::getIsFeatured).collect(Collectors.toList());
+            articles = articles.stream().filter(a -> Boolean.TRUE.equals(a.getIsFeatured())).collect(Collectors.toList());
+        }
+
+        if (category != null && !category.isBlank() && !category.equalsIgnoreCase("All") && !category.equalsIgnoreCase("All Tips")) {
+            articles = articles.stream()
+                    .filter(a -> a.getCategory() != null && a.getCategory().equalsIgnoreCase(category.trim()))
+                    .collect(Collectors.toList());
         }
 
         if (petType != null && !petType.isBlank() && !petType.equalsIgnoreCase("All") && !petType.equalsIgnoreCase("All Tips")) {
             articles = articles.stream()
-                    .filter(a -> a.getPetType() != null && a.getPetType().equalsIgnoreCase(petType))
+                    .filter(a -> a.getPetType() != null && a.getPetType().equalsIgnoreCase(petType.trim()))
                     .collect(Collectors.toList());
         }
 
         if (search != null && !search.isBlank()) {
             String lower = search.toLowerCase().trim();
             articles = articles.stream()
-                    .filter(a -> a.getTitle().toLowerCase().contains(lower) ||
-                            a.getContent().toLowerCase().contains(lower))
+                    .filter(a -> (a.getTitle() != null && a.getTitle().toLowerCase().contains(lower)) ||
+                            (a.getContent() != null && a.getContent().toLowerCase().contains(lower)) ||
+                            (a.getCategory() != null && a.getCategory().toLowerCase().contains(lower)))
                     .collect(Collectors.toList());
         }
 
@@ -59,6 +66,8 @@ public class ArticleService {
                 .content(dto.getContent())
                 .imageUrl(dto.getImageUrl())
                 .petType(dto.getPetType())
+                .category(dto.getCategory() != null ? dto.getCategory() : "Preventive Care")
+                .excerpt(dto.getExcerpt())
                 .isFeatured(dto.getIsFeatured() != null ? dto.getIsFeatured() : false)
                 .publishedAt(dto.getPublishedAt() != null ? dto.getPublishedAt() : LocalDateTime.now())
                 .build();
@@ -73,10 +82,12 @@ public class ArticleService {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Article not found with id: " + id));
 
-        article.setTitle(dto.getTitle());
-        article.setContent(dto.getContent());
+        if (dto.getTitle() != null) article.setTitle(dto.getTitle());
+        if (dto.getContent() != null) article.setContent(dto.getContent());
         if (dto.getImageUrl() != null) article.setImageUrl(dto.getImageUrl());
         if (dto.getPetType() != null) article.setPetType(dto.getPetType());
+        if (dto.getCategory() != null) article.setCategory(dto.getCategory());
+        if (dto.getExcerpt() != null) article.setExcerpt(dto.getExcerpt());
         if (dto.getIsFeatured() != null) article.setIsFeatured(dto.getIsFeatured());
         if (dto.getPublishedAt() != null) article.setPublishedAt(dto.getPublishedAt());
 
@@ -100,6 +111,8 @@ public class ArticleService {
                 .content(article.getContent())
                 .imageUrl(article.getImageUrl())
                 .petType(article.getPetType())
+                .category(article.getCategory() != null ? article.getCategory() : "Preventive Care")
+                .excerpt(article.getExcerpt())
                 .isFeatured(article.getIsFeatured())
                 .publishedAt(article.getPublishedAt())
                 .build();

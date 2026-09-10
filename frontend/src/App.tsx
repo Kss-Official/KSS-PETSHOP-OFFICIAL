@@ -19,6 +19,7 @@ import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminCustomersPage } from './pages/admin/AdminCustomersPage';
 import { AdminArticlesPage } from './pages/admin/AdminArticlesPage';
 import { AdminNewsletterPage } from './pages/admin/AdminNewsletterPage';
+import { AdminInsuranceQuotesPage } from './pages/admin/AdminInsuranceQuotesPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AuthProvider } from './features/auth/AuthContext';
 import { AdminToastProvider } from './components/admin/AdminLayout';
@@ -166,6 +167,14 @@ function AnimatedRoutes() {
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminNewsletterPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/quotes"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminInsuranceQuotesPage />
             </ProtectedRoute>
           }
         />

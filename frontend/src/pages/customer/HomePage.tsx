@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { CtaBanner } from '../../components/layout/CtaBanner';
-import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
+import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency, getConsultationFeeINR } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
@@ -101,16 +101,20 @@ export const HomePage: React.FC = () => {
     fetchHomeData();
   }, []);
 
-  const filteredVets = vets.filter((vet) => {
-    if (activeCategory === 'All') return true;
-    const petLower = activeCategory.toLowerCase();
-    if (vet.petTypes && vet.petTypes.toLowerCase().includes(petLower)) return true;
-    if (activeCategory === 'Exotic Pets' && (
-      (vet.specialization && vet.specialization.toLowerCase().includes('exotic')) ||
-      (vet.petTypes && (vet.petTypes.toLowerCase().includes('bird') || vet.petTypes.toLowerCase().includes('rabbit') || vet.petTypes.toLowerCase().includes('exotic')))
-    )) return true;
-    return false;
-  });
+  const filteredVets = (() => {
+    const matched = vets.filter((vet) => {
+      if (activeCategory === 'All') return true;
+      const petLower = activeCategory.toLowerCase();
+      // Primary: match against petTypes string from DB
+      if (vet.petTypes && vet.petTypes.toLowerCase().includes(petLower)) return true;
+      // Secondary: for Exotic Pets, also match by specialization keyword
+      if (activeCategory === 'Exotic Pets' &&
+        vet.specialization && vet.specialization.toLowerCase().includes('exotic')) return true;
+      return false;
+    });
+    // 'All' shows every vet; individual species tabs are capped at 4
+    return activeCategory === 'All' ? matched : matched.slice(0, 4);
+  })();
 
   const handleVetScroll = () => {
     if (vetScrollRef.current) {
@@ -158,7 +162,7 @@ export const HomePage: React.FC = () => {
       defaultImg = avatar4Url;
     }
 
-    const img = iconUrl ? getCloudinaryImageUrl(iconUrl) : defaultImg;
+    const img = defaultImg || (iconUrl ? getCloudinaryImageUrl(iconUrl) : '');
     return { icon, badgeBg, img };
   };
 
@@ -505,15 +509,9 @@ export const HomePage: React.FC = () => {
                           <span>({vet.reviewsCount || 58} reviews)</span>
                           <span>•</span>
                           <span>{vet.experienceYears || 7}+ yrs exp</span>
-                          {vet.petTypes && (
-                            <>
-                              <span>•</span>
-                              <span className="text-[#287A41] font-bold">🐾 {vet.petTypes}</span>
-                            </>
-                          )}
                         </div>
-                        <p className="font-semibold text-[#16241B] pt-0.5 flex items-center gap-1">
-                          <span className="text-[#3FA65C]">📍</span> {vet.city || 'Bangalore, KA'} • <span className="font-bold text-[#287A41]">{vet.consultationFee ? formatCurrency(vet.consultationFee) : '₹40 / visit'}</span>
+                        <p className="font-bold text-[#287A41] pt-0.5 text-xs">
+                          {formatCurrency(getConsultationFeeINR(vet.experienceYears))} / visit
                         </p>
                       </div>
                     </Card>

@@ -13,6 +13,7 @@ import {
   Users,
   BookOpen,
   Mail,
+  ShieldCheck,
   LogOut,
   User,
   ChevronDown,
@@ -318,6 +319,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
     { label: 'Customers', path: '/admin/customers', icon: Users },
     { label: 'Health Tips', path: '/admin/articles', icon: BookOpen },
     { label: 'Newsletter', path: '/admin/newsletter', icon: Mail },
+    { label: 'Insurance Quotes', path: '/admin/quotes', icon: ShieldCheck },
     { label: 'Profile', path: '/admin/settings', icon: User },
   ];
 

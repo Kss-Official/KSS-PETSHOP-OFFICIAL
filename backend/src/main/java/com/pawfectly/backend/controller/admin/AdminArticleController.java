@@ -4,7 +4,6 @@ package com.pawfectly.backend.controller.admin;
 import com.pawfectly.backend.entity.Article;
 import com.pawfectly.backend.repository.ArticleRepository;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,6 +41,8 @@ public class AdminArticleController {
         article.setId(null);
         if (article.getIsFeatured() == null)
             article.setIsFeatured(false);
+        if (article.getCategory() == null)
+            article.setCategory("Preventive Care");
         if (article.getPublishedAt() == null)
             article.setPublishedAt(LocalDateTime.now());
         Article saved = articleRepository.save(article);
@@ -56,6 +57,10 @@ public class AdminArticleController {
                     article.setContent(articleDetails.getContent());
                     article.setImageUrl(articleDetails.getImageUrl());
                     article.setPetType(articleDetails.getPetType());
+                    if (articleDetails.getCategory() != null)
+                        article.setCategory(articleDetails.getCategory());
+                    if (articleDetails.getExcerpt() != null)
+                        article.setExcerpt(articleDetails.getExcerpt());
                     if (articleDetails.getIsFeatured() != null)
                         article.setIsFeatured(articleDetails.getIsFeatured());
                     Article updated = articleRepository.save(article);
