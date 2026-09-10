@@ -39,7 +39,7 @@ public class SecurityConfig {
     private final AccessDeniedHandlerJwt accessDeniedHandler;
     private final AuthTokenFilter authTokenFilter;
 
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://localhost:3001}")
+    @Value("${app.cors.allowed-origins:https://kss-petshop-official.vercel.app,http://localhost:5173,http://localhost:3000,http://localhost:3001}")
     private String allowedOrigins;
 
     @Bean

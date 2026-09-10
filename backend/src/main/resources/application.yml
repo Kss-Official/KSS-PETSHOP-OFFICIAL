@@ -1,15 +1,15 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
     name: pawfectly-backend
 
   datasource:
-    # Local MySQL or a managed MySQL instance (RDS, PlanetScale, etc.) - adjust host/port/db name
-    url: ${DB_URL:jdbc:mysql://localhost:3306/pawfectly?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:12345}
+    # Supports custom DB_URL, Railway MYSQL_URL / DATABASE_URL, or local fallback
+    url: ${DB_URL:${MYSQL_URL:${DATABASE_URL:jdbc:mysql://localhost:3306/pawfectly?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true}}}
+    username: ${DB_USERNAME:${MYSQL_USER:${MYSQLUSER:root}}}
+    password: ${DB_PASSWORD:${MYSQL_PASSWORD:${MYSQLPASSWORD:12345}}}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -39,4 +39,4 @@ app:
     expiration-ms: ${JWT_EXPIRATION:${JWT_EXPIRATION_MS:86400000}} # 24h
 
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:5174,http://localhost:3000,http://localhost:3001}
+    allowed-origins: ${CORS_ORIGINS:https://kss-petshop-official.vercel.app,http://localhost:5173,http://localhost:5174,http://localhost:3000,http://localhost:3001}
