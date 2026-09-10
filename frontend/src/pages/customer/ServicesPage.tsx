@@ -347,26 +347,26 @@ export const ServicesPage: React.FC = () => {
                       <StepIcon className="w-9 h-9 sm:w-10 sm:h-10 text-[#16241B]" />
                     </div>
 
-                  <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#16241B] text-white text-[11px] font-black flex items-center justify-center shadow-xs">
-                    {stepItem.step}
-                  </span>
-                </div>
-
-                <h3 className="text-base font-black text-[#16241B]">
-                  {stepItem.title}
-                </h3>
-                <p className="text-xs text-[#556658] font-medium max-w-[220px] leading-relaxed mt-1.5">
-                  {stepItem.description}
-                </p>
-
-                {index < howItWorksSteps.length - 1 && (
-                  <div className="hidden md:flex absolute top-10 -right-4 lg:-right-6 w-8 lg:w-12 items-center justify-center pointer-events-none z-10 text-[#16241B]/40">
-                    <ArrowRight className="w-5 h-5 text-[#3FA65C]" />
+                    <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#16241B] text-white text-[11px] font-black flex items-center justify-center shadow-xs">
+                      {stepItem.step}
+                    </span>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  <h3 className="text-base font-black text-[#16241B]">
+                    {stepItem.title}
+                  </h3>
+                  <p className="text-xs text-[#556658] font-medium max-w-[220px] leading-relaxed mt-1.5">
+                    {stepItem.description}
+                  </p>
+
+                  {index < howItWorksSteps.length - 1 && (
+                    <div className="hidden md:flex absolute top-10 -right-4 lg:-right-6 w-8 lg:w-12 items-center justify-center pointer-events-none z-10 text-[#16241B]/40">
+                      <ArrowRight className="w-5 h-5 text-[#3FA65C]" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -399,12 +399,12 @@ export const ServicesPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-5 flex justify-center items-center relative z-20">
-                <div className="w-full max-w-[340px] aspect-square rounded-3xl overflow-hidden border-2 border-white/60 shadow-lg bg-white/90">
+              <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
+                <div className="relative w-full max-w-[270px] sm:max-w-[300px] h-[200px] sm:h-[280px] flex justify-center items-center overflow-visible">
                   <img
-                    src={getCloudinaryImageUrl('cta_cat_sunglasses_flawless_seamless')}
-                    alt="Corgi with Sunglasses"
-                    className="w-full h-full object-cover rounded-3xl"
+                    src={getCloudinaryImageUrl('services_cta')}
+                    alt="Pet Services Care"
+                    className="relative z-10 w-[138%] max-w-[350px] h-auto object-contain scale-115 -mt-16 -mb-4 pointer-events-none drop-shadow-lg"
                   />
                 </div>
               </div>

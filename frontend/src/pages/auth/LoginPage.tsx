@@ -1,25 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/Button';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthContext';
 import apiClient from '../../lib/axios';
 import type { AuthResponse } from '../../features/auth/types';
-import { Mail, Lock, User as UserIcon, Phone, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  User as UserIcon,
+  Phone,
+  ArrowRight,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 
-export const LoginPage: React.FC = () => {
-  const [isRegister, setIsRegister] = useState(false);
+interface LoginPageProps {
+  initialMode?: 'login' | 'register';
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ initialMode }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { login, isAuthenticated, user } = useAuth();
+  const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
+
+  const [isRegister, setIsRegister] = useState<boolean>(() => {
+    if (initialMode === 'register') return true;
+    return location.pathname === '/register';
+  });
+
+  useEffect(() => {
+    if (initialMode) {
+      setIsRegister(initialMode === 'register');
+    } else {
+      setIsRegister(location.pathname === '/register');
+    }
+  }, [location.pathname, initialMode]);
+
+  // Form Fields State
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(true);
+
+  // Password Visibility Toggle State
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Status State
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { login, isAuthenticated, user } = useAuth();
-  const navigate = useNavigate();
-  const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
+  const handleToggleMode = (mode: 'login' | 'register') => {
+    setIsRegister(mode === 'register');
+    setErrorMessage(null);
+    window.history.replaceState(null, '', mode === 'register' ? '/register' : '/login');
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setIsRegister(window.location.pathname === '/register');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -34,17 +80,32 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    setLoading(true);
 
-    try {
-      if (isRegister) {
-        const cleanPhone = phone.replace(/\D/g, '');
-        if (cleanPhone.length !== 10) {
-          setErrorMessage('Phone number must be exactly 10 digits.');
-          setLoading(false);
-          return;
-        }
+    if (isRegister) {
+      if (!name.trim()) {
+        setErrorMessage('Please enter your full name.');
+        return;
+      }
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        setErrorMessage('Phone number must be exactly 10 digits.');
+        return;
+      }
+      if (password.length < 6) {
+        setErrorMessage('Password must be at least 6 characters long.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match.');
+        return;
+      }
+      if (!agreeTerms) {
+        setErrorMessage('You must agree to the Terms & Privacy Policy.');
+        return;
+      }
 
+      setLoading(true);
+      try {
         const response = await apiClient.post<AuthResponse>('/auth/register', {
           name,
           email,
@@ -58,7 +119,19 @@ export const LoginPage: React.FC = () => {
         } else {
           navigate('/profile', { replace: true });
         }
-      } else {
+      } catch (err: unknown) {
+        const error = err as Error;
+        setErrorMessage(error.message || 'Registration failed. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      if (!email.trim() || !password) {
+        setErrorMessage('Please enter your email and password.');
+        return;
+      }
+      setLoading(true);
+      try {
         const response = await apiClient.post<AuthResponse>('/auth/login', {
           email,
           password,
@@ -69,189 +142,256 @@ export const LoginPage: React.FC = () => {
         } else {
           navigate('/profile', { replace: true });
         }
+      } catch (err: unknown) {
+        const error = err as Error;
+        setErrorMessage(error.message || 'Authentication failed. Please check your credentials.');
+      } finally {
+        setLoading(false);
       }
-    } catch (err: unknown) {
-      const error = err as Error;
-      setErrorMessage(error.message || 'Authentication failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] flex flex-col font-sans">
-      <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16">
-        <div className="bg-white rounded-[32px] p-8 sm:p-12 max-w-md w-full border border-[#EDE7D9] shadow-xl space-y-6">
-          {/* Logo Brand Header */}
-          <div className="flex justify-center mb-2">
-            <a
-              href="/"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/');
-              }}
-              className="flex items-center gap-2.5 hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              <img
-                src={logoUrl}
-                alt="Pawfectly Logo"
-                className="w-9 h-9 rounded-full object-cover shadow-xs"
-              />
-              <span className="text-2xl font-black tracking-tight text-[#16241B]">
-                Pawfectly<span className="text-[#EF7C3C]">.</span>
-              </span>
-            </a>
-          </div>
-          <div className="text-center space-y-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider">
-              {isRegister ? 'JOIN PAWFECTLY' : 'WELCOME BACK'}
+    <div
+      className="h-screen w-full overflow-hidden bg-cover bg-center bg-no-repeat flex items-center justify-center p-3 sm:p-4 font-sans"
+      style={{
+        backgroundImage: `url('https://res.cloudinary.com/vphylrop/image/upload/v1788939755/ChatGPT_Image_Sep_9_2026_01_10_44_PM.png')`,
+      }}
+    >
+      {/* Centered White Card Container */}
+      <div className="bg-white rounded-[24px] p-5 sm:p-6 lg:p-7 max-w-[440px] w-full border border-[#EDE7D9] shadow-2xl space-y-3.5">
+        {/* Logo Row at Top Center */}
+        <div className="flex flex-col items-center justify-center gap-1.5">
+          <div className="flex items-center gap-2 select-none">
+            <img
+              src={logoUrl}
+              alt="Pawfectly Logo"
+              className="w-8 h-8 rounded-full object-cover shadow-xs"
+            />
+            <span className="text-xl sm:text-2xl font-black tracking-tight text-[#1F5C2E]">
+              Pawfectly<span className="text-[#E8792A]">.</span>
             </span>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">
-              {isRegister ? 'Create Your Account' : 'Log In to Pawfectly'}
-            </h1>
-            <p className="text-xs sm:text-sm text-[#556658] font-medium">
-              {isRegister
-                ? 'Register to manage your pets, bookings, and pharmacy orders.'
-                : 'Access your pet profiles, appointment history, and order tracking.'}
-            </p>
           </div>
 
-          {errorMessage && (
-            <div className="p-4 rounded-2xl bg-[#FFF5F5] border border-[#FED7D7] text-xs font-bold text-[#E53E3E] text-center">
-              {errorMessage}
+          {/* Status Badge directly under logo */}
+          <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-[#E6F4E8] text-[#1F5C2E] text-[10px] font-black uppercase tracking-wider mt-0.5">
+            {isRegister ? 'JOIN THE PAWFECTLY FAMILY' : 'WELCOME BACK'}
+          </span>
+        </div>
+
+        {/* Headings & Subtext */}
+        <div className="text-center space-y-1">
+          <h1 className="text-xl sm:text-2xl font-black text-[#1F5C2E] tracking-tight">
+            {isRegister ? 'Create Account' : 'Log In'}
+          </h1>
+          <p className="text-xs text-[#667085] font-normal leading-tight">
+            {isRegister
+              ? 'Join us and make every moment with your pet even more special.'
+              : 'Access your pet profiles, appointments, orders, and more.'}
+          </p>
+        </div>
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="p-2.5 rounded-xl bg-[#FDF2F2] border border-[#F87171]/30 text-xs font-bold text-[#DC2626] text-center">
+            {errorMessage}
+          </div>
+        )}
+
+        {/* Form Fields */}
+        <form onSubmit={handleSubmit} className="space-y-2.5">
+          {/* REGISTER: Field 1 - Full Name */}
+          {isRegister && (
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1F5C2E] mb-1 block">
+                FULL NAME
+              </label>
+              <div className="relative">
+                <UserIcon className="w-3.5 h-3.5 text-[#88998C] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Full Name"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#F2F6F0] border border-[#E2EADF] text-xs text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-2 focus:ring-[#1F5C2E] focus:bg-white transition-all font-medium"
+                />
+              </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isRegister && (
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1.5">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <UserIcon className="w-4 h-4 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Alex Morgan"
-                    className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
-                  />
-                </div>
-              </div>
-            )}
+          {/* EMAIL ADDRESS Field */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#1F5C2E] mb-1 block">
+              EMAIL ADDRESS
+            </label>
+            <div className="relative">
+              <Mail className="w-3.5 h-3.5 text-[#88998C] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={isRegister ? 'Email Address' : 'Enter your email address'}
+                className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#F2F6F0] border border-[#E2EADF] text-xs text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-2 focus:ring-[#1F5C2E] focus:bg-white transition-all font-medium"
+              />
+            </div>
+          </div>
 
+          {/* REGISTER: Field 3 - Phone Number */}
+          {isRegister && (
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1.5">
-                Email Address
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1F5C2E] mb-1 block">
+                PHONE NUMBER
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                <Phone className="w-3.5 h-3.5 text-[#88998C] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="email"
+                  type="tel"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="alex@pawfectly.com"
-                  className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
+                  maxLength={10}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="Phone Number"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#F2F6F0] border border-[#E2EADF] text-xs text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-2 focus:ring-[#1F5C2E] focus:bg-white transition-all font-medium"
                 />
               </div>
             </div>
+          )}
 
-            {isRegister && (
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1.5">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="9876543210"
-                    className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C]"
-                  />
-                </div>
-                <span className="text-[11px] text-[#88998C] font-medium block mt-1">
-                  Must be a valid 10-digit mobile number.
-                </span>
-              </div>
-            )}
+          {/* PASSWORD Field */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#1F5C2E] mb-1 block">
+              PASSWORD
+            </label>
+            <div className="relative">
+              <Lock className="w-3.5 h-3.5 text-[#88998C] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={isRegister ? 'Password' : 'Enter your password'}
+                className="w-full pl-9 pr-9 py-2 rounded-lg bg-[#F2F6F0] border border-[#E2EADF] text-xs text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-2 focus:ring-[#1F5C2E] focus:bg-white transition-all font-medium"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#1F5C2E] cursor-pointer transition-colors"
+                aria-label="Toggle password visibility"
+              >
+                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
 
+          {/* REGISTER: Field 5 - Confirm Password */}
+          {isRegister && (
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1.5">
-                Password
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1F5C2E] mb-1 block">
+                CONFIRM PASSWORD
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Lock className="w-3.5 h-3.5 text-[#88998C] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? 'text' : 'password'}
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-11 pr-11 py-3 rounded-2xl bg-[#FAF6EE] border border-[#E5DFCE] text-sm text-[#16241B] focus:outline-hidden focus:ring-2 focus:ring-[#3FA65C] transition-colors"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm Password"
+                  className="w-full pl-9 pr-9 py-2 rounded-lg bg-[#F2F6F0] border border-[#E2EADF] text-xs text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-2 focus:ring-[#1F5C2E] focus:bg-white transition-all font-medium"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#16241B] p-1 rounded-lg focus:outline-hidden transition-colors cursor-pointer"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#1F5C2E] cursor-pointer transition-colors"
+                  aria-label="Toggle confirm password visibility"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
-              {isRegister && (
-                <span className="text-[11px] text-[#88998C] font-medium block mt-1">
-                  Must be at least 8 characters long.
-                </span>
-              )}
             </div>
+          )}
 
-            <div className="pt-2">
-              <Button
-                variant="primary"
-                size="lg"
-                type="submit"
-                disabled={loading}
-                className="w-full justify-center flex items-center gap-2"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>{isRegister ? 'Create Account' : 'Sign In'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </Button>
+          {/* REGISTER: Terms & Privacy Checkbox Row */}
+          {isRegister && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <input
+                id="terms-checkbox"
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                className="w-3.5 h-3.5 rounded text-[#1F5C2E] focus:ring-[#1F5C2E] accent-[#1F5C2E] cursor-pointer"
+              />
+              <label htmlFor="terms-checkbox" className="text-[11px] text-[#667085] font-medium cursor-pointer">
+                I agree to the{' '}
+                <a
+                  href="#terms"
+                  onClick={(e) => e.preventDefault()}
+                  className="text-[#1F5C2E] font-bold hover:underline cursor-pointer"
+                >
+                  Terms & Privacy Policy
+                </a>
+              </label>
             </div>
-          </form>
+          )}
 
-          <div className="pt-4 border-t border-[#F0EAE1] text-center space-y-3">
+          {/* Primary CTA Button */}
+          <div className="pt-1">
             <button
-              type="button"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setErrorMessage(null);
-              }}
-              className="text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors cursor-pointer"
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-5 rounded-full bg-[#1F5C2E] hover:bg-[#184924] text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
             >
-              {isRegister
-                ? 'Already have an account? Log In'
-                : "Don't have an account? Register"}
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>{isRegister ? 'Create Account' : 'Log In'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
+        </form>
+
+        {/* Divider */}
+        <div className="relative flex items-center justify-center my-2.5">
+          <div className="w-full border-t border-[#E5E9E3]" />
+          <span className="absolute bg-white px-2.5 text-[10px] font-bold text-[#88998C] uppercase tracking-wider">
+            OR
+          </span>
         </div>
-      </main>
+
+        {/* Bottom Link Line */}
+        <div className="text-center pt-0.5">
+          <p className="text-xs text-[#667085] font-medium">
+            {isRegister ? (
+              <>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => handleToggleMode('login')}
+                  className="font-bold text-[#1F5C2E] hover:underline cursor-pointer"
+                >
+                  Log In
+                </button>
+              </>
+            ) : (
+              <>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => handleToggleMode('register')}
+                  className="font-bold text-[#1F5C2E] hover:underline cursor-pointer"
+                >
+                  Register
+                </button>
+              </>
+            )}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

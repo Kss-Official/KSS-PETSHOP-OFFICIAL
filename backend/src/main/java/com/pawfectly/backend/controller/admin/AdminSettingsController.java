@@ -15,7 +15,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/v1/admin/settings", "/api/admin/settings"})
-@RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminSettingsController {
 

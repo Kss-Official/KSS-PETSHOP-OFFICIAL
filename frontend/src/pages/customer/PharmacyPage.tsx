@@ -5,7 +5,7 @@ import { Footer } from '../../components/layout/Footer';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl } from '../../lib/utils';
+import { getCloudinaryImageUrl, formatCurrency, getWishlistItems, toggleWishlistItem } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
 import {
@@ -88,13 +88,26 @@ export const PharmacyPage: React.FC = () => {
     }
   };
 
+  const syncWishlistState = () => {
+    const items = getWishlistItems();
+    const map: Record<number, boolean> = {};
+    items.forEach((item) => {
+      map[item.id] = true;
+    });
+    setWishlist(map);
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCart();
+    syncWishlistState();
     const handleCartUpdate = () => fetchCart();
+    const handleWishlistUpdate = () => syncWishlistState();
     window.addEventListener('cart-updated', handleCartUpdate);
+    window.addEventListener('wishlist-updated', handleWishlistUpdate);
     return () => {
       window.removeEventListener('cart-updated', handleCartUpdate);
+      window.removeEventListener('wishlist-updated', handleWishlistUpdate);
     };
   }, [isAuthenticated]);
 
@@ -180,16 +193,20 @@ export const PharmacyPage: React.FC = () => {
     }
   };
 
-  const toggleWishlist = (productId: number) => {
-    setWishlist((prev) => {
-      const next = !prev[productId];
-      return { ...prev, [productId]: next };
+  const handleToggleWishlist = (product: ProductItem) => {
+    toggleWishlistItem({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      price: product.price,
+      rating: product.rating,
+      stockQuantity: product.stockQuantity,
+      imageUrl: resolveProductImageUrl(product),
+      description: product.description,
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toFixed(2)}`;
-  };
+
 
   const resolveProductImageUrl = (product: ProductItem) => {
     if (product.imageUrl && (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'))) {
@@ -282,7 +299,7 @@ export const PharmacyPage: React.FC = () => {
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
                 Healthy Pets,{' '}
-                <span className="text-[#EF7C3C]">Happier Lives.</span>
+                <span className="text-[#009E66]">Happier Lives.</span>
               </h1>
 
               <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
@@ -323,7 +340,7 @@ export const PharmacyPage: React.FC = () => {
                 <span>ALL PHARMACY PRODUCTS</span>
               </span>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
-                Loved by <span className="text-[#EF7C3C]">Pets,</span> Recommended by Vets
+                Loved by <span className="text-[#EF7C3C]">Pets,</span> Recommended by Vets<span className="text-[#EF7C3C]">.</span>
               </h2>
             </div>
 
@@ -332,7 +349,6 @@ export const PharmacyPage: React.FC = () => {
               className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
             >
               <span>View all products</span>
-              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -360,16 +376,14 @@ export const PharmacyPage: React.FC = () => {
                       setActiveCategoryFilter(tab.name);
                     }
                   }}
-                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${
-                    isSelected
-                      ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41] shadow-xs ring-2 ring-[#3FA65C]/20'
-                      : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B] shadow-2xs'
-                  }`}
+                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${isSelected
+                    ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41] shadow-xs ring-2 ring-[#3FA65C]/20'
+                    : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B] shadow-2xs'
+                    }`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                      isSelected ? 'bg-[#3FA65C] text-white' : `${tab.bg} ${tab.text}`
-                    }`}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-[#3FA65C] text-white' : `${tab.bg} ${tab.text}`
+                      }`}
                   >
                     <TabIcon className="w-3.5 h-3.5" />
                   </div>
@@ -379,128 +393,128 @@ export const PharmacyPage: React.FC = () => {
             })}
           </div>
 
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] space-y-3">
-                    <Skeleton className="w-full aspect-square rounded-[16px]" />
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-8 w-full rounded-full" />
-                  </div>
-                ))}
-              </div>
-            ) : error ? (
-              <ErrorState message={error} onRetry={fetchProducts} />
-            ) : filteredProducts.length === 0 ? (
-              <EmptyState
-                title="No products available"
-                description="We could not find any products in this category."
-                actionLabel="View All Products"
-                onAction={() => setActiveCategoryFilter('All')}
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-                {filteredProducts.map((product) => {
-                  const isFavorited = !!wishlist[product.id];
-                  return (
-                    <div
-                      key={product.id}
-                      className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
-                    >
-                      <div className="relative w-full aspect-square rounded-[16px] overflow-hidden bg-white mb-3 p-2 border border-[#F0EAE1]">
-                        <img
-                          src={resolveProductImageUrl(product)}
-                          alt={product.name}
-                          className="w-full h-full object-contain rounded-[12px]"
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] space-y-3">
+                  <Skeleton className="w-full aspect-square rounded-[16px]" />
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-8 w-full rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <ErrorState message={error} onRetry={fetchProducts} />
+          ) : filteredProducts.length === 0 ? (
+            <EmptyState
+              title="No products available"
+              description="We could not find any products in this category."
+              actionLabel="View All Products"
+              onAction={() => setActiveCategoryFilter('All')}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
+              {filteredProducts.map((product) => {
+                const isFavorited = !!wishlist[product.id];
+                return (
+                  <div
+                    key={product.id}
+                    className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                  >
+                    <div className="relative w-full aspect-square rounded-[16px] overflow-hidden bg-white mb-3 p-2 border border-[#F0EAE1]">
+                      <img
+                        src={resolveProductImageUrl(product)}
+                        alt={product.name}
+                        className="w-full h-full object-contain rounded-[12px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleToggleWishlist(product)}
+                        aria-label="Add to wishlist"
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs hover:scale-110 transition-transform cursor-pointer"
+                      >
+                        <Heart
+                          className={`w-3.5 h-3.5 ${isFavorited
+                            ? 'text-[#E11D48] fill-[#E11D48]'
+                            : 'text-[#88998C] hover:text-[#E11D48]'
+                            }`}
                         />
-                        <button
-                          type="button"
-                          onClick={() => toggleWishlist(product.id)}
-                          aria-label="Add to wishlist"
-                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs hover:scale-110 transition-transform cursor-pointer"
-                        >
-                          <Heart
-                            className={`w-3.5 h-3.5 ${isFavorited
-                              ? 'text-[#E11D48] fill-[#E11D48]'
-                              : 'text-[#88998C] hover:text-[#E11D48]'
-                              }`}
-                          />
-                        </button>
-                      </div>
+                      </button>
+                    </div>
 
-                      <div className="space-y-1.5 flex-grow">
-                        <span className="text-[10px] font-black text-[#88998C] uppercase tracking-wider">
-                          {product.category}
+                    <div className="space-y-1.5 flex-grow">
+                      <span className="text-[10px] font-black text-[#88998C] uppercase tracking-wider">
+                        {product.category}
+                      </span>
+                      <h3 className="text-xs sm:text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 leading-snug">
+                        {product.name}
+                      </h3>
+
+                      <div className="flex items-center gap-1.5 text-xs text-[#556658] pt-0.5">
+                        <Star className="w-3.5 h-3.5 fill-[#F5A623] text-[#F5A623]" />
+                        <span className="font-extrabold text-[#16241B]">
+                          {product.rating ? product.rating.toFixed(1) : '4.8'}
                         </span>
-                        <h3 className="text-xs sm:text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 leading-snug">
-                          {product.name}
-                        </h3>
-
-                        <div className="flex items-center gap-1.5 text-xs text-[#556658] pt-0.5">
-                          <Star className="w-3.5 h-3.5 fill-[#F5A623] text-[#F5A623]" />
-                          <span className="font-extrabold text-[#16241B]">
-                            {product.rating ? product.rating.toFixed(1) : '4.8'}
-                          </span>
-                          <span className="text-[11px]">({product.reviewsCount || 50})</span>
-                        </div>
-                      </div>
-
-                      <div className="pt-3 mt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2">
-                        <div>
-                          <span className="text-[10px] font-semibold text-[#88998C] block -mb-0.5">
-                            Price
-                          </span>
-                          <span className="text-sm font-black text-[#16241B]">
-                            {formatCurrency(product.price)}
-                          </span>
-                        </div>
-
-                        {cartItems[product.id] ? (
-                          <div className="inline-flex items-center bg-[#E6F9EC] border border-[#3FA65C] rounded-full p-0.5 shadow-2xs">
-                            <button
-                              type="button"
-                              onClick={() => handleDecreaseQuantity(product, cartItems[product.id])}
-                              disabled={updatingCart[product.id]}
-                              aria-label="Decrease quantity"
-                              className="w-7 h-7 rounded-full bg-white text-[#287A41] hover:bg-[#3FA65C] hover:text-white flex items-center justify-center font-bold text-sm shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="min-w-[28px] text-center text-xs font-black text-[#16241B] px-1">
-                              {cartItems[product.id].quantity}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleIncreaseQuantity(product, cartItems[product.id])}
-                              disabled={
-                                updatingCart[product.id] ||
-                                cartItems[product.id].quantity >= product.stockQuantity
-                              }
-                              aria-label="Increase quantity"
-                              className="w-7 h-7 rounded-full bg-[#009E66] text-white hover:bg-[#008757] flex items-center justify-center font-bold text-sm shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleAddToCart(product)}
-                            disabled={updatingCart[product.id] || product.stockQuantity <= 0}
-                            className="px-3.5 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-50"
-                          >
-                            <ShoppingBag className="w-3.5 h-3.5" />
-                            <span>Add to Cart</span>
-                          </button>
-                        )}
+                        <span className="text-[11px]">({product.reviewsCount || 50})</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+
+                    <div className="pt-3 mt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2">
+                      <div>
+                        <span className="text-[10px] font-semibold text-[#88998C] block -mb-0.5">
+                          Price
+                        </span>
+                        <span className="text-sm font-black text-[#16241B]">
+                          {formatCurrency(product.price)}
+                        </span>
+                      </div>
+
+                      {cartItems[product.id] ? (
+                        <div className="inline-flex items-center bg-[#E6F9EC] border border-[#3FA65C] rounded-full p-0.5 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => handleDecreaseQuantity(product, cartItems[product.id])}
+                            disabled={updatingCart[product.id]}
+                            aria-label="Decrease quantity"
+                            className="w-7 h-7 rounded-full bg-white text-[#287A41] hover:bg-[#3FA65C] hover:text-white flex items-center justify-center font-bold text-sm shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="min-w-[28px] text-center text-xs font-black text-[#16241B] px-1">
+                            {cartItems[product.id].quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleIncreaseQuantity(product, cartItems[product.id])}
+                            disabled={
+                              updatingCart[product.id] ||
+                              cartItems[product.id].quantity >= product.stockQuantity
+                            }
+                            aria-label="Increase quantity"
+                            className="w-7 h-7 rounded-full bg-[#009E66] text-white hover:bg-[#008757] flex items-center justify-center font-bold text-sm shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleAddToCart(product)}
+                          disabled={updatingCart[product.id] || product.stockQuantity <= 0}
+                          className="px-3.5 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-50"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>Add to Cart</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* 5. Special Care Section (Without Image) */}
@@ -515,7 +529,7 @@ export const PharmacyPage: React.FC = () => {
                 </span>
 
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight leading-tight">
-                  Special Care for<br className="hidden sm:inline" /> Their <span className="text-[#3FA65C]">Special Needs</span>
+                  Special Care for<br className="hidden sm:inline" /> Their <span className="text-[#3FA65C]">Special Needs</span><span className="text-[#16241B]">.</span>
                 </h2>
 
                 <p className="text-sm sm:text-base text-[#556658] font-medium leading-relaxed max-w-md">
@@ -553,7 +567,7 @@ export const PharmacyPage: React.FC = () => {
 
         {/* 6. CTA Banner */}
         <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
+          <div className="bg-[#FFCA28] rounded-[36px] px-6 sm:px-10 lg:px-12 py-6 sm:py-8 lg:py-8 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 text-[#16241B] text-xs font-black uppercase tracking-wider shadow-2xs">
@@ -566,8 +580,9 @@ export const PharmacyPage: React.FC = () => {
                     className="text-[#EF7C3C]"
                     style={{ WebkitTextStroke: '0.75px #16241B' }}
                   >
-                    Best Care.
+                    Best Care
                   </span>
+                  <span className="text-[#16241B]">.</span>
                 </h2>
 
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
@@ -584,12 +599,12 @@ export const PharmacyPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-5 flex justify-center items-center relative z-20">
-                <div className="w-full max-w-[340px] aspect-square rounded-3xl overflow-hidden border-2 border-white/60 shadow-lg bg-white/90">
+              <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
+                <div className="relative w-full max-w-[250px] sm:max-w-[270px] h-[250px] sm:h-[270px] flex justify-center items-center overflow-visible">
                   <img
-                    src={getCloudinaryImageUrl('cta_cat_sunglasses_flawless_seamless')}
-                    alt="Corgi with Sunglasses"
-                    className="w-full h-full object-cover rounded-3xl"
+                    src={getCloudinaryImageUrl('pharmacy_cta')}
+                    alt="Pet Pharmacy Essentials"
+                    className="relative z-10 w-[118%] max-w-[280px] h-auto object-contain -mt-14 -mb-2 pointer-events-none drop-shadow-md"
                   />
                 </div>
               </div>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
 import { useAuth } from '../../features/auth/AuthContext';
-import { getCloudinaryImageUrl, getPetSpeciesImage } from '../../lib/utils';
+import { getCloudinaryImageUrl, getPetSpeciesImage, getWishlistItems, type WishlistItem } from '../../lib/utils';
 import apiClient from '../../lib/axios';
 import {
   User,
@@ -37,6 +37,10 @@ import {
   Heart,
   Minus,
   FileText,
+  BookOpen,
+  RotateCcw,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 
 interface PetItem {
@@ -111,8 +115,19 @@ interface CartItemData {
   stockQuantity?: number;
 }
 
+interface ArticleItem {
+  id: number;
+  title: string;
+  content?: string;
+  imageUrl?: string;
+  petType?: string;
+  isFeatured?: boolean;
+  publishedAt?: string;
+}
+
 export const ProfilePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const currentTab = searchParams.get('tab') || 'overview';
   const { user } = useAuth();
 
@@ -127,7 +142,7 @@ export const ProfilePage: React.FC = () => {
     }, 3500);
   };
 
-  // 1. User Profile State (Overview)
+  // 1. User Profile State (Overview & Settings)
   const [userProfile, setUserProfile] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -246,10 +261,8 @@ export const ProfilePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (currentTab === 'pets') {
-      fetchPets();
-    }
-  }, [currentTab, fetchPets]);
+    fetchPets();
+  }, [fetchPets]);
 
   const handleSavePet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,7 +362,7 @@ export const ProfilePage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (currentTab === 'orders') {
+    if (currentTab === 'orders' || currentTab === 'overview') {
       fetchOrders();
     }
   }, [currentTab, fetchOrders]);
@@ -457,7 +470,7 @@ export const ProfilePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (currentTab === 'appointments') {
+    if (currentTab === 'appointments' || currentTab === 'overview') {
       fetchAppointments();
       fetchVetsList();
       fetchServicesList();
@@ -468,6 +481,7 @@ export const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (pets.length > 0 && (!selectedPetId || !pets.find((p) => p.id === selectedPetId))) {
       setSelectedPetId(pets[0].id);
+      if (pets[0].name) setPetNameInput(pets[0].name);
     }
   }, [pets, selectedPetId]);
 
@@ -498,7 +512,6 @@ export const ProfilePage: React.FC = () => {
     try {
       let petIdToUse = selectedPetId;
 
-      // If user chose to enter a new pet or has no pets yet
       if (!petIdToUse || selectedPetId === -1) {
         const petNameToUse = petNameInput.trim() || 'My Pet';
         const petRes = await apiClient.post<PetItem>('/customer/pets', {
@@ -551,7 +564,44 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  // 5. Security State (Change Password)
+  // 5. Wishlist State
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const syncWishlist = useCallback(() => {
+    setWishlistItems(getWishlistItems());
+  }, []);
+
+  useEffect(() => {
+    syncWishlist();
+    window.addEventListener('wishlist-updated', syncWishlist);
+    return () => window.removeEventListener('wishlist-updated', syncWishlist);
+  }, [syncWishlist]);
+
+  // 6. Articles State (Recommended Health Tips)
+  const [articles, setArticles] = useState<ArticleItem[]>([]);
+  const [articlesLoading, setArticlesLoading] = useState(false);
+  const [articlesError, setArticlesError] = useState<string | null>(null);
+
+  const fetchArticles = useCallback(async () => {
+    setArticlesLoading(true);
+    setArticlesError(null);
+    try {
+      const res = await apiClient.get<ArticleItem[]>('/articles');
+      setArticles(res.data || []);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load health tips.';
+      setArticlesError(msg);
+    } finally {
+      setArticlesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentTab === 'overview') {
+      fetchArticles();
+    }
+  }, [currentTab, fetchArticles]);
+
+  // 7. Security State (Change Password)
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -587,7 +637,7 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  // 6. Preferences State
+  // 8. Preferences State
   const [preferences, setPreferences] = useState(() => {
     const saved = localStorage.getItem('pawfectly_user_preferences');
     return saved
@@ -687,6 +737,51 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  // Quick Action Reorder Handler
+  const [reordering, setReordering] = useState(false);
+  const completedOrders = orders.filter(
+    (o) => (o.orderStatus || o.status || '').toUpperCase() === 'COMPLETED'
+  );
+  const lastCompletedOrder = completedOrders.length > 0 ? completedOrders[0] : null;
+
+  const handleReorderLastOrder = async () => {
+    if (!lastCompletedOrder || !lastCompletedOrder.items || lastCompletedOrder.items.length === 0) {
+      showToast('No completed order items to reorder.', 'error');
+      return;
+    }
+
+    setReordering(true);
+    let addedCount = 0;
+    const skippedItems: string[] = [];
+
+    for (const item of lastCompletedOrder.items) {
+      if (!item.productId) continue;
+      try {
+        await apiClient.post('/customer/cart', {
+          productId: item.productId,
+          quantity: item.quantity || 1,
+        });
+        addedCount++;
+      } catch {
+        skippedItems.push(item.productName || 'An item');
+      }
+    }
+
+    setReordering(false);
+    window.dispatchEvent(new Event('cart-updated'));
+
+    if (addedCount > 0 && skippedItems.length === 0) {
+      showToast(`Reordered ${addedCount} ${addedCount === 1 ? 'item' : 'items'} to cart! 🛒`);
+    } else if (addedCount > 0 && skippedItems.length > 0) {
+      showToast(
+        `Added ${addedCount} items. ${skippedItems.join(', ')} currently out of stock.`,
+        'error'
+      );
+    } else if (skippedItems.length > 0) {
+      showToast(`Could not reorder: ${skippedItems.join(', ')} currently out of stock.`, 'error');
+    }
+  };
+
   const navTabs = [
     { id: 'overview', label: 'Overview', icon: User },
     { id: 'cart', label: 'My Cart', icon: ShoppingBag },
@@ -694,8 +789,7 @@ export const ProfilePage: React.FC = () => {
     { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'appointments', label: 'My Appointments', icon: Calendar },
     { id: 'wishlist', label: 'Wishlist', icon: Heart },
-    { id: 'security', label: 'Security', icon: Lock },
-    { id: 'preferences', label: 'Preferences', icon: Sliders },
+    { id: 'settings', label: 'Settings', icon: Sliders },
   ];
 
   const getStatusBadge = (status?: string) => {
@@ -727,6 +821,45 @@ export const ProfilePage: React.FC = () => {
         return 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]';
     }
   };
+
+  // Card summary calculations
+  const upcomingAppointments = appointments.filter(
+    (a) => a.status === 'CONFIRMED' || a.status === 'PENDING'
+  );
+  const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
+
+  const activeOrders = orders.filter((o) => {
+    const st = (o.orderStatus || o.status || '').toUpperCase();
+    return st !== 'COMPLETED' && st !== 'DELIVERED' && st !== 'CANCELLED';
+  });
+  const activeOrder = activeOrders.length > 0 ? activeOrders[0] : null;
+
+  // Recent Prescriptions calculation
+  const appointmentsWithPrescriptions = appointments.filter(
+    (a) => (a.prescription && a.prescription.trim() !== '') || (a.diagnosis && a.diagnosis.trim() !== '')
+  );
+  const recentPrescriptions = appointmentsWithPrescriptions.slice(0, 4);
+
+  // Recommended Health Tips calculation — sorted by pet species match
+  const userPetSpeciesList = pets.map((p) => (p.species || '').trim().toLowerCase()).filter(Boolean);
+
+  const recommendedArticles = [...articles]
+    .sort((a, b) => {
+      const aType = (a.petType || '').trim().toLowerCase();
+      const bType = (b.petType || '').trim().toLowerCase();
+
+      const aSpeciesMatchIndex = userPetSpeciesList.indexOf(aType);
+      const bSpeciesMatchIndex = userPetSpeciesList.indexOf(bType);
+
+      const aScore = aSpeciesMatchIndex !== -1 ? 100 - aSpeciesMatchIndex : (aType === 'all' || aType === 'general' || !aType ? 10 : 0);
+      const bScore = bSpeciesMatchIndex !== -1 ? 100 - bSpeciesMatchIndex : (bType === 'all' || bType === 'general' || !bType ? 10 : 0);
+
+      if (aScore !== bScore) {
+        return bScore - aScore; // Higher score first
+      }
+      return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
+    })
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen lg:h-screen bg-white text-[#16241B] font-sans flex flex-col lg:overflow-hidden">
@@ -776,7 +909,7 @@ export const ProfilePage: React.FC = () => {
               <nav className="space-y-1">
                 {navTabs.map((tab) => {
                   const TabIcon = tab.icon;
-                  const isActive = currentTab === tab.id;
+                  const isActive = currentTab === tab.id || (tab.id === 'settings' && (currentTab === 'security' || currentTab === 'preferences'));
                   return (
                     <button
                       key={tab.id}
@@ -817,121 +950,384 @@ export const ProfilePage: React.FC = () => {
                     Account Overview
                   </h1>
                   <p className="text-xs sm:text-sm text-[#556658] font-medium font-sans mt-1">
-                    Manage your personal details and contact information.
+                    Quick snapshot of your upcoming appointments, active orders, registered pets, and saved items.
                   </p>
                 </div>
 
-                {profileLoading ? (
-                  <div className="space-y-5 max-w-2xl">
-                    <Skeleton className="h-14 w-full rounded-2xl" />
-                    <Skeleton className="h-14 w-full rounded-2xl" />
-                    <Skeleton className="h-14 w-full rounded-2xl" />
-                    <Skeleton className="h-12 w-36 rounded-full mt-4" />
+                {/* Dashboard 4 Summary Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1 — Next Appointment */}
+                  <div
+                    onClick={() => setSearchParams({ tab: 'appointments' })}
+                    className="bg-[#EFF8F0] border border-[#D5EAD9] hover:border-[#009E66]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold tracking-wider text-[#287A41] uppercase">
+                        NEXT APPOINTMENT
+                      </span>
+                      <div className="w-7 h-7 rounded-full bg-white/90 border border-[#C3ECD0] flex items-center justify-center text-[#287A41] shadow-2xs group-hover:scale-105 transition-transform">
+                        <Calendar className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 space-y-0.5">
+                      {appointmentsLoading ? (
+                        <>
+                          <Skeleton className="h-4 w-28 bg-[#D5EAD9]" />
+                          <Skeleton className="h-3 w-20 mt-1 bg-[#D5EAD9]" />
+                        </>
+                      ) : appointmentsError ? (
+                        <>
+                          <p className="text-xs font-bold text-red-600 truncate">Failed to load</p>
+                          <p className="text-[11px] text-[#556658] truncate">Tap to check</p>
+                        </>
+                      ) : nextAppointment ? (
+                        <>
+                          <p className="text-sm font-black text-[#16241B] truncate">
+                            {nextAppointment.vetName || 'Assigned Veterinarian'}
+                          </p>
+                          <p className="text-xs font-semibold text-[#556658] truncate">
+                            {(() => {
+                              const { date, time } = formatAptDateTime(nextAppointment);
+                              return `${date}${time ? ` at ${time}` : ''}`;
+                            })()}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-black text-[#16241B] truncate">No upcoming appointments</p>
+                          <p className="text-xs font-semibold text-[#556658] truncate">Book one with a vet</p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <form onSubmit={handleSaveProfile} className="space-y-6 max-w-2xl">
-                    {/* Full Name */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
-                        FULL NAME
-                      </label>
-                      <div className="relative">
-                        <User className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="text"
-                          required
-                          value={formProfile.name}
-                          onChange={(e) => setFormProfile({ ...formProfile, name: e.target.value })}
-                          className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
-                        />
+
+                  {/* Card 2 — Active Order */}
+                  <div
+                    onClick={() => setSearchParams({ tab: 'orders' })}
+                    className="bg-[#FFF5EE] border border-[#FED7AA] hover:border-[#EF7C3C]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold tracking-wider text-[#EF7C3C] uppercase">
+                        ACTIVE ORDER
+                      </span>
+                      <div className="w-7 h-7 rounded-full bg-white/90 border border-[#FED7AA] flex items-center justify-center text-[#EF7C3C] shadow-2xs group-hover:scale-105 transition-transform">
+                        <Package className="w-3.5 h-3.5" />
                       </div>
                     </div>
 
-                    {/* Email Address */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
-                        EMAIL ADDRESS
-                      </label>
-                      <div className="relative">
-                        <Mail className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="email"
-                          required
-                          value={formProfile.email}
-                          onChange={(e) => setFormProfile({ ...formProfile, email: e.target.value })}
-                          className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
-                        />
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-2 text-xs text-[#556658] font-normal font-sans">
-                        <Info className="w-4 h-4 text-[#556658] shrink-0" />
-                        <span>
-                          Changing your email may require re-verification. You will be notified if additional steps are needed.
-                        </span>
+                    <div className="mt-3 space-y-0.5">
+                      {ordersLoading ? (
+                        <>
+                          <Skeleton className="h-4 w-28 bg-[#FED7AA]" />
+                          <Skeleton className="h-3 w-20 mt-1 bg-[#FED7AA]" />
+                        </>
+                      ) : ordersError ? (
+                        <>
+                          <p className="text-xs font-bold text-red-600 truncate">Failed to load</p>
+                          <p className="text-[11px] text-[#556658] truncate">Tap to check</p>
+                        </>
+                      ) : activeOrder ? (
+                        <>
+                          <p className="text-sm font-black text-[#16241B] truncate">
+                            Order {activeOrder.orderStatus ? activeOrder.orderStatus.replace(/_/g, ' ') : (activeOrder.status || 'Placed')}
+                          </p>
+                          <p className="text-xs font-semibold text-[#556658] truncate">
+                            {activeOrder.orderNumber || `Order #${activeOrder.id}`}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-black text-[#16241B] truncate">No active orders</p>
+                          <p className="text-xs font-semibold text-[#556658] truncate">Browse the pharmacy</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card 3 — Your Pets */}
+                  <div
+                    onClick={() => setSearchParams({ tab: 'pets' })}
+                    className="bg-[#EEF2FF] border border-[#C7D2FE] hover:border-[#3B82F6]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold tracking-wider text-[#3B82F6] uppercase">
+                        YOUR PETS
+                      </span>
+                      <div className="w-7 h-7 rounded-full bg-white/90 border border-[#BFDBFE] flex items-center justify-center text-[#3B82F6] shadow-2xs group-hover:scale-105 transition-transform">
+                        <PawPrint className="w-3.5 h-3.5" />
                       </div>
                     </div>
 
-                    {/* Phone Number */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
-                        PHONE NUMBER
-                      </label>
-                      <div className="relative">
-                        <Phone className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="tel"
-                          maxLength={10}
-                          value={formProfile.phone}
-                          placeholder="9876543210"
-                          onChange={(e) =>
-                            setFormProfile({
-                              ...formProfile,
-                              phone: e.target.value.replace(/\D/g, '').slice(0, 10),
-                            })
-                          }
-                          className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
-                        />
+                    <div className="mt-3 space-y-0.5">
+                      {petsLoading ? (
+                        <>
+                          <Skeleton className="h-4 w-28 bg-[#C7D2FE]" />
+                          <Skeleton className="h-3 w-20 mt-1 bg-[#C7D2FE]" />
+                        </>
+                      ) : petsError ? (
+                        <>
+                          <p className="text-xs font-bold text-red-600 truncate">Failed to load</p>
+                          <p className="text-[11px] text-[#556658] truncate">Tap to check</p>
+                        </>
+                      ) : pets.length > 0 ? (
+                        <>
+                          <p className="text-sm font-black text-[#16241B] truncate">
+                            {pets.length} {pets.length === 1 ? 'pet registered' : 'pets registered'}
+                          </p>
+                          <p className="text-xs font-semibold text-[#556658] truncate">
+                            {pets.map((p) => p.name).join(', ')}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-black text-[#16241B] truncate">No pets added yet</p>
+                          <p className="text-xs font-semibold text-[#556658] truncate">Add your first pet</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card 4 — Wishlist */}
+                  <div
+                    onClick={() => setSearchParams({ tab: 'wishlist' })}
+                    className="bg-[#FFF0F5] border border-[#FBCFE8] hover:border-[#EC4899]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold tracking-wider text-[#EC4899] uppercase">
+                        WISHLIST
+                      </span>
+                      <div className="w-7 h-7 rounded-full bg-white/90 border border-[#F9A8D4] flex items-center justify-center text-[#EC4899] shadow-2xs group-hover:scale-105 transition-transform">
+                        <Heart className="w-3.5 h-3.5 fill-[#EC4899] text-[#EC4899]" />
                       </div>
                     </div>
 
-                    {/* Primary Address */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
-                        PRIMARY ADDRESS
-                      </label>
-                      <div className="relative">
-                        <MapPin className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="text"
-                          value={formProfile.address}
-                          placeholder="Street Address, City, Postal Code"
-                          onChange={(e) => setFormProfile({ ...formProfile, address: e.target.value })}
-                          className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
-                        />
-                      </div>
+                    <div className="mt-3 space-y-0.5">
+                      {wishlistItems.length > 0 ? (
+                        <>
+                          <p className="text-sm font-black text-[#16241B] truncate">
+                            {wishlistItems.length} {wishlistItems.length === 1 ? 'item saved' : 'items saved'}
+                          </p>
+                          <p className="text-xs font-semibold text-[#556658] truncate">
+                            {wishlistItems.map((i) => i.name).join(', ')}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-black text-[#16241B] truncate">No items saved</p>
+                          <p className="text-xs font-semibold text-[#556658] truncate">Browse the pharmacy</p>
+                        </>
+                      )}
                     </div>
+                  </div>
+                </div>
 
-                    {/* Submit Button */}
-                    <div className="pt-4">
-                      <button
-                        type="submit"
-                        disabled={!isProfileDirty || profileSaving}
-                        className={`px-8 py-3.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 font-sans ${
-                          isProfileDirty && !profileSaving
-                            ? 'bg-[#009E66] hover:bg-[#008757] text-white shadow-md cursor-pointer'
-                            : 'bg-[#009E66]/40 text-white cursor-not-allowed opacity-70'
-                        }`}
-                      >
-                        {profileSaving ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Saving...
-                          </>
+                {/* QUICK ACTIONS ROW */}
+                <div className="space-y-3 pt-2">
+                  <h2 className="text-xs font-black uppercase tracking-wider text-[#16241B] flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-[#009E66]" />
+                    <span>Quick Actions</span>
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Action: Reorder */}
+                    <button
+                      onClick={handleReorderLastOrder}
+                      disabled={!lastCompletedOrder || reordering}
+                      className={`bg-[#FAF8F3] border rounded-2xl p-4 flex items-center gap-3.5 text-left transition-all group shadow-2xs ${
+                        lastCompletedOrder && !reordering
+                          ? 'border-[#E8E4D8] hover:border-[#EF7C3C]/50 hover:bg-[#FFF5EE]/30 cursor-pointer'
+                          : 'border-[#E8E4D8]/60 opacity-60 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-[#FFF5EE] border border-[#FED7AA] flex items-center justify-center text-[#EF7C3C] shrink-0 group-hover:scale-105 transition-transform">
+                        {reordering ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
-                          'Save Changes'
+                          <RotateCcw className="w-5 h-5" />
                         )}
-                      </button>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-[#16241B]">Reorder Purchase</h3>
+                        <p className="text-xs text-[#556658] font-medium mt-0.5 truncate max-w-[200px]">
+                          {lastCompletedOrder
+                            ? `Order #${lastCompletedOrder.id}`
+                            : 'No past completed orders'}
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* RECENT PRESCRIPTIONS SECTION */}
+                <div className="space-y-4 pt-4 border-t border-[#E8E4D8]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-black text-[#16241B] flex items-center gap-2">
+                        <FileText className="w-4.5 h-4.5 text-[#009E66]" />
+                        <span>Recent Prescriptions</span>
+                      </h2>
+                      <p className="text-xs text-[#556658] font-medium mt-0.5">
+                        Clinical instructions & medical prescriptions issued by your veterinarians.
+                      </p>
                     </div>
-                  </form>
-                )}
+                  </div>
+
+                  {appointmentsLoading ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-20 rounded-2xl" />
+                      <Skeleton className="h-20 rounded-2xl" />
+                    </div>
+                  ) : appointmentsError ? (
+                    <ErrorState
+                      title="Could not load prescriptions"
+                      description={appointmentsError}
+                      onRetry={fetchAppointments}
+                    />
+                  ) : recentPrescriptions.length === 0 ? (
+                    <EmptyState
+                      icon={FileText}
+                      title="No Prescriptions Yet"
+                      description="Prescriptions, treatment plans, and medical records from your completed vet visits will appear here."
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {recentPrescriptions.map((apt) => {
+                        const { date } = formatAptDateTime(apt);
+                        return (
+                          <div
+                            key={apt.id}
+                            className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs"
+                          >
+                            <div className="space-y-1.5 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[11px] font-black border border-[#C3ECD0]">
+                                  {apt.petName || 'Pet'}
+                                </span>
+                                <span className="text-xs text-[#88998C] font-semibold">
+                                  • {date}
+                                </span>
+                              </div>
+
+                              {apt.prescription && (
+                                <p className="text-sm font-black text-[#16241B] whitespace-pre-line">
+                                  {apt.prescription}
+                                </p>
+                              )}
+
+                              {apt.diagnosis && (
+                                <p className="text-xs font-medium text-[#556658]">
+                                  <span className="font-bold text-[#16241B]">Diagnosis:</span> {apt.diagnosis}
+                                </p>
+                              )}
+
+                              <p className="text-xs text-[#88998C] font-medium">
+                                Prescribed by <span className="font-bold text-[#16241B]">{apt.vetName || 'Veterinarian'}</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* RECOMMENDED HEALTH TIPS SECTION */}
+                <div className="space-y-4 pt-4 border-t border-[#E8E4D8]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-black text-[#16241B] flex items-center gap-2">
+                        <BookOpen className="w-4.5 h-4.5 text-[#009E66]" />
+                        <span>
+                          {pets.length > 0
+                            ? `Health Tips for ${pets.map((p) => p.name).join(' & ')}`
+                            : 'Recommended Health Tips'}
+                        </span>
+                      </h2>
+                      <p className="text-xs text-[#556658] font-medium mt-0.5">
+                        Veterinary articles and wellness guides curated for your companion animals.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/health-tips')}
+                      className="text-xs font-bold text-[#009E66] hover:text-[#008757] flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                    >
+                      <span>View All</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {articlesLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Skeleton className="h-40 rounded-2xl" />
+                      <Skeleton className="h-40 rounded-2xl" />
+                    </div>
+                  ) : articlesError ? (
+                    <ErrorState
+                      title="Could not load health tips"
+                      description={articlesError}
+                      onRetry={fetchArticles}
+                    />
+                  ) : recommendedArticles.length === 0 ? (
+                    <EmptyState
+                      icon={BookOpen}
+                      title="No Health Tips Found"
+                      description="Explore our complete pet care knowledge base for expert guides and medical tips."
+                      actionLabel="Explore Health Tips"
+                      actionLink="/health-tips"
+                    />
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {recommendedArticles.map((article) => (
+                        <div
+                          key={article.id}
+                          onClick={() => navigate('/health-tips')}
+                          className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] hover:border-[#009E66]/40 transition-all cursor-pointer group flex flex-col justify-between shadow-2xs"
+                        >
+                          <div className="space-y-2">
+                            {article.imageUrl && (
+                              <div className="h-32 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] mb-3">
+                                <img
+                                  src={getCloudinaryImageUrl(article.imageUrl)}
+                                  alt={article.title}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-2">
+                              {article.petType && (
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[10px] font-black uppercase border border-[#C3ECD0]">
+                                  {article.petType}
+                                </span>
+                              )}
+                              {article.isFeatured && (
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-[10px] font-black uppercase border border-[#FED7AA]">
+                                  Featured
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="text-sm font-black text-[#16241B] group-hover:text-[#009E66] transition-colors line-clamp-2">
+                              {article.title}
+                            </h3>
+
+                            {article.content && (
+                              <p className="text-xs text-[#556658] line-clamp-2 font-medium">
+                                {article.content.replace(/<[^>]*>?/gm, '')}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="pt-3 border-t border-[#EAE3D4] mt-3 flex items-center justify-between text-xs font-bold text-[#009E66]">
+                            <span>Read Article</span>
+                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1793,22 +2189,28 @@ export const ProfilePage: React.FC = () => {
                           </select>
                         </div>
 
-                        {/* Pet Name */}
+                        {/* Pet Selection */}
                         <div className="space-y-1 text-left">
                           <label className="text-xs font-bold text-[#334437]">Pet Selection</label>
-                          {pets.length > 0 ? (
+                          {petsLoading ? (
+                            <div className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-medium text-[#67796B] flex items-center gap-2">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#009E66]" /> Loading your pets...
+                            </div>
+                          ) : pets.length > 0 ? (
                             <div className="space-y-2">
                               <select
-                                value={selectedPetId || ''}
+                                value={selectedPetId ?? pets[0]?.id ?? ''}
                                 onChange={(e) => {
                                   const val = Number(e.target.value);
                                   setSelectedPetId(val);
                                   if (val !== -1) {
                                     const found = pets.find((p) => p.id === val);
                                     if (found) setPetNameInput(found.name);
+                                  } else {
+                                    setPetNameInput('');
                                   }
                                 }}
-                                className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                                className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C] cursor-pointer"
                               >
                                 {pets.map((p) => (
                                   <option key={p.id} value={p.id}>
@@ -1832,7 +2234,7 @@ export const ProfilePage: React.FC = () => {
                             <input
                               type="text"
                               required
-                              placeholder="e.g. Bella"
+                              placeholder="Enter pet's name (e.g. Bella)"
                               value={petNameInput}
                               onChange={(e) => setPetNameInput(e.target.value)}
                               className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
@@ -1921,246 +2323,405 @@ export const ProfilePage: React.FC = () => {
                   </p>
                 </div>
 
-                <EmptyState
-                  icon={Heart}
-                  title="No Liked Items Saved Yet"
-                  description="Tap the heart icon on any pet service, vet profile, or pharmacy product to save it to your personal wishlist."
-                  actionLabel="Explore Pharmacy"
-                  actionLink="/pharmacy"
-                />
+                {wishlistItems.length === 0 ? (
+                  <EmptyState
+                    icon={Heart}
+                    title="No Liked Items Saved Yet"
+                    description="Tap the heart icon on any pet service, vet profile, or pharmacy product to save it to your personal wishlist."
+                    actionLabel="Explore Pharmacy"
+                    actionLink="/pharmacy"
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {wishlistItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
+                            {item.imageUrl ? (
+                              <img src={getCloudinaryImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Heart className="w-6 h-6 text-[#EC4899] fill-[#EC4899]" />
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black text-[#16241B]">{item.name}</h3>
+                            <p className="text-xs font-bold text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
+                            {item.category && <p className="text-[11px] text-[#88998C] font-semibold">{item.category}</p>}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => navigate('/pharmacy')}
+                          className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-bold hover:bg-[#008757] transition-colors cursor-pointer shrink-0"
+                        >
+                          View Item
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* 5. SECURITY TAB (Change Password) */}
-            {currentTab === 'security' && (
-              <div className="space-y-6">
+            {/* 5. SETTINGS TAB (Personal Details + Security & Password + Preferences) */}
+            {(currentTab === 'settings' || currentTab === 'security' || currentTab === 'preferences') && (
+              <div className="space-y-8">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">Security & Password</h1>
+                  <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">
+                    Settings & Profile
+                  </h1>
                   <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
-                    Update your account password to keep your profile protected.
+                    Manage your personal details, security credentials, and communication preferences.
                   </p>
                 </div>
 
-                <form onSubmit={handleChangePassword} className="space-y-6 max-w-2xl">
-                  {/* Current Password */}
-                  <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
-                      Current Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                      <input
-                        type={showCurrentPw ? 'text' : 'password'}
-                        required
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPw(!showCurrentPw)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#16241B]"
-                      >
-                        {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
+                {/* Section 1: Personal Details */}
+                <div className="space-y-4 pt-2">
+                  <h2 className="text-base font-black text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
+                    <User className="w-4 h-4 text-[#009E66]" />
+                    <span>Personal Details</span>
+                  </h2>
 
-                  {/* New Password */}
-                  <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                      <input
-                        type={showNewPw ? 'text' : 'password'}
-                        required
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPw(!showNewPw)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#16241B]"
-                      >
-                        {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                  {profileLoading ? (
+                    <div className="space-y-5 max-w-2xl">
+                      <Skeleton className="h-14 w-full rounded-2xl" />
+                      <Skeleton className="h-14 w-full rounded-2xl" />
+                      <Skeleton className="h-14 w-full rounded-2xl" />
+                      <Skeleton className="h-12 w-36 rounded-full mt-4" />
                     </div>
-                    <span className="text-[11px] text-[#88998C] font-medium block mt-1.5">
-                      Must be at least 8 characters long.
-                    </span>
-                  </div>
+                  ) : (
+                    <form onSubmit={handleSaveProfile} className="space-y-6 max-w-2xl">
+                      {/* Full Name */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
+                          FULL NAME
+                        </label>
+                        <div className="relative">
+                          <User className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            required
+                            value={formProfile.name}
+                            onChange={(e) => setFormProfile({ ...formProfile, name: e.target.value })}
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
 
-                  {/* Confirm New Password */}
-                  <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
-                      Confirm New Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                      <input
-                        type={showConfirmPw ? 'text' : 'password'}
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPw(!showConfirmPw)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#16241B]"
-                      >
-                        {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                      {/* Email Address */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
+                          EMAIL ADDRESS
+                        </label>
+                        <div className="relative">
+                          <Mail className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="email"
+                            required
+                            value={formProfile.email}
+                            onChange={(e) => setFormProfile({ ...formProfile, email: e.target.value })}
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-2 text-xs text-[#556658] font-normal font-sans">
+                          <Info className="w-4 h-4 text-[#556658] shrink-0" />
+                          <span>
+                            Changing your email may require re-verification. You will be notified if additional steps are needed.
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Phone Number */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
+                          PHONE NUMBER
+                        </label>
+                        <div className="relative">
+                          <Phone className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="tel"
+                            maxLength={10}
+                            value={formProfile.phone}
+                            placeholder="9876543210"
+                            onChange={(e) =>
+                              setFormProfile({
+                                ...formProfile,
+                                phone: e.target.value.replace(/\D/g, '').slice(0, 10),
+                              })
+                            }
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Primary Address */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
+                          PRIMARY ADDRESS
+                        </label>
+                        <div className="relative">
+                          <MapPin className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={formProfile.address}
+                            placeholder="Street Address, City, Postal Code"
+                            onChange={(e) => setFormProfile({ ...formProfile, address: e.target.value })}
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="pt-2">
+                        <button
+                          type="submit"
+                          disabled={!isProfileDirty || profileSaving}
+                          className={`px-8 py-3.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 font-sans ${
+                            isProfileDirty && !profileSaving
+                              ? 'bg-[#009E66] hover:bg-[#008757] text-white shadow-md cursor-pointer'
+                              : 'bg-[#009E66]/40 text-white cursor-not-allowed opacity-70'
+                          }`}
+                        >
+                          {profileSaving ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                            </>
+                          ) : (
+                            'Save Changes'
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
+                {/* Section 2: Security & Password */}
+                <div className="space-y-4 pt-6 border-t border-[#E8E4D8]">
+                  <h2 className="text-base font-black text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
+                    <Lock className="w-4 h-4 text-[#009E66]" />
+                    <span>Security & Password</span>
+                  </h2>
+
+                  <form onSubmit={handleChangePassword} className="space-y-6 max-w-2xl">
+                    {/* Current Password */}
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
+                        Current Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                        <input
+                          type={showCurrentPw ? 'text' : 'password'}
+                          required
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPw(!showCurrentPw)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#16241B]"
+                        >
+                          {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
-                    {confirmPassword.length > 0 && !isPasswordMatching && (
-                      <span className="text-[11px] text-red-500 font-bold block mt-1.5">
-                        Passwords do not match.
+
+                    {/* New Password */}
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                        <input
+                          type={showNewPw ? 'text' : 'password'}
+                          required
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPw(!showNewPw)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#16241B]"
+                        >
+                          {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <span className="text-[11px] text-[#88998C] font-medium block mt-1.5">
+                        Must be at least 8 characters long.
                       </span>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      disabled={!canSubmitPassword || passwordSubmitting}
-                      className={`px-8 py-3.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
-                        canSubmitPassword && !passwordSubmitting
-                          ? 'bg-[#548B60] hover:bg-[#437750] text-white shadow-md'
-                          : 'bg-[#84A88C] text-white cursor-not-allowed opacity-80'
-                      }`}
-                    >
-                      {passwordSubmitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" /> Updating...
-                        </>
-                      ) : (
-                        'Update Password'
+                    {/* Confirm New Password */}
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
+                        <input
+                          type={showConfirmPw ? 'text' : 'password'}
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPw(!showConfirmPw)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#88998C] hover:text-[#16241B]"
+                        >
+                          {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {confirmPassword.length > 0 && !isPasswordMatching && (
+                        <span className="text-[11px] text-red-500 font-bold block mt-1.5">
+                          Passwords do not match.
+                        </span>
                       )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
+                    </div>
 
-            {/* 6. PREFERENCES TAB */}
-            {currentTab === 'preferences' && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">Preferences & Notifications</h1>
-                  <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
-                    Control your newsletter subscription and communication alerts.
-                  </p>
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        disabled={!canSubmitPassword || passwordSubmitting}
+                        className={`px-8 py-3.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
+                          canSubmitPassword && !passwordSubmitting
+                            ? 'bg-[#548B60] hover:bg-[#437750] text-white shadow-md'
+                            : 'bg-[#84A88C] text-white cursor-not-allowed opacity-80'
+                        }`}
+                      >
+                        {passwordSubmitting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Updating...
+                          </>
+                        ) : (
+                          'Update Password'
+                        )}
+                      </button>
+                    </div>
+                  </form>
                 </div>
 
-                <div className="space-y-4 max-w-2xl">
-                  {/* Newsletter */}
-                  <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
-                      <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-[#548B60]" />
-                        <span>Pawfectly Newsletter</span>
-                      </h4>
-                      <p className="text-xs text-[#67796B]">
-                        Receive monthly pet wellness articles, guides, and care advice.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePreference('newsletter')}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                        preferences.newsletter ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
-                          preferences.newsletter ? 'left-6.5' : 'left-0.5'
-                        }`}
-                      />
-                    </button>
-                  </div>
+                {/* Section 3: Preferences & Notifications */}
+                <div className="space-y-4 pt-6 border-t border-[#E8E4D8]">
+                  <h2 className="text-base font-black text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
+                    <Sliders className="w-4 h-4 text-[#009E66]" />
+                    <span>Preferences & Notifications</span>
+                  </h2>
 
-                  {/* Appointment Reminders */}
-                  <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
-                      <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-[#EF7C3C]" />
-                        <span>Appointment Reminders</span>
-                      </h4>
-                      <p className="text-xs text-[#67796B]">
-                        Email & SMS notifications 24 hours before your vet appointments.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePreference('appointmentReminders')}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                        preferences.appointmentReminders ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
-                          preferences.appointmentReminders ? 'left-6.5' : 'left-0.5'
+                  <div className="space-y-4 max-w-2xl">
+                    {/* Newsletter */}
+                    <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
+                        <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-[#548B60]" />
+                          <span>Pawfectly Newsletter</span>
+                        </h4>
+                        <p className="text-xs text-[#67796B]">
+                          Receive monthly pet wellness articles, guides, and care advice.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePreference('newsletter')}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                          preferences.newsletter ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
                         }`}
-                      />
-                    </button>
-                  </div>
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
+                            preferences.newsletter ? 'left-6.5' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
 
-                  {/* Order Status Updates */}
-                  <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
-                      <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
-                        <ShoppingBag className="w-4 h-4 text-[#0284C7]" />
-                        <span>Order & Pickup Updates</span>
-                      </h4>
-                      <p className="text-xs text-[#67796B]">
-                        Real-time status tracking for your pet pharmacy orders.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePreference('orderUpdates')}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                        preferences.orderUpdates ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
-                          preferences.orderUpdates ? 'left-6.5' : 'left-0.5'
+                    {/* Appointment Reminders */}
+                    <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
+                        <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
+                          <Bell className="w-4 h-4 text-[#EF7C3C]" />
+                          <span>Appointment Reminders</span>
+                        </h4>
+                        <p className="text-xs text-[#67796B]">
+                          Email & SMS notifications 24 hours before your vet appointments.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePreference('appointmentReminders')}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                          preferences.appointmentReminders ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
                         }`}
-                      />
-                    </button>
-                  </div>
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
+                            preferences.appointmentReminders ? 'left-6.5' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
 
-                  {/* Health & Vaccination Alerts */}
-                  <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
-                      <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-[#7E22CE]" />
-                        <span>Health & Vaccination Alerts</span>
-                      </h4>
-                      <p className="text-xs text-[#67796B]">
-                        Reminders when your pet’s annual vaccinations or checkups are due.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePreference('healthTips')}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                        preferences.healthTips ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
-                          preferences.healthTips ? 'left-6.5' : 'left-0.5'
+                    {/* Order Status Updates */}
+                    <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
+                        <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
+                          <ShoppingBag className="w-4 h-4 text-[#0284C7]" />
+                          <span>Order & Pickup Updates</span>
+                        </h4>
+                        <p className="text-xs text-[#67796B]">
+                          Real-time status tracking for your pet pharmacy orders.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePreference('orderUpdates')}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                          preferences.orderUpdates ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
                         }`}
-                      />
-                    </button>
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
+                            preferences.orderUpdates ? 'left-6.5' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Health & Vaccination Alerts */}
+                    <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
+                        <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-[#7E22CE]" />
+                          <span>Health & Vaccination Alerts</span>
+                        </h4>
+                        <p className="text-xs text-[#67796B]">
+                          Reminders when your pet’s annual vaccinations or checkups are due.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePreference('healthTips')}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                          preferences.healthTips ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
+                            preferences.healthTips ? 'left-6.5' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2171,3 +2732,6 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
+export default ProfilePage;
+

@@ -1,9 +1,13 @@
 import axios, { AxiosError } from 'axios';
 
-const baseURL =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.NEXT_PUBLIC_API_BASE_URL ||
-  'http://localhost:8080/api';
+const baseURL = import.meta.env.VITE_API_BASE_URL;
+
+if (!baseURL) {
+  throw new Error(
+    '[axios] VITE_API_BASE_URL is not set. ' +
+      'Add it to your frontend/.env file (e.g. VITE_API_BASE_URL=http://localhost:8080/api).'
+  );
+}
 
 export const apiClient = axios.create({
   baseURL,

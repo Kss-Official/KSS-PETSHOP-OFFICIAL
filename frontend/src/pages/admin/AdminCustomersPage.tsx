@@ -68,8 +68,8 @@ export const AdminCustomersPage: React.FC = () => {
   const fetchCustomers = async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/admin/customers');
-      setCustomers(res.data || []);
+      const data = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
+      setCustomers(data);
     } catch (err: any) {
       console.error('Failed to fetch customers', err);
       const msg = err.response?.data?.message || 'Failed to load customers from database.';

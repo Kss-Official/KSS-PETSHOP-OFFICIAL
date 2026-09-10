@@ -23,7 +23,6 @@ import {
   Sparkles,
   Mail,
   CheckCircle2,
-  ArrowRight,
 } from 'lucide-react';
 
 interface ArticleDto {
@@ -285,14 +284,15 @@ export const HealthTipsPage: React.FC = () => {
         <section id="health-tips-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 lg:pt-28 pb-16 sm:pb-24">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center min-h-[460px] sm:min-h-[540px]">
             <div className="lg:col-span-5 space-y-8">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider shadow-2xs">
-                <Heart className="w-3.5 h-3.5 fill-[#EF7C3C]" />
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] border border-[#C3ECD0] text-xs font-black uppercase tracking-wider shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#287A41]" />
                 <span>PET HEALTH TIPS</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#16241B] tracking-tight leading-[1.12]">
                 Small Care Makes A{' '}
-                <span className="text-[#EF7C3C]">Big Difference.</span>
+                <span className="text-[#009E66]">Big Difference</span>
+                <span className="text-[#16241B]">.</span>
               </h1>
 
               <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
@@ -343,7 +343,7 @@ export const HealthTipsPage: React.FC = () => {
                           el.scrollIntoView({ behavior: 'smooth' });
                         }
                       }}
-                      className="px-3 py-1 rounded-full bg-white border border-[#E5DFCE] hover:border-[#3FA65C] hover:text-[#3FA65C] font-semibold text-xs transition-colors cursor-pointer"
+                      className="px-3 py-1 rounded-full bg-white border border-[#E5DFCE] hover:border-[#3FA65C]/40 text-[#16241B] hover:text-[#009E66] shadow-2xs hover:shadow-md hover:bg-[#E6F4E8] font-bold text-xs transition-all cursor-pointer"
                     >
                       {tag}
                     </button>
@@ -383,7 +383,6 @@ export const HealthTipsPage: React.FC = () => {
               className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
             >
               <span>View all</span>
-              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -543,7 +542,6 @@ export const HealthTipsPage: React.FC = () => {
                 className="text-xs sm:text-sm font-bold text-[#009E66] hover:text-[#008757] hover:underline flex items-center gap-1 cursor-pointer transition-colors shrink-0"
               >
                 <span>View all articles</span>
-                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -674,8 +672,9 @@ export const HealthTipsPage: React.FC = () => {
                     className="text-[#EF7C3C]"
                     style={{ WebkitTextStroke: '0.75px #16241B' }}
                   >
-                    You Know Today.
+                    You Know Today
                   </span>
+                  <span className="text-[#16241B]">.</span>
                 </h2>
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
                   Get the latest pet health tips, expert advice, and care reminders straight to your inbox.
@@ -713,12 +712,12 @@ export const HealthTipsPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="lg:col-span-5 flex justify-center items-center relative z-20">
-                <div className="w-full max-w-[340px] aspect-square rounded-3xl overflow-hidden border-2 border-white/60 shadow-lg bg-white/90">
+              <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
+                <div className="relative w-full max-w-[250px] sm:max-w-[270px] h-[250px] sm:h-[270px] flex justify-center items-center overflow-visible">
                   <img
-                    src={getCloudinaryImageUrl('cta_cat_sunglasses_flawless_seamless')}
-                    alt="Corgi with Sunglasses"
-                    className="w-full h-full object-cover rounded-3xl"
+                    src={getCloudinaryImageUrl('health_tips_cta')}
+                    alt="Pet Health Care"
+                    className="relative z-10 w-[118%] max-w-[320px] h-auto object-contain -mt-14 -mb-2 pointer-events-none drop-shadow-md"
                   />
                 </div>
               </div>

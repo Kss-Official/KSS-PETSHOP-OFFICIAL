@@ -15,7 +15,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { getCloudinaryImageUrl } from '../../lib/utils';
+import { getCloudinaryImageUrl, getWishlistItems } from '../../lib/utils';
 import { useAuth } from '../../features/auth/AuthContext';
 
 interface NotificationItem {
@@ -47,7 +47,7 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-3',
     title: 'Clinic Schedule Notice',
-    message: 'Pawfectly Central Clinic emergency helpline is active 24/7 at 1-800-PAWFECT.',
+    message: 'Pawfectly Central Clinic emergency helpline is active 24/7 at 9080876747.',
     time: '1d ago',
     isRead: true,
     type: 'admin',
@@ -82,6 +82,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+
+  const [wishlistCount, setWishlistCount] = useState<number>(0);
+
+  useEffect(() => {
+    const syncCount = () => {
+      setWishlistCount(getWishlistItems().length);
+    };
+    syncCount();
+    window.addEventListener('wishlist-updated', syncCount);
+    return () => window.removeEventListener('wishlist-updated', syncCount);
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -200,6 +211,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                 className="relative w-10 h-10 rounded-full bg-white border border-[#E5DFCE] flex items-center justify-center text-[#334437] hover:bg-[#F3EDE0] transition-colors cursor-pointer shadow-2xs group"
               >
                 <Heart className="w-4.5 h-4.5 text-[#16241B] group-hover:text-red-500 group-hover:fill-red-500 transition-colors" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-[#E11D48] text-white text-[10px] font-black flex items-center justify-center shadow-xs">
+                    {wishlistCount}
+                  </span>
+                )}
               </button>
 
               {/* 3. Notification Bell with Dropdown */}
@@ -237,10 +253,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                           </span>
                         )}
                       </div>
+
                       {unreadCount > 0 && (
                         <button
+                          type="button"
                           onClick={markAllAsRead}
-                          className="flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors cursor-pointer"
+                          className="text-xs font-bold text-[#009E66] hover:text-[#008757] hover:underline cursor-pointer flex items-center gap-1 transition-colors"
                         >
                           <CheckCheck className="w-3.5 h-3.5" />
                           <span>Mark all read</span>
@@ -330,14 +348,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                         >
                           Clear all
                         </button>
-                        {unreadCount > 0 && (
-                          <button
-                            onClick={markAllAsRead}
-                            className="font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors cursor-pointer"
-                          >
-                            Mark all as read
-                          </button>
-                        )}
                       </div>
                     )}
                   </div>
@@ -367,6 +377,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                 className="relative w-10 h-10 rounded-full bg-white border border-[#E5DFCE] flex items-center justify-center text-[#334437] hover:bg-[#F3EDE0] transition-colors cursor-pointer group"
               >
                 <Heart className="w-4 h-4 text-[#16241B] group-hover:text-red-500 group-hover:fill-red-500 transition-colors" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-[#E11D48] text-white text-[10px] font-black flex items-center justify-center shadow-xs">
+                    {wishlistCount}
+                  </span>
+                )}
               </button>
 
               {/* Notification Bell with Dialogue Box */}
@@ -404,10 +419,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                           </span>
                         )}
                       </div>
+
                       {unreadCount > 0 && (
                         <button
+                          type="button"
                           onClick={markAllAsRead}
-                          className="flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors cursor-pointer"
+                          className="text-xs font-bold text-[#009E66] hover:text-[#008757] hover:underline cursor-pointer flex items-center gap-1 transition-colors"
                         >
                           <CheckCheck className="w-3.5 h-3.5" />
                           <span>Mark all read</span>
@@ -497,14 +514,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                         >
                           Clear all
                         </button>
-                        {unreadCount > 0 && (
-                          <button
-                            onClick={markAllAsRead}
-                            className="font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors cursor-pointer"
-                          >
-                            Mark all as read
-                          </button>
-                        )}
                       </div>
                     )}
                   </div>
