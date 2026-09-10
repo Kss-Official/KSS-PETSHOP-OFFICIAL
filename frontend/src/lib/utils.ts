@@ -33,6 +33,9 @@ export function getCloudinaryImageUrl(
   options: string = 'f_auto,q_auto'
 ): string {
   if (!publicId) return '';
+  if (publicId.startsWith('http://') || publicId.startsWith('https://')) {
+    return publicId;
+  }
   const targetId = ASSET_ALIASES[publicId] || publicId;
   const cloudName = (
     import.meta.env.VITE_CLOUDINARY_CLOUD_NAME ||
