@@ -2,6 +2,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 80px;
 }
 
 @layer base {
@@ -46,6 +47,28 @@ html {
   scrollbar-width: none;
 }
 
+/* Smooth Interactive Micro-animations for Buttons & Links */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+[role="button"] {
+  transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button:active:not(:disabled),
+a:active:not(:disabled),
+input[type="button"]:active:not(:disabled),
+input[type="submit"]:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 @keyframes float-slow {
   0%, 100% {
     transform: translateY(0px);
@@ -72,10 +95,10 @@ html {
   animation: float-delayed 4.5s ease-in-out infinite 1s;
 }
 
-/* Page Transition - Native Crossfade via View Transitions API */
+/* Page Transition - Native Smooth Crossfade & Slight Elevation via View Transitions API */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 200ms;
+  animation-duration: 250ms;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   mix-blend-mode: normal;
 }
@@ -91,18 +114,22 @@ html {
 @keyframes pageFadeOut {
   from {
     opacity: 1;
+    transform: translateY(0);
   }
   to {
     opacity: 0;
+    transform: translateY(-4px);
   }
 }
 
 @keyframes pageFadeIn {
   from {
     opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -114,8 +141,19 @@ html {
   html {
     scroll-behavior: auto !important;
   }
+  button,
+  a,
+  input,
+  [role="button"] {
+    transition: none !important;
+  }
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation: none !important;
   }
+}
+
+/* Hide Leaflet attribution watermark */
+.leaflet-control-attribution {
+  display: none !important;
 }

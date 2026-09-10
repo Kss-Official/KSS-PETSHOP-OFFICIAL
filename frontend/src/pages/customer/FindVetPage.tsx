@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl, getVetImageUrl } from '../../lib/utils';
+import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
 import L from 'leaflet';
@@ -57,12 +57,15 @@ interface VetDoctor {
 
 const CLINIC_LOCATION = {
   name: 'Pawfectly Veterinary Care Center',
-  address: '123 Pawfectly Way, New York, NY 10001',
-  lat: 40.7128,
-  lng: -74.006,
-  phone: '1-800-PAWFECT',
+  address: 'Pawfectly Clinic, Brigade Road, Bangalore, Karnataka 560001',
+  lat: 12.9716,   // Bangalore city centre
+  lng: 77.5946,
+  phone: '9080876747',
   hours: 'Mon-Sun: 8:00 AM - 9:00 PM (24/7 Emergency)',
 };
+
+/** Fallback consultation fee in ₹ when a vet record has no fee set. */
+const DEFAULT_CONSULTATION_FEE = 500;
 
 export const FindVetPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -94,23 +97,13 @@ export const FindVetPage: React.FC = () => {
 
   const popularSearches = ['Emergency Care', 'Dental Care', 'Surgery', 'General Veterinarian'];
 
-  const fetchVets = () => {
+  const fetchVets = useCallback(() => {
     setLoading(true);
     setError(null);
     apiClient
       .get('/vets')
       .then((res) => {
         setDoctorsList(res.data || []);
-
-        // Check if vetId was passed via query parameter
-        const queryVetId = searchParams.get('vetId');
-        if (queryVetId) {
-          if (!isAuthenticated) {
-            navigate('/login');
-          } else {
-            navigate(`/profile?tab=appointments&vetId=${queryVetId}`);
-          }
-        }
       })
       .catch(() => {
         setError('Failed to load veterinarians. Please check your connection.');
@@ -118,11 +111,22 @@ export const FindVetPage: React.FC = () => {
       .finally(() => {
         setLoading(false);
       });
-  };
+  }, []);
 
   useEffect(() => {
     fetchVets();
-  }, []);
+  }, [fetchVets]);
+
+  useEffect(() => {
+    const queryVetId = searchParams.get('vetId');
+    if (queryVetId && !loading) {
+      if (!isAuthenticated) {
+        navigate('/login', { replace: true });
+      } else {
+        navigate(`/profile?tab=appointments&vetId=${queryVetId}`, { replace: true });
+      }
+    }
+  }, [searchParams, isAuthenticated, loading, navigate]);
 
   const handleExecuteSearch = () => {
     setAppliedSearchTerm(inputSearchTerm.trim());
@@ -185,12 +189,12 @@ export const FindVetPage: React.FC = () => {
       zoom: 14,
       zoomControl: true,
       scrollWheelZoom: false,
+      attributionControl: false,
     });
 
     mapInstanceRef.current = map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 18,
     }).addTo(map);
 
@@ -309,8 +313,8 @@ export const FindVetPage: React.FC = () => {
               </div>
 
               {/* Popular Searches */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="text-xs font-semibold text-[#556658]">Popular Searches :</span>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-xs font-bold text-[#556658]">Popular Searches :</span>
                 {popularSearches.map((tag) => (
                   <button
                     key={tag}
@@ -319,7 +323,7 @@ export const FindVetPage: React.FC = () => {
                       setAppliedSpecialization(tag);
                       document.getElementById('vets-directory')?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="text-xs font-bold text-[#287A41] hover:underline cursor-pointer transition-colors"
+                    className="px-3 py-1 rounded-full text-xs font-bold text-[#287A41] bg-white border border-[#D5EAD9] shadow-2xs hover:shadow-md hover:bg-[#E6F4E8] hover:border-[#287A41]/40 transition-all cursor-pointer"
                   >
                     {tag}
                   </button>
@@ -357,7 +361,7 @@ export const FindVetPage: React.FC = () => {
               href="/find-a-vet"
               className="shrink-0 text-sm font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors flex items-center gap-1 pb-0.5"
             >
-              View All <span aria-hidden="true">→</span>
+              View All
             </a>
           </div>
 
@@ -447,7 +451,8 @@ export const FindVetPage: React.FC = () => {
                           </div>
 
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                            {/* 1. Vet Name */}
+                            <div className="flex items-center gap-1.5">
                               <h3 className="text-base sm:text-lg font-black text-[#1B2B1E]">
                                 {displayName}
                               </h3>
@@ -455,21 +460,27 @@ export const FindVetPage: React.FC = () => {
                                 <CheckCircle2 className="w-4 h-4 text-[#3FA65C] shrink-0" />
                               </span>
                             </div>
+
+                            {/* 2. Specialization */}
                             <p className="text-xs sm:text-sm font-semibold text-[#EF7C3C]">
                               {doc.specialization}
                             </p>
+
+                            {/* 3. Secondary Specialization */}
                             {doc.secondarySpecialization && (
                               <p className="text-xs text-[#556658] font-medium">
                                 {doc.secondarySpecialization}
                               </p>
                             )}
-                            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#556658] pt-0.5">
+
+                            {/* 4. Review, Experience, Species */}
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#556658] pt-1">
                               <span className="flex items-center gap-1 text-[#F5A623] font-extrabold">
-                                <Star className="w-3.5 h-3.5 fill-current" /> {doc.rating ? doc.rating.toFixed(1) : '4.9'}
+                                <Star className="w-3.5 h-3.5 fill-current" /> {doc.rating ? doc.rating.toFixed(1) : '4.7'}
                               </span>
-                              <span>({doc.reviewsCount || 45} reviews)</span>
+                              <span>({doc.reviewsCount || 58} reviews)</span>
                               <span>•</span>
-                              <span>{doc.experienceYears || 10}+ yrs exp</span>
+                              <span>{doc.experienceYears || 7}+ yrs exp</span>
                               {doc.petTypes && (
                                 <>
                                   <span>•</span>
@@ -479,13 +490,17 @@ export const FindVetPage: React.FC = () => {
                                   </span>
                                 </>
                               )}
-                              <span>•</span>
-                              <span className="flex items-center gap-1 text-[#1B2B1E]">
-                                <MapPin className="w-3 h-3 text-[#3FA65C]" /> {doc.city || 'New York, USA'}
+                            </div>
+
+                            {/* 5. Location and Price */}
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#556658] pt-0.5">
+                              <span className="flex items-center gap-1 text-[#1B2B1E] font-medium">
+                                <MapPin className="w-3.5 h-3.5 text-[#3FA65C]" />
+                                <span>{doc.city || 'Bangalore, India'}</span>
                               </span>
                               <span>•</span>
                               <span className="font-bold text-[#287A41]">
-                                ${doc.consultationFee ? doc.consultationFee.toFixed(2) : '50.00'} / visit
+                                {doc.consultationFee ? formatCurrency(doc.consultationFee) : formatCurrency(DEFAULT_CONSULTATION_FEE)} / visit
                               </span>
                             </div>
                           </div>

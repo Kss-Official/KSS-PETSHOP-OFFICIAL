@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { CtaBanner } from '../../components/layout/CtaBanner';
-import { getCloudinaryImageUrl, getVetImageUrl } from '../../lib/utils';
+import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
@@ -491,12 +491,29 @@ export const HomePage: React.FC = () => {
                         <p className="text-xs font-bold text-[#EF7C3C] mt-0.5">
                           {vet.specialization}
                         </p>
+                        {vet.secondarySpecialization && (
+                          <p className="text-xs text-[#556658] font-medium mt-0.5">
+                            {vet.secondarySpecialization}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-1 text-xs text-[#556658]">
-                        <p className="font-semibold">{vet.experienceYears || 10}+ years experience</p>
-                        <p className="font-semibold text-[#16241B] line-clamp-1">{vet.secondarySpecialization || vet.specialization}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap font-semibold">
+                          <span className="text-[#F5A623] font-extrabold flex items-center gap-0.5">
+                            ★ {vet.rating ? vet.rating.toFixed(1) : '4.7'}
+                          </span>
+                          <span>({vet.reviewsCount || 58} reviews)</span>
+                          <span>•</span>
+                          <span>{vet.experienceYears || 7}+ yrs exp</span>
+                          {vet.petTypes && (
+                            <>
+                              <span>•</span>
+                              <span className="text-[#287A41] font-bold">🐾 {vet.petTypes}</span>
+                            </>
+                          )}
+                        </div>
                         <p className="font-semibold text-[#16241B] pt-0.5 flex items-center gap-1">
-                          <span className="text-[#EF7C3C]">📍</span> {vet.city || 'New York, USA'}
+                          <span className="text-[#3FA65C]">📍</span> {vet.city || 'Bangalore, KA'} • <span className="font-bold text-[#287A41]">{vet.consultationFee ? formatCurrency(vet.consultationFee) : '₹40 / visit'}</span>
                         </p>
                       </div>
                     </Card>

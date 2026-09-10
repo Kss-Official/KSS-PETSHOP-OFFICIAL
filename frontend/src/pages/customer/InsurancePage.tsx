@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-import { ImagePlaceholder } from '../../components/ui/ImagePlaceholder';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 import {
   ShieldCheck,
@@ -19,6 +18,7 @@ import {
   Zap,
   X,
   Send,
+  Loader2,
 } from 'lucide-react';
 
 export const InsurancePage: React.FC = () => {
@@ -33,7 +33,14 @@ export const InsurancePage: React.FC = () => {
     phone: '',
   });
   const [quoteSubmitted, setQuoteSubmitted] = useState(false);
+  const [quoteSubmitting, setQuoteSubmitting] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPageLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -49,8 +56,12 @@ export const InsurancePage: React.FC = () => {
   const handleSubmitQuote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!quoteFormData.email || !quoteFormData.petName) return;
-    setQuoteSubmitted(true);
-    showToast(`Quote request for ${quoteFormData.petName} submitted successfully!`);
+    setQuoteSubmitting(true);
+    setTimeout(() => {
+      setQuoteSubmitting(false);
+      setQuoteSubmitted(true);
+      showToast(`Quote request for ${quoteFormData.petName} submitted successfully!`);
+    }, 500);
   };
 
   const plans = [
@@ -73,7 +84,7 @@ export const InsurancePage: React.FC = () => {
         '24/7 emergency veterinary hotline',
       ],
       ctaText: 'Get Started',
-      ctaStyle: 'bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE]',
+      ctaStyle: 'bg-white hover:bg-[#FFF0E6] hover:border-[#EF7C3C]/40 hover:text-[#EF7C3C] text-[#16241B] border border-[#E5DFCE]',
     },
     {
       id: 'plan-standard',
@@ -117,7 +128,7 @@ export const InsurancePage: React.FC = () => {
         'Microchipping & behavioral therapy support',
       ],
       ctaText: 'Get Started',
-      ctaStyle: 'bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE]',
+      ctaStyle: 'bg-white hover:bg-[#FFF0E6] hover:border-[#EF7C3C]/40 hover:text-[#EF7C3C] text-[#16241B] border border-[#E5DFCE]',
     },
   ];
 
@@ -216,6 +227,23 @@ export const InsurancePage: React.FC = () => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
 
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col">
+        <Navbar activePage="insurance" />
+        <main className="flex-grow flex flex-col items-center justify-center py-24 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-[#E6F9EC] border border-[#C3ECD0] flex items-center justify-center text-[#009E66] shadow-sm animate-pulse">
+            <Loader2 className="w-8 h-8 animate-spin text-[#009E66]" />
+          </div>
+          <p className="text-sm font-black text-[#16241B] tracking-tight">
+            Loading Pet Insurance Options...
+          </p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col">
       <Navbar activePage="insurance" />
@@ -233,66 +261,67 @@ export const InsurancePage: React.FC = () => {
         <section id="insurance-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
             <div className="lg:col-span-5 space-y-6 text-left z-20">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
-                  <Shield className="w-3.5 h-3.5 text-[#287A41]" />
-                  <span>PET INSURANCE</span>
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
+                <Shield className="w-3.5 h-3.5 text-[#287A41]" />
+                <span>PET INSURANCE</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
+                Protect Them Today, For{' '}
+                <span className="text-[#009E66]">Every Tomorrow</span>
+                <span className="text-[#16241B]">.</span>
+              </h1>
+
+              <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
+                Comprehensive coverage for accidents, illness, and routine care
+                — because peace of mind shouldn't be optional.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+                <button
+                  onClick={() => handleOpenQuote('Standard')}
+                  className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                >
+                  Get a Quote <ArrowRight className="w-4 h-4" />
+                </button>
+                <a
+                  href="#how-it-works"
+                  className="px-7 py-3.5 bg-white hover:bg-[#FFF0E6] hover:border-[#EF7C3C]/40 hover:text-[#EF7C3C] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                >
+                  How It Works
+                </a>
+              </div>
+
+              {/* Trust Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-6 text-left">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-[#16241B]">No Hidden Fees</span>
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
-                  Protect Them Today, For{' '}
-                  <span className="text-[#EF7C3C]">Every Tomorrow.</span>
-                </h1>
-
-                <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
-                  Comprehensive coverage for accidents, illness, and routine care
-                  — because peace of mind shouldn't be optional.
-                </p>
-
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                  <button
-                    onClick={() => handleOpenQuote('Standard')}
-                    className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
-                  >
-                    Get a Quote <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <a
-                    href="#how-it-works"
-                    className="px-7 py-3.5 bg-white hover:bg-[#FAF6EE] text-[#16241B] border border-[#E5DFCE] font-bold rounded-full shadow-xs transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
-                  >
-                    How It Works
-                  </a>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[#E0F2FE] text-[#0284C7] flex items-center justify-center shrink-0">
+                    <Zap className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-[#16241B]">Fast Claim Approval</span>
                 </div>
 
-                {/* Trust Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-6 text-left">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">No Hidden Fees</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[#FFE4E6] text-[#E11D48] flex items-center justify-center shrink-0">
+                    <Clock className="w-3.5 h-3.5" />
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#E0F2FE] text-[#0284C7] flex items-center justify-center shrink-0">
-                      <Zap className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">Fast Claim Approval</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#FFE4E6] text-[#E11D48] flex items-center justify-center shrink-0">
-                      <Clock className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">24/7 Support</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#FEF9C3] text-[#B45309] flex items-center justify-center shrink-0">
-                      <Users className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#16241B]">25,000+ Pet Parents</span>
-                  </div>
+                  <span className="text-xs font-bold text-[#16241B]">24/7 Support</span>
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[#FEF9C3] text-[#B45309] flex items-center justify-center shrink-0">
+                    <Users className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-[#16241B]">25,000+ Pet Parents</span>
+                </div>
+              </div>
             </div>
 
             {/* Right Column: Large hero image (7 cols) - Moved right */}
@@ -327,13 +356,11 @@ export const InsurancePage: React.FC = () => {
               {plans.map((plan) => (
                 <div
                   key={plan.id}
-                  className={`rounded-[28px] p-6 sm:p-8 flex flex-col justify-between transition-all relative ${
-                    plan.cardBg
-                  } ${plan.border} ${
-                    plan.isPopular
+                  className={`rounded-[28px] p-6 sm:p-8 flex flex-col justify-between transition-all relative ${plan.cardBg
+                    } ${plan.border} ${plan.isPopular
                       ? 'shadow-xl ring-4 ring-[#3FA65C]/10 scale-102 lg:-translate-y-2'
                       : 'shadow-xs hover:shadow-md'
-                  }`}
+                    }`}
                 >
                   {plan.isPopular && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#3FA65C] text-white px-4 py-1 rounded-full text-xs font-black tracking-wider uppercase shadow-xs">
@@ -535,8 +562,9 @@ export const InsurancePage: React.FC = () => {
                     className="text-[#EF7C3C]"
                     style={{ WebkitTextStroke: '0.75px #16241B' }}
                   >
-                    They Deserve.
+                    They Deserve
                   </span>
+                  <span className="text-[#16241B]">.</span>
                 </h2>
 
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
@@ -553,9 +581,13 @@ export const InsurancePage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-5 flex justify-center items-center relative z-20">
-                <div className="w-full max-w-[340px] aspect-square rounded-3xl overflow-hidden border-2 border-white/60 shadow-lg bg-white/90">
-                  <ImagePlaceholder label="Corgi with Sunglasses" className="rounded-3xl" />
+              <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
+                <div className="relative w-full max-w-[270px] sm:max-w-[300px] h-[200px] sm:h-[280px] flex justify-center items-center overflow-visible">
+                  <img
+                    src={getCloudinaryImageUrl('insurance_cta')}
+                    alt="Pet Insurance Protection"
+                    className="relative z-10 w-[138%] max-w-[650px] h-auto object-contain scale-115 -mt-16 -mb-4 pointer-events-none drop-shadow-lg"
+                  />
                 </div>
               </div>
             </div>
@@ -693,9 +725,18 @@ export const InsurancePage: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-full bg-[#009E66] hover:bg-[#008757] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                    disabled={quoteSubmitting}
+                    className="px-6 py-2.5 rounded-full bg-[#009E66] hover:bg-[#008757] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-70"
                   >
-                    <Send className="w-3.5 h-3.5" /> Submit Quote Request
+                    {quoteSubmitting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" /> Submit Quote Request
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

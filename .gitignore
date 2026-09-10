@@ -26,6 +26,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 logs/
+*.sql
 
 # IDE & OS
 .vscode/*

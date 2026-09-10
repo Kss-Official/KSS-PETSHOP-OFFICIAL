@@ -152,6 +152,40 @@ public class OrderService {
         return mapToDto(updated);
     }
 
+    @Transactional
+    public OrderDto cancelOrder(Long orderId, Long customerId, boolean isAdmin) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        if (!isAdmin && !order.getCustomer().getId().equals(customerId)) {
+            throw new AccessDeniedException("You do not have permission to cancel this order.");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            return mapToDto(order);
+        }
+
+        if (order.getOrderStatus() == OrderStatus.COMPLETED) {
+            throw new BadRequestException("Completed orders cannot be cancelled.");
+        }
+
+        // Restore stock for items
+        List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
+        for (OrderItem item : items) {
+            Product product = item.getProduct();
+            if (product != null) {
+                product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
+                productRepository.save(product);
+            }
+        }
+
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        Order updated = orderRepository.save(order);
+        log.info("Cancelled order {} for customer id {}", orderId, customerId);
+
+        return mapToDto(updated);
+    }
+
     @Transactional(readOnly = true)
     public List<OrderDto> getAllOrdersAdmin() {
         return orderRepository.findAll().stream()
@@ -171,8 +205,14 @@ public class OrderService {
                         .build())
                 .collect(Collectors.toList());
 
+        String dateStr = order.getCreatedAt() != null
+                ? order.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+                : "20260909";
+        String orderNum = String.format("ORD-%s-%04d", dateStr, order.getId());
+
         return OrderDto.builder()
                 .id(order.getId())
+                .orderNumber(orderNum)
                 .customerId(order.getCustomer().getId())
                 .customerName(order.getCustomer().getName())
                 .totalAmount(order.getTotalAmount())

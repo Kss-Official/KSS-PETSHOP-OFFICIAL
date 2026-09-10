@@ -30,7 +30,7 @@ function ScrollToTop() {
 
   useEffect(() => {
     if (!hash) {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
   }, [pathname, hash]);
 
@@ -76,6 +76,7 @@ function AnimatedRoutes() {
         <Route path="/pet-insurance" element={<InsurancePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin/login" element={<LoginPage />} />
+        <Route path="/register" element={<LoginPage />} />
 
         {/* Customer Protected Routes */}
         <Route
