@@ -247,8 +247,8 @@ export const AdminCustomersPage: React.FC = () => {
         searchKey={(row) => `${row.name} ${row.email} ${row.phone}`}
         filterLabel="All Statuses"
         filterOptions={[
-          { label: 'Active', value: 'TRUE' },
-          { label: 'Deactivated', value: 'FALSE' },
+          { label: 'Active', value: 'true' },
+          { label: 'Deactivated', value: 'false' },
         ]}
         filterKey={(row) => String(row.isActive)}
       />

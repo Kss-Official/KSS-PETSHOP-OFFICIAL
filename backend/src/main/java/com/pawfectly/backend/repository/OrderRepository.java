@@ -15,10 +15,14 @@ import java.util.List;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerId(Long customerId);
+    List<Order> findByCustomerIdIn(List<Long> customerIds);
     List<Order> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
     List<Order> findAllByOrderByCreatedAtDesc();
 
-    @Query("SELECT o FROM Order o WHERE " +
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.customer ORDER BY o.createdAt DESC")
+    List<Order> findRecentOrdersWithCustomer(org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.customer WHERE " +
            "(:orderStatus IS NULL OR o.orderStatus = :orderStatus) AND " +
            "(:paymentStatus IS NULL OR o.paymentStatus = :paymentStatus) " +
            "ORDER BY o.createdAt DESC")
@@ -32,6 +36,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.paymentStatus = 'PAID' AND o.createdAt >= :startDate")
     BigDecimal sumRevenueSince(@Param("startDate") LocalDateTime startDate);
+
+    @Query("SELECT o FROM Order o WHERE (o.paymentStatus = 'PAID' OR o.orderStatus = 'COMPLETED') AND o.createdAt >= :startDate")
+    List<Order> findPaidOrdersSince(@Param("startDate") LocalDateTime startDate);
 
     @Query("SELECT o FROM Order o WHERE (o.paymentStatus = 'PAID' OR o.orderStatus = 'COMPLETED') AND o.createdAt >= :startDate AND o.createdAt < :endDate")
     List<Order> findPaidOrdersBetween(

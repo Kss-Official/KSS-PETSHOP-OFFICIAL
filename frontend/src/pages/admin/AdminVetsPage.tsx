@@ -15,7 +15,8 @@ interface Vet {
   reviewsCount?: number;
   consultationFee?: number;
   photoUrl: string;
-  address: string;
+  bio?: string;
+  address?: string;
   isActive: boolean;
 }
 
@@ -37,7 +38,7 @@ export const AdminVetsPage: React.FC = () => {
     specialization: '',
     consultationFee: 500,
     photoUrl: '',
-    address: '',
+    bio: '',
     isActive: true,
   });
 
@@ -67,7 +68,7 @@ export const AdminVetsPage: React.FC = () => {
       specialization: '',
       consultationFee: 500,
       photoUrl: '',
-      address: '',
+      bio: '',
       isActive: true,
     });
     setError(null);
@@ -82,7 +83,7 @@ export const AdminVetsPage: React.FC = () => {
       specialization: vet.specialization || '',
       consultationFee: vet.consultationFee ?? 500,
       photoUrl: vet.photoUrl || '',
-      address: vet.address || '',
+      bio: vet.bio || '',
       isActive: vet.isActive,
     });
     setError(null);
@@ -138,7 +139,7 @@ export const AdminVetsPage: React.FC = () => {
         specialization: formData.specialization,
         consultationFee: formData.consultationFee,
         photoUrl: formData.photoUrl,
-        address: formData.address,
+        bio: formData.bio,
         isActive: formData.isActive,
       };
 
@@ -176,7 +177,7 @@ export const AdminVetsPage: React.FC = () => {
             </div>
             <div>
               <p className="font-semibold text-gray-900">{row.name}</p>
-              <p className="text-xs text-gray-500">{row.address || 'Clinic practitioner'}</p>
+              <p className="text-xs text-gray-500 line-clamp-1 max-w-xs">{row.bio || 'Veterinary Specialist'}</p>
             </div>
           </div>
         );
@@ -361,13 +362,13 @@ export const AdminVetsPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Clinic Location / Address
+              Description
             </label>
-            <input
-              type="text"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Building 4, Downtown Pet Medical Center"
+            <textarea
+              rows={3}
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              placeholder="Dr. Sarah Mitchell is a dedicated Veterinary Surgeon with over 12 years of experience specializing in orthopedic surgery, soft tissue procedures, and emergency trauma care."
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/30 focus:border-[#3FA65C]"
             />
           </div>

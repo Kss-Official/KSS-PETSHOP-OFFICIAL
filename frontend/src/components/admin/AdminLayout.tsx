@@ -16,7 +16,6 @@ import {
   ShieldCheck,
   LogOut,
   User,
-  ChevronDown,
   Menu,
   X,
   CheckCircle2,
@@ -561,21 +560,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
             <div className="relative">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-3 pl-2 pr-3 py-1.5 rounded-xl bg-[#F9FAF8] hover:bg-[#F3F4F6] border border-[#E5E7EB] hover:border-[#D1D5DB] transition-all cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)] group"
+                className="flex items-center justify-center p-1 rounded-xl bg-[#F9FAF8] hover:bg-[#F3F4F6] border border-[#E5E7EB] hover:border-[#D1D5DB] transition-all cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)] group"
+                aria-label="User profile menu"
               >
                 <div className="relative">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#16241B] to-[#283E2F] text-[#3FA65C] font-extrabold text-xs flex items-center justify-center border border-white/10 shadow-xs">
-                    {user?.name?.charAt(0) || 'A'}
+                    {user?.name?.charAt(0) || 'P'}
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#3FA65C] border-2 border-white rounded-full"></span>
                 </div>
-                <div className="hidden sm:flex flex-col text-left">
-                  <span className="text-xs font-bold text-[#111827] leading-tight group-hover:text-[#3FA65C] transition-colors">
-                    {user?.name || 'Admin User'}
-                  </span>
-                  <span className="text-[10px] font-medium text-[#6B7280]">{user?.email || 'admin@pawfectly.com'}</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 text-[#9CA3AF] transition-transform duration-150 ${userDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {userDropdownOpen && (
