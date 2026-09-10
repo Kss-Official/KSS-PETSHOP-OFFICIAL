@@ -28,6 +28,8 @@ import {
   Mail,
   ShieldCheck,
   Clock,
+  Star,
+  Stethoscope,
   MapPin,
   Phone,
   AlertCircle,
@@ -100,6 +102,7 @@ interface VetDoctorItem {
   secondarySpecialization?: string;
   city?: string;
   consultationFee?: number;
+  experienceYears?: number;
 }
 
 interface CartItemData {
@@ -561,6 +564,11 @@ export const ProfilePage: React.FC = () => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to cancel appointment.';
       showToast(msg, 'error');
+    } finally {
+      setCancellingAppointment(false);
+    }
+  };
+
   // 4b. Notifications & Reviews State
   const [notifications, setNotifications] = useState<{ id: number; customerId: number; type: string; title: string; message: string; relatedEntityId?: number; isRead: boolean; createdAt?: string }[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
@@ -570,6 +578,12 @@ export const ProfilePage: React.FC = () => {
   const [reviewRating, setReviewRating] = useState<number>(5);
   const [reviewText, setReviewText] = useState<string>('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
+  const handleOpenReviewModal = (apt: AppointmentItem) => {
+    setReviewModalApt(apt);
+    setReviewRating(5);
+    setReviewText('');
+  };
 
   const fetchNotifications = useCallback(async () => {
     setNotificationsLoading(true);
@@ -2825,6 +2839,8 @@ export const ProfilePage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            )}
+          </section>
         </div>
       </main>
 

@@ -117,7 +117,7 @@ export const HealthTipsPage: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const featuredList = filteredArticles.filter((a) => a.featured).slice(0, 3);
+  const featuredList = filteredArticles.filter((a) => a.isFeatured).slice(0, 3);
 
   const petTypeFilteredArticles = articles.filter((art) => {
     if (!selectedPetType) return true;

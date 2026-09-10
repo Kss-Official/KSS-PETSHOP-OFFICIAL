@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Search, Filter, Edit3, Mail, Phone, Pet, User, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Search, Edit3, Mail, Phone, Clock, CheckCircle2 } from 'lucide-react';
 import { AdminLayout, useAdminToast } from '../../components/admin/AdminLayout';
 import { DataTable, type Column } from '../../components/admin/DataTable';
 import { AdminModal } from '../../components/admin/AdminModal';
@@ -103,8 +103,9 @@ export const AdminInsuranceQuotesPage: React.FC = () => {
 
   const columns: Column<InsuranceQuoteRecord>[] = [
     {
+      key: 'id',
       header: 'Quote Details',
-      accessor: (q) => (
+      render: (q: InsuranceQuoteRecord) => (
         <div className="flex flex-col">
           <span className="font-bold text-[#16241B] text-xs">Quote #{q.id}</span>
           <span className="text-[11px] text-gray-500 font-medium">
@@ -114,8 +115,9 @@ export const AdminInsuranceQuotesPage: React.FC = () => {
       ),
     },
     {
+      key: 'customerName',
       header: 'Customer',
-      accessor: (q) => (
+      render: (q: InsuranceQuoteRecord) => (
         <div className="flex flex-col space-y-0.5">
           <span className="font-bold text-[#16241B] text-xs flex items-center gap-1">
             {q.customerName}
@@ -130,8 +132,9 @@ export const AdminInsuranceQuotesPage: React.FC = () => {
       ),
     },
     {
+      key: 'petName',
       header: 'Pet Profile',
-      accessor: (q) => (
+      render: (q: InsuranceQuoteRecord) => (
         <div className="flex flex-col">
           <span className="font-bold text-[#16241B] text-xs">{q.petName}</span>
           <span className="text-[11px] text-gray-500 font-medium">
@@ -141,8 +144,9 @@ export const AdminInsuranceQuotesPage: React.FC = () => {
       ),
     },
     {
+      key: 'selectedPlan',
       header: 'Plan Tiers',
-      accessor: (q) => {
+      render: (q: InsuranceQuoteRecord) => {
         let badgeStyle = 'bg-gray-100 text-gray-700';
         if (q.selectedPlan === 'Basic') badgeStyle = 'bg-purple-100 text-purple-800 border-purple-200';
         else if (q.selectedPlan === 'Standard') badgeStyle = 'bg-emerald-100 text-emerald-800 border-emerald-200';
@@ -156,28 +160,23 @@ export const AdminInsuranceQuotesPage: React.FC = () => {
       },
     },
     {
+      key: 'status',
       header: 'Status',
-      accessor: (q) => {
-        let badgeType: 'success' | 'warning' | 'error' | 'info' = 'info';
-        if (q.status === 'APPROVED') badgeType = 'success';
-        else if (q.status === 'PENDING') badgeType = 'warning';
-        else if (q.status === 'REJECTED') badgeType = 'error';
-        else if (q.status === 'REVIEWED' || q.status === 'CONTACTED') badgeType = 'info';
-
-        return <AdminStatusBadge status={q.status} type={badgeType} />;
-      },
+      render: (q: InsuranceQuoteRecord) => <AdminStatusBadge status={q.status} />,
     },
     {
+      key: 'notes',
       header: 'Notes',
-      accessor: (q) => (
+      render: (q: InsuranceQuoteRecord) => (
         <span className="text-xs text-gray-600 italic max-w-xs truncate block" title={q.notes || 'No notes'}>
           {q.notes || '—'}
         </span>
       ),
     },
     {
+      key: 'actions',
       header: 'Actions',
-      accessor: (q) => (
+      render: (q: InsuranceQuoteRecord) => (
         <button
           onClick={() => handleOpenEditModal(q)}
           className="px-3 py-1.5 rounded-lg bg-[#FAF6EE] hover:bg-[#E6F9EC] text-[#16241B] hover:text-[#287A41] text-xs font-bold border border-[#EDE7D9] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
@@ -272,7 +271,8 @@ export const AdminInsuranceQuotesPage: React.FC = () => {
           columns={columns}
           data={filteredQuotes}
           isLoading={isLoading}
-          emptyMessage="No insurance quote requests found matching your filters."
+          emptyTitle="No insurance quote requests found"
+          emptySubtitle="No requests match your selected status or search term."
         />
 
         {/* Status & Notes Management Modal */}

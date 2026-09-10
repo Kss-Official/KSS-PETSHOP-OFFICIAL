@@ -18,6 +18,8 @@ import {
   Scissors,
   Sparkles,
   ShieldCheck,
+  MapPin,
+  X,
   AlertCircle,
   Heart,
   Pill,
@@ -27,7 +29,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  MapPin,
 } from 'lucide-react';
 
 interface VetDoctor {
