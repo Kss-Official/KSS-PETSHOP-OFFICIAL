@@ -3,7 +3,6 @@ package com.pawfectly.backend.controller.admin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pawfectly.backend.dto.ProductDto;
 import com.pawfectly.backend.dto.RegisterRequest;
-import com.pawfectly.backend.entity.OrderStatus;
 import com.pawfectly.backend.entity.Product;
 import com.pawfectly.backend.entity.Role;
 import com.pawfectly.backend.repository.ProductRepository;
