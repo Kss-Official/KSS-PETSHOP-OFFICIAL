@@ -1840,11 +1840,11 @@ export const ProfilePage: React.FC = () => {
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="space-y-0.5">
-                              <span className="text-xs font-black text-[#16241B]">
+                              <span className="text-xs font-semibold text-[#16241B]">
                                 {order.orderNumber || `ORD-${order.id}`}
                               </span>
                               {order.createdAt && (
-                                <p className="text-xs text-[#88998C] font-medium">
+                                <p className="text-xs text-[#88998C] font-normal">
                                   Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', {
                                     day: 'numeric',
                                     month: 'short',
@@ -1856,7 +1856,7 @@ export const ProfilePage: React.FC = () => {
 
                             <div className="flex items-center gap-3">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-black border shadow-2xs ${getStatusBadge(
+                                className={`px-3 py-1 rounded-full text-xs font-semibold border shadow-2xs ${getStatusBadge(
                                   currentStatus
                                 )}`}
                               >
@@ -1866,7 +1866,7 @@ export const ProfilePage: React.FC = () => {
                               {isCancellable && (
                                 <button
                                   onClick={() => setOrderToCancel(order.id)}
-                                  className="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                                  className="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-medium transition-colors cursor-pointer shrink-0"
                                 >
                                   Cancel Order
                                 </button>
@@ -1896,7 +1896,7 @@ export const ProfilePage: React.FC = () => {
                                       <span>
                                         {item.quantity}x {item.productName}
                                       </span>
-                                      <span className="font-bold text-[#16241B]">
+                                      <span className="font-normal text-[#16241B]">
                                         ₹{(unitPrice * item.quantity).toLocaleString('en-IN')}
                                       </span>
                                     </div>
@@ -1906,7 +1906,7 @@ export const ProfilePage: React.FC = () => {
                                 <p className="text-[#88998C]">No item details available.</p>
                               )}
 
-                              <div className="flex items-center justify-between pt-2.5 border-t border-[#EAE3D4] mt-2 text-sm font-black text-[#16241B]">
+                              <div className="flex items-center justify-between pt-2.5 border-t border-[#EAE3D4] mt-2 text-sm font-medium text-[#16241B]">
                                 <span>Total Amount:</span>
                                 <span>₹{order.totalAmount.toLocaleString('en-IN')}</span>
                               </div>
@@ -1925,22 +1925,22 @@ export const ProfilePage: React.FC = () => {
                       <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
                         <AlertCircle className="w-6 h-6" />
                       </div>
-                      <h3 className="text-lg font-black text-[#16241B]">Cancel Order?</h3>
-                      <p className="text-xs text-[#67796B] font-medium">
+                      <h3 className="text-lg font-bold text-[#16241B]">Cancel Order?</h3>
+                      <p className="text-xs text-[#67796B] font-normal">
                         Are you sure you want to cancel order #{orderToCancel}? Your order will be directly cancelled and reserved items restored to store inventory.
                       </p>
                       <div className="flex items-center justify-center gap-3 pt-2">
                         <button
                           onClick={() => setOrderToCancel(null)}
                           disabled={cancellingOrder}
-                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-bold text-xs cursor-pointer"
+                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-medium text-xs cursor-pointer"
                         >
                           Keep Order
                         </button>
                         <button
                           onClick={() => handleCancelOrderConfirm(orderToCancel)}
                           disabled={cancellingOrder}
-                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
                         >
                           {cancellingOrder ? (
                             <>

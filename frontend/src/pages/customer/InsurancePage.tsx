@@ -449,9 +449,9 @@ export const InsurancePage: React.FC = () => {
 
                   <button
                     onClick={() => handleOpenQuote(plan.name)}
-                    className={`w-full py-3.5 rounded-full font-black text-xs sm:text-sm transition-all cursor-pointer ${plan.ctaStyle}`}
+                    className={`w-full py-3.5 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer ${plan.ctaStyle}`}
                   >
-                    {plan.ctaText} →
+                    {plan.ctaText}
                   </button>
                 </div>
               ))}

@@ -392,9 +392,9 @@ export const ServicesPage: React.FC = () => {
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
                   <button
                     onClick={() => navigate('/vets')}
-                    className="px-7 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                    className="px-7 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
                   >
-                    Talk to Vet →
+                    Talk to Vet
                   </button>
                 </div>
               </div>
