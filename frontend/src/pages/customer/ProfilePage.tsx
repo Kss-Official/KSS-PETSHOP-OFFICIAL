@@ -1494,10 +1494,6 @@ export const ProfilePage: React.FC = () => {
                           ₹{cartItems.reduce((acc, i) => acc + (i.price || 0) * i.quantity, 0).toLocaleString('en-IN')}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-xs font-semibold text-[#556658]">
-                        <span>Delivery / In-Store Pickup:</span>
-                        <span className="font-bold text-[#009E66]">FREE</span>
-                      </div>
                       <div className="pt-2 border-t border-[#E8E4D8] flex items-center justify-between text-base font-black text-[#16241B]">
                         <span>Total Amount:</span>
                         <span className="text-lg text-[#009E66]">
