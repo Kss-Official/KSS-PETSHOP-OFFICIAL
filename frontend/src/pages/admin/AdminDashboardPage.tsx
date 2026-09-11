@@ -5,8 +5,6 @@ import {
   Calendar,
   Users,
   IndianRupee,
-  ArrowRight,
-  ChevronRight,
   Package,
   Stethoscope,
   BarChart3,
@@ -416,7 +414,7 @@ export const AdminDashboardPage: React.FC = () => {
                   to="/admin/orders"
                   className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors"
                 >
-                  View All <ArrowRight className="w-3.5 h-3.5" />
+                  View All
                 </Link>
               </div>
 
@@ -506,7 +504,7 @@ export const AdminDashboardPage: React.FC = () => {
                   to="/admin/products"
                   className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors"
                 >
-                  Manage <ChevronRight className="w-3.5 h-3.5" />
+                  Manage
                 </Link>
               </div>
 
@@ -594,7 +592,7 @@ export const AdminDashboardPage: React.FC = () => {
                   to="/admin/vets"
                   className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors"
                 >
-                  Manage <ChevronRight className="w-3.5 h-3.5" />
+                  Manage
                 </Link>
               </div>
 
@@ -706,7 +704,7 @@ export const AdminDashboardPage: React.FC = () => {
                   to="/admin/appointments"
                   className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors"
                 >
-                  View All <ChevronRight className="w-3.5 h-3.5" />
+                  View All
                 </Link>
               </div>
 

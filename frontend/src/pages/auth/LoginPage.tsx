@@ -8,7 +8,6 @@ import {
   Lock,
   User as UserIcon,
   Phone,
-  ArrowRight,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -155,7 +154,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode }) => {
     <div
       className="h-screen w-full overflow-hidden bg-cover bg-center bg-no-repeat flex items-center justify-center p-3 sm:p-4 font-sans"
       style={{
-        backgroundImage: `url('https://res.cloudinary.com/vphylrop/image/upload/v1788939755/ChatGPT_Image_Sep_9_2026_01_10_44_PM.png')`,
+        backgroundImage: `url('https://res.cloudinary.com/vphylrop/image/upload/v1789131459/ChatGPT_Image_Sep_11_2026_06_27_14_PM.png')`,
       }}
     >
       {/* Centered White Card Container */}
@@ -341,14 +340,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-5 rounded-full bg-[#1F5C2E] hover:bg-[#184924] text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+              className="w-full py-2.5 px-5 rounded-full bg-[#009E66] hover:bg-[#008757] text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   <span>{isRegister ? 'Create Account' : 'Log In'}</span>
-                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>

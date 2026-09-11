@@ -62,7 +62,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
-
   const fetchBackendNotifications = useCallback(async () => {
     if (!isAuthenticated) {
       setNotifications([]);
@@ -78,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
         message: n.message || '',
         time: formatRelativeTime(n.createdAt),
         isRead: !!n.isRead,
-        type: n.type === 'ANNOUNCEMENT' ? 'admin' : n.type === 'APPOINTMENT' ? 'appointment' : n.type === 'ORDER' ? 'order' : 'admin',
+        type: n.type === 'ANNOUNCEMENT' ? 'admin' : n.type === 'APPOINTMENT' ? 'appointment' : (n.type && n.type.includes('ORDER')) ? 'order' : 'admin',
       }));
       setNotifications(mapped);
     } catch {
@@ -103,6 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
       fetchBackendNotifications();
     }
   }, [notificationMenuOpen, fetchBackendNotifications]);
+
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 

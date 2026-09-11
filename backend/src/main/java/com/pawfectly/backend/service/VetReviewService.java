@@ -81,6 +81,13 @@ public class VetReviewService {
     }
 
     @Transactional(readOnly = true)
+    public List<VetReviewDto> getReviewsByCustomer(Long customerId) {
+        return vetReviewRepository.findByCustomerIdOrderByCreatedAtDesc(customerId).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public VetReviewDto getReviewForAppointment(Long appointmentId) {
         return vetReviewRepository.findByAppointmentId(appointmentId)
                 .map(this::mapToDto)

@@ -319,7 +319,7 @@ export const InsurancePage: React.FC = () => {
                   onClick={() => handleOpenQuote('Standard')}
                   className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
                 >
-                  Get a Quote <ArrowRight className="w-4 h-4" />
+                  Get a Quote
                 </button>
                 <a
                   href="#how-it-works"
@@ -613,7 +613,7 @@ export const InsurancePage: React.FC = () => {
                     onClick={() => handleOpenQuote('Comprehensive')}
                     className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all text-sm sm:text-base cursor-pointer"
                   >
-                    Get Your Free Quote <ArrowRight className="w-4 h-4" />
+                    Get Your Free Quote
                   </button>
                 </div>
               </div>

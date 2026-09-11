@@ -1,13 +1,17 @@
 package com.pawfectly.backend.controller.admin;
 
+import com.pawfectly.backend.entity.NotificationPreference;
 import com.pawfectly.backend.entity.Order;
 import com.pawfectly.backend.entity.OrderItem;
 import com.pawfectly.backend.entity.OrderStatus;
 import com.pawfectly.backend.entity.PaymentStatus;
 import com.pawfectly.backend.entity.Product;
+import com.pawfectly.backend.entity.User;
+import com.pawfectly.backend.repository.NotificationPreferenceRepository;
 import com.pawfectly.backend.repository.OrderItemRepository;
 import com.pawfectly.backend.repository.OrderRepository;
 import com.pawfectly.backend.repository.ProductRepository;
+import com.pawfectly.backend.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,14 +31,20 @@ public class AdminOrderController {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
+    private final NotificationService notificationService;
+    private final NotificationPreferenceRepository notificationPreferenceRepository;
 
     public AdminOrderController(
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
-            ProductRepository productRepository) {
+            ProductRepository productRepository,
+            NotificationService notificationService,
+            NotificationPreferenceRepository notificationPreferenceRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
+        this.notificationService = notificationService;
+        this.notificationPreferenceRepository = notificationPreferenceRepository;
     }
 
     @GetMapping
@@ -157,6 +167,20 @@ public class AdminOrderController {
                             product.setStockQuantity(currentStock + item.getQuantity());
                             productRepository.save(product);
                         }
+                    }
+                }
+
+                // Send notification to customer if status changed
+                if (oldStatus != newStatus && saved.getCustomer() != null) {
+                    User customer = saved.getCustomer();
+                    NotificationPreference pref = notificationPreferenceRepository.findByUserId(customer.getId()).orElse(null);
+                    boolean orderUpdatesEnabled = pref == null || Boolean.TRUE.equals(pref.getOrderUpdates());
+                    if (orderUpdatesEnabled) {
+                        String statusFormatted = saved.getOrderStatus().name().replace("_", " ");
+                        String orderRef = String.format("ORD-%04d", saved.getId());
+                        String title = "Order " + statusFormatted;
+                        String message = "Your order " + orderRef + " is now " + statusFormatted + ".";
+                        notificationService.createCustomerNotification(customer, "ORDER_STATUS_UPDATE", title, message, saved.getId());
                     }
                 }
 

@@ -166,7 +166,7 @@ export const HealthTipsPage: React.FC = () => {
       text: 'text-[#B45309]',
       hoverText: 'group-hover:text-[#B45309]',
       hoverBg: 'hover:bg-[#FEF9C3]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895238/be7aa286-04e9-4307-b2f4-6dc218dfb17f_1.png',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1789131563/ChatGPT_Image_Sep_11_2026_06_29_05_PM.png',
     },
     {
       name: 'Cats',
@@ -177,7 +177,7 @@ export const HealthTipsPage: React.FC = () => {
       text: 'text-[#287A41]',
       hoverText: 'group-hover:text-[#287A41]',
       hoverBg: 'hover:bg-[#E6F9EC]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895237/17d0f799-c458-4c6c-a0a6-80d8cf71e496_1.png',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1789132287/ChatGPT_Image_Sep_11_2026_06_41_13_PM.png',
     },
     {
       name: 'Rabbits',

@@ -10,6 +10,8 @@ import { ErrorState } from '../../components/feedback/ErrorState';
 import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
+import { useWishlistIds } from '../../hooks/useWishlistIds';
+import { HeartToggle } from '../../components/common/HeartToggle';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -68,6 +70,9 @@ const CLINIC_LOCATION = {
 
 export const FindVetPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { isSaved } = useWishlistIds();
   const [inputSearchTerm, setInputSearchTerm] = useState('');
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   const [inputSpecialization, setInputSpecialization] = useState('All Specializations');
@@ -80,8 +85,6 @@ export const FindVetPage: React.FC = () => {
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   // Vet Reviews Modal State
   const [selectedVetForReviews, setSelectedVetForReviews] = useState<VetDoctor | null>(null);
@@ -513,14 +516,21 @@ export const FindVetPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="flex sm:flex-col items-center sm:items-end justify-center w-full sm:w-auto shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/vets/${doc.id}`)}
-                            className="px-4 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all whitespace-nowrap shrink-0 cursor-pointer"
-                          >
-                            View Profile
-                          </button>
+                        <div className="flex sm:flex-col items-center sm:items-end justify-center gap-2.5 w-full sm:w-auto shrink-0">
+                          <div className="flex items-center gap-2">
+                            <HeartToggle
+                              itemType="VET"
+                              itemId={doc.id}
+                              isInitiallySaved={isSaved('VET', doc.id)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/vets/${doc.id}`)}
+                              className="px-4 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                            >
+                              View Profile
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );

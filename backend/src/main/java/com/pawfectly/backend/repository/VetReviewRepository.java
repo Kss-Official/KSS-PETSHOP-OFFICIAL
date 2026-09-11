@@ -17,6 +17,8 @@ public interface VetReviewRepository extends JpaRepository<VetReview, Long> {
 
     boolean existsByAppointmentId(Long appointmentId);
 
+    List<VetReview> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
+
     @Query("SELECT AVG(r.rating) FROM VetReview r WHERE r.vet.id = :vetId")
     Double getAverageRatingForVet(Long vetId);
 

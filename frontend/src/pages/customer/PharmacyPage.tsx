@@ -2,19 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
+import { StickyCartBar } from '../../components/layout/StickyCartBar';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl, formatCurrency, getWishlistItems, toggleWishlistItem } from '../../lib/utils';
+import { getCloudinaryImageUrl, getProductImageUrl, formatCurrency } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
+import { useWishlistIds } from '../../hooks/useWishlistIds';
+import { HeartToggle } from '../../components/common/HeartToggle';
 import {
-  ArrowRight,
   Star,
   Heart,
   Pill,
   ShoppingBag,
-  ShoppingCart,
   Utensils,
   Scissors,
   Shield,
@@ -45,7 +46,7 @@ interface CartItemMapValue {
 export const PharmacyPage: React.FC = () => {
   const [cartItems, setCartItems] = useState<Record<number, CartItemMapValue>>({});
   const [updatingCart, setUpdatingCart] = useState<Record<number, boolean>>({});
-  const [wishlist, setWishlist] = useState<Record<number, boolean>>({});
+  const { isSaved } = useWishlistIds();
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('All');
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -89,26 +90,13 @@ export const PharmacyPage: React.FC = () => {
     }
   };
 
-  const syncWishlistState = () => {
-    const items = getWishlistItems();
-    const map: Record<number, boolean> = {};
-    items.forEach((item) => {
-      map[item.id] = true;
-    });
-    setWishlist(map);
-  };
-
   useEffect(() => {
     fetchProducts();
     fetchCart();
-    syncWishlistState();
     const handleCartUpdate = () => fetchCart();
-    const handleWishlistUpdate = () => syncWishlistState();
     window.addEventListener('cart-updated', handleCartUpdate);
-    window.addEventListener('wishlist-updated', handleWishlistUpdate);
     return () => {
       window.removeEventListener('cart-updated', handleCartUpdate);
-      window.removeEventListener('wishlist-updated', handleWishlistUpdate);
     };
   }, [isAuthenticated]);
 
@@ -194,53 +182,8 @@ export const PharmacyPage: React.FC = () => {
     }
   };
 
-  const handleToggleWishlist = (product: ProductItem) => {
-    toggleWishlistItem({
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      price: product.price,
-      rating: product.rating,
-      stockQuantity: product.stockQuantity,
-      imageUrl: resolveProductImageUrl(product),
-      description: product.description,
-    });
-  };
-
-
-
   const resolveProductImageUrl = (product: ProductItem) => {
-    if (product.imageUrl && (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'))) {
-      return product.imageUrl;
-    }
-    const name = product.name.toLowerCase();
-    if (name.includes("hill") || name.includes("dog food")) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png';
-    }
-    if (name.includes("frontline")) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png';
-    }
-    if (name.includes("royal canin") || name.includes("kitten")) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png';
-    }
-    if (name.includes("vetplus") || name.includes("joint")) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png';
-    }
-    if (name.includes("virbac") || name.includes("epi-otic") || name.includes("ear cleaner")) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png';
-    }
-    if (name.includes("nexgard") || name.includes("chews")) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png';
-    }
-    const fallbacks = [
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png',
-    ];
-    return fallbacks[(product.id - 1) % fallbacks.length];
+    return getProductImageUrl(product.name, product.imageUrl, product.id);
   };
 
   const pharmacyCategoryTabs = [
@@ -314,7 +257,7 @@ export const PharmacyPage: React.FC = () => {
                   href="#popular-products"
                   className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
                 >
-                  Shop Now <ArrowRight className="w-4 h-4" />
+                  Shop Now
                 </a>
               </div>
             </div>
@@ -418,7 +361,6 @@ export const PharmacyPage: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
               {filteredProducts.map((product) => {
-                const isFavorited = !!wishlist[product.id];
                 return (
                   <div
                     key={product.id}
@@ -430,19 +372,12 @@ export const PharmacyPage: React.FC = () => {
                         alt={product.name}
                         className="w-full h-full object-contain rounded-[12px]"
                       />
-                      <button
-                        type="button"
-                        onClick={() => handleToggleWishlist(product)}
-                        aria-label="Add to wishlist"
-                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs hover:scale-110 transition-transform cursor-pointer"
-                      >
-                        <Heart
-                          className={`w-3.5 h-3.5 ${isFavorited
-                            ? 'text-[#E11D48] fill-[#E11D48]'
-                            : 'text-[#88998C] hover:text-[#E11D48]'
-                            }`}
-                        />
-                      </button>
+                      <HeartToggle
+                        itemType="PRODUCT"
+                        itemId={product.id}
+                        isInitiallySaved={isSaved('PRODUCT', product.id)}
+                        className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-xs shadow-xs hover:scale-110"
+                      />
                     </div>
 
                     <div className="space-y-1.5 flex-grow">
@@ -587,7 +522,7 @@ export const PharmacyPage: React.FC = () => {
                     href="#popular-products"
                     className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all text-sm sm:text-base cursor-pointer"
                   >
-                    Shop Now <ArrowRight className="w-4 h-4" />
+                    Shop Now
                   </a>
                 </div>
               </div>
@@ -606,23 +541,8 @@ export const PharmacyPage: React.FC = () => {
         </section>
       </main>
 
-      {/* 7. Footer */}
       <Footer />
-      {/* Floating Cart Button — only visible when cart has items */}
-      {isAuthenticated && Object.keys(cartItems).length > 0 && (() => {
-        const totalCount = Object.values(cartItems).reduce((sum, item) => sum + item.quantity, 0);
-        return (
-          <button
-            type="button"
-            onClick={() => navigate('/profile?tab=cart')}
-            aria-label={`View cart — ${totalCount} item${totalCount !== 1 ? 's' : ''}`}
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#009E66] hover:bg-[#007A4F] text-white pl-3.5 pr-4 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 group"
-          >
-            <ShoppingCart className="w-4 h-4 shrink-0" />
-            <span className="text-xs font-black tabular-nums">{totalCount}</span>
-          </button>
-        );
-      })()}
+      <StickyCartBar />
 
     </div>
   );

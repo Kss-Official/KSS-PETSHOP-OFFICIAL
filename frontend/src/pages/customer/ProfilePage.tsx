@@ -5,8 +5,9 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
 import { useAuth } from '../../features/auth/AuthContext';
-import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getWishlistItems, formatCurrency, type WishlistItem } from '../../lib/utils';
+import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getVetImageUrl, getProductImageUrl, formatCurrency, type WishlistItem } from '../../lib/utils';
 import apiClient from '../../lib/axios';
+import { HeartToggle } from '../../components/common/HeartToggle';
 import {
   User,
   PawPrint,
@@ -38,6 +39,7 @@ import {
   Minus,
   FileText,
   BookOpen,
+  Sparkles,
 } from 'lucide-react';
 
 interface PetItem {
@@ -538,7 +540,7 @@ export const ProfilePage: React.FC = () => {
         dateTime: isoDateTime,
       });
 
-      showToast('Appointment booked successfully! 📅');
+      showToast('Appointment booked successfully!');
       setIsBookingModalOpen(false);
       setBookingNotesInput('');
       fetchAppointments();
@@ -657,15 +659,40 @@ export const ProfilePage: React.FC = () => {
 
   // 5. Wishlist State
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const syncWishlist = useCallback(() => {
-    setWishlistItems(getWishlistItems());
+  const [wishlistLoading, setWishlistLoading] = useState<boolean>(false);
+  const [wishlistError, setWishlistError] = useState<string | null>(null);
+
+  const fetchWishlist = useCallback(async () => {
+    setWishlistLoading(true);
+    setWishlistError(null);
+    try {
+      const res = await apiClient.get<WishlistItem[]>('/customer/wishlist');
+      setWishlistItems(res.data || []);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load saved items.';
+      setWishlistError(msg);
+    } finally {
+      setWishlistLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    syncWishlist();
-    window.addEventListener('wishlist-updated', syncWishlist);
-    return () => window.removeEventListener('wishlist-updated', syncWishlist);
-  }, [syncWishlist]);
+    if (currentTab === 'wishlist' || currentTab === 'overview') {
+      fetchWishlist();
+    }
+  }, [currentTab, fetchWishlist]);
+
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      fetchWishlist();
+    };
+    window.addEventListener('wishlist-ids-updated', handleWishlistUpdate);
+    window.addEventListener('wishlist-updated', handleWishlistUpdate);
+    return () => {
+      window.removeEventListener('wishlist-ids-updated', handleWishlistUpdate);
+      window.removeEventListener('wishlist-updated', handleWishlistUpdate);
+    };
+  }, [fetchWishlist]);
 
   // 6. Articles State (Recommended Health Tips)
   const [articles, setArticles] = useState<ArticleItem[]>([]);
@@ -2407,6 +2434,7 @@ export const ProfilePage: React.FC = () => {
                         if (n.type === 'APPOINTMENT_CONFIRMED') return <CheckCircle2 className="w-5 h-5 text-[#287A41]" />;
                         if (n.type === 'APPOINTMENT_REJECTED') return <AlertCircle className="w-5 h-5 text-[#DC2626]" />;
                         if (n.type === 'NEW_VET') return <Stethoscope className="w-5 h-5 text-[#0284C7]" />;
+                        if (n.type && n.type.includes('ORDER')) return <ShoppingBag className="w-5 h-5 text-[#009E66]" />;
                         return <Bell className="w-5 h-5 text-[#EF7C3C]" />;
                       };
 
@@ -2470,7 +2498,21 @@ export const ProfilePage: React.FC = () => {
                   </p>
                 </div>
 
-                {wishlistItems.length === 0 ? (
+                {wishlistLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((n) => (
+                      <div key={n} className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center gap-3.5">
+                        <Skeleton className="w-14 h-14 rounded-xl shrink-0" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : wishlistError ? (
+                  <ErrorState title="Unable to load wishlist" message={wishlistError} onRetry={fetchWishlist} />
+                ) : wishlistItems.length === 0 ? (
                   <EmptyState
                     icon={Heart}
                     title="No Saved Items Yet"
@@ -2480,34 +2522,84 @@ export const ProfilePage: React.FC = () => {
                   />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {wishlistItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
-                            {item.imageUrl ? (
-                              <img src={getCloudinaryImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <Heart className="w-6 h-6 text-[#EC4899] fill-[#EC4899]" />
-                            )}
+                    {wishlistItems.map((item) => {
+                      let itemLink = '/pharmacy';
+                      if (item.itemType === 'VET') {
+                        itemLink = `/vets/${item.itemId}`;
+                      } else if (item.itemType === 'SERVICE') {
+                        itemLink = '/services';
+                      }
+
+                      let imageSrc = '';
+                      if (item.itemType === 'PRODUCT') {
+                        imageSrc = getProductImageUrl(item.name, item.imageUrl, item.itemId);
+                      } else if (item.itemType === 'VET') {
+                        imageSrc = getVetImageUrl(item.name, item.imageUrl);
+                      } else if (item.itemType === 'SERVICE') {
+                        imageSrc = getArticleImageUrl(item.name, item.imageUrl);
+                      } else if (item.imageUrl) {
+                        imageSrc = getCloudinaryImageUrl(item.imageUrl);
+                      }
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center justify-between gap-4 group hover:shadow-xs transition-shadow"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
+                              {imageSrc ? (
+                                <img src={imageSrc} alt={item.name} className="w-full h-full object-cover" />
+                              ) : item.itemType === 'VET' ? (
+                                <Stethoscope className="w-6 h-6 text-[#287A41]" />
+                              ) : item.itemType === 'SERVICE' ? (
+                                <Sparkles className="w-6 h-6 text-[#7E22CE]" />
+                              ) : (
+                                <ShoppingBag className="w-6 h-6 text-[#009E66]" />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                                  item.itemType === 'VET'
+                                    ? 'bg-[#E3F3E9] text-[#287A41]'
+                                    : item.itemType === 'SERVICE'
+                                    ? 'bg-[#F3E8FF] text-[#7E22CE]'
+                                    : 'bg-[#E6F9EC] text-[#009E66]'
+                                }`}>
+                                  {item.itemType}
+                                </span>
+                              </div>
+                              <h3 className="text-sm font-bold text-[#16241B] truncate mt-1">{item.name}</h3>
+                              {item.price !== undefined && item.price !== null && (
+                                <p className="text-xs font-semibold text-[#009E66]">{formatCurrency(item.price)}</p>
+                              )}
+                              {item.specialization && (
+                                <p className="text-xs text-[#EF7C3C] font-semibold truncate">{item.specialization}</p>
+                              )}
+                              {item.category && (
+                                <p className="text-[11px] text-[#88998C] font-normal truncate">{item.category}</p>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="text-sm font-normal text-[#16241B]">{item.name}</h3>
-                            <p className="text-xs font-normal text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
-                            {item.category && <p className="text-[11px] text-[#88998C] font-normal">{item.category}</p>}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <HeartToggle
+                              itemType={item.itemType}
+                              itemId={item.itemId}
+                              isInitiallySaved={true}
+                              onToggle={() => fetchWishlist()}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => navigate(itemLink)}
+                              className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-semibold hover:bg-[#008757] transition-colors cursor-pointer"
+                            >
+                              View Item
+                            </button>
                           </div>
                         </div>
-
-                        <button
-                          onClick={() => navigate('/pharmacy')}
-                          className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-semibold hover:bg-[#008757] transition-colors cursor-pointer shrink-0"
-                        >
-                          View Item
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

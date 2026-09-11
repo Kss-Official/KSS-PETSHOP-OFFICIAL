@@ -8,6 +8,8 @@ import { ErrorState } from '../../components/feedback/ErrorState';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
+import { useWishlistIds } from '../../hooks/useWishlistIds';
+import { HeartToggle } from '../../components/common/HeartToggle';
 import {
   Stethoscope,
   Scissors,
@@ -37,10 +39,11 @@ interface ServiceDto {
 
 export const ServicesPage: React.FC = () => {
   const [services, setServices] = useState<ServiceDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { isSaved } = useWishlistIds();
+  const navigate = useNavigate();
 
   const fetchServices = () => {
     setLoading(true);
@@ -191,14 +194,6 @@ export const ServicesPage: React.FC = () => {
                 <div className="absolute inset-4 sm:inset-8 bg-[#D1D5DB]/40 rounded-[35%_65%_55%_45%/60%_38%_62%_40%] transform rotate-2 scale-100 blur-xs -z-0" />
 
                 {/* Cat Paw prints around the image */}
-                <div className="absolute -top-3 left-8 flex gap-1.5 text-[#6B7280] opacity-60 transform -rotate-12 pointer-events-none z-0">
-                  <PawPrint className="w-7 h-7 sm:w-9 sm:h-9" />
-                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 translate-y-2" />
-                </div>
-                <div className="absolute top-10 -left-4 sm:-left-8 flex gap-1 text-[#9CA3AF] opacity-50 transform rotate-45 pointer-events-none z-0">
-                  <PawPrint className="w-6 h-6 sm:w-8 sm:h-8" />
-                  <PawPrint className="w-5 h-5 sm:w-7 sm:h-7 translate-y-1.5" />
-                </div>
                 <div className="absolute -top-5 right-14 flex gap-1.5 text-[#6B7280] opacity-50 transform rotate-12 pointer-events-none z-0">
                   <PawPrint className="w-6 h-6 sm:w-8 sm:h-8" />
                   <PawPrint className="w-7 h-7 sm:w-9 sm:h-9 -translate-y-2" />
@@ -211,7 +206,7 @@ export const ServicesPage: React.FC = () => {
                   <PawPrint className="w-6 h-6 sm:w-8 sm:h-8" />
                   <PawPrint className="w-5 h-5 sm:w-7 sm:h-7 -translate-y-1.5" />
                 </div>
-                <div className="absolute bottom-4 -right-3 flex gap-1.5 text-[#9CA3AF] opacity-50 transform -rotate-15 pointer-events-none z-0">
+                <div className="absolute bottom-4 left-4 sm:left-8 flex gap-1.5 text-[#9CA3AF] opacity-50 transform -rotate-15 pointer-events-none z-0">
                   <PawPrint className="w-7 h-7 sm:w-9 sm:h-9" />
                   <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 translate-y-1.5" />
                 </div>
@@ -242,7 +237,7 @@ export const ServicesPage: React.FC = () => {
 
               <Link to="/find-a-vet">
                 <button className="bg-[#009E66] hover:bg-[#008757] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-xs transition-all flex items-center gap-1 cursor-pointer">
-                  Find a Clinic ›
+                  Find a Clinic
                 </button>
               </Link>
             </div>
@@ -294,6 +289,13 @@ export const ServicesPage: React.FC = () => {
                         >
                           <IconComponent className="w-4 h-4" />
                         </div>
+
+                        <HeartToggle
+                          itemType="SERVICE"
+                          itemId={service.id}
+                          isInitiallySaved={isSaved('SERVICE', service.id)}
+                          className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-xs shadow-xs hover:scale-110"
+                        />
                       </div>
 
                       <div className="pt-4 flex flex-col flex-grow">
@@ -312,7 +314,7 @@ export const ServicesPage: React.FC = () => {
                           onClick={() => navigate(isAuthenticated ? '/profile?tab=appointments' : '/login')}
                           className="text-xs font-bold text-[#3FA65C] hover:text-[#2e7d44] transition-colors flex items-center gap-1 mt-auto cursor-pointer"
                         >
-                          Book Now ›
+                          Book Now
                         </button>
                       </div>
                     </div>

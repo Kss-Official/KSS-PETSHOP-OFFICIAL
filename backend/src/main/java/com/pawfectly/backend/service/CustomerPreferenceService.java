@@ -22,7 +22,7 @@ public class CustomerPreferenceService {
     private final UserRepository userRepository;
     private final NewsletterSubscriberRepository subscriberRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public NotificationPreferenceDto getPreferences(Long customerId) {
         NotificationPreference pref = preferenceRepository.findByUserId(customerId)
                 .orElseGet(() -> createDefaultPreference(customerId));

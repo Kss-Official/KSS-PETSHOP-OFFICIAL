@@ -1,10 +1,12 @@
 package com.pawfectly.backend.controller.admin;
 
+import com.pawfectly.backend.dto.AppointmentDto;
 import com.pawfectly.backend.entity.Appointment;
 import com.pawfectly.backend.entity.AppointmentStatus;
 import com.pawfectly.backend.entity.MedicalRecord;
 import com.pawfectly.backend.repository.AppointmentRepository;
 import com.pawfectly.backend.repository.MedicalRecordRepository;
+import com.pawfectly.backend.service.AppointmentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,10 +24,15 @@ public class AdminAppointmentController {
 
     private final AppointmentRepository appointmentRepository;
     private final MedicalRecordRepository medicalRecordRepository;
+    private final AppointmentService appointmentService;
 
-    public AdminAppointmentController(AppointmentRepository appointmentRepository, MedicalRecordRepository medicalRecordRepository) {
+    public AdminAppointmentController(
+            AppointmentRepository appointmentRepository,
+            MedicalRecordRepository medicalRecordRepository,
+            AppointmentService appointmentService) {
         this.appointmentRepository = appointmentRepository;
         this.medicalRecordRepository = medicalRecordRepository;
+        this.appointmentService = appointmentService;
     }
 
     @GetMapping
@@ -90,15 +97,12 @@ public class AdminAppointmentController {
 
         try {
             AppointmentStatus newStatus = AppointmentStatus.valueOf(statusStr.toUpperCase());
-            return appointmentRepository.findById(id).map(apt -> {
-                apt.setStatus(newStatus);
-                Appointment saved = appointmentRepository.save(apt);
-                return ResponseEntity.ok(Map.of(
-                        "id", saved.getId(),
-                        "status", saved.getStatus().name(),
-                        "message", "Appointment status updated to " + saved.getStatus().name()
-                ));
-            }).orElse(ResponseEntity.notFound().build());
+            AppointmentDto updated = appointmentService.updateAppointmentStatus(id, newStatus);
+            return ResponseEntity.ok(Map.of(
+                    "id", updated.getId(),
+                    "status", updated.getStatus().name(),
+                    "message", "Appointment status updated to " + updated.getStatus().name()
+            ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid status value"));
         }
