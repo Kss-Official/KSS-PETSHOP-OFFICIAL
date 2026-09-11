@@ -541,6 +541,7 @@ export const ProfilePage: React.FC = () => {
       });
 
       showToast('Appointment booked successfully!');
+      window.dispatchEvent(new Event('admin-notifications-updated'));
       setIsBookingModalOpen(false);
       setBookingNotesInput('');
       fetchAppointments();

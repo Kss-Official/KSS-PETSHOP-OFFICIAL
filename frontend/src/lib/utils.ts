@@ -12,6 +12,7 @@ const ASSET_VERSIONS: Record<string, string> = {
   ChatGPT_Image_Sep_11_2026_06_16_49_PM: 'v1789130830',
   ChatGPT_Image_Sep_9_2026_11_21_47_AM: 'v1788933125',
   ChatGPT_Image_Sep_9_2026_12_39_49_PM: 'v1788937905',
+  ChatGPT_Image_Sep_9_2026_01_10_44_PM: 'v1788939755',
 };
 
 const ASSET_ALIASES: Record<string, string> = {
