@@ -26,7 +26,10 @@ public class BackendApplication {
     }
 
     @Bean
-    public CommandLineRunner seedDefaultUsers(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public CommandLineRunner seedDefaultUsers(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            com.pawfectly.backend.repository.ServiceRepository serviceRepository) {
         return args -> {
             // Ensure default admin user exists
             userRepository.findByEmail("admin@pawfectly.com").ifPresentOrElse(
@@ -63,6 +66,28 @@ public class BackendApplication {
                     .isActive(true)
                     .build())
             );
+
+            // Sync service action photos in database
+            serviceRepository.findByNameIgnoreCase("Veterinary Care").ifPresent(s -> {
+                s.setIconUrl("https://res.cloudinary.com/vphylrop/image/upload/v1788797640/service_01_vet_care.jpg");
+                serviceRepository.save(s);
+            });
+            serviceRepository.findByNameIgnoreCase("Pet Food & Nutrition").ifPresent(s -> {
+                s.setIconUrl("https://res.cloudinary.com/vphylrop/image/upload/v1788802670/service_02_pet_food_rabbit_bowl.jpg");
+                serviceRepository.save(s);
+            });
+            serviceRepository.findByNameIgnoreCase("Professional Grooming").ifPresent(s -> {
+                s.setIconUrl("https://res.cloudinary.com/vphylrop/image/upload/v1788802830/service_03_grooming_puppy_tub.jpg");
+                serviceRepository.save(s);
+            });
+            serviceRepository.findByNameIgnoreCase("Pet Pharmacy & Meds").ifPresent(s -> {
+                s.setIconUrl("https://res.cloudinary.com/vphylrop/image/upload/v1788802595/service_04_pharmacy_cat_med.jpg");
+                serviceRepository.save(s);
+            });
+            serviceRepository.findByNameIgnoreCase("Toys & Enrichment").ifPresent(s -> {
+                s.setIconUrl("https://res.cloudinary.com/vphylrop/image/upload/v1788802179/service_05_toys_kittens_play.jpg");
+                serviceRepository.save(s);
+            });
         };
     }
 }
