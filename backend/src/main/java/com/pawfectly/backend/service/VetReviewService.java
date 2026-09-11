@@ -74,6 +74,13 @@ public class VetReviewService {
     }
 
     @Transactional(readOnly = true)
+    public List<VetReviewDto> getReviewsForCustomer(Long customerId) {
+        return vetReviewRepository.findByCustomerId(customerId).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<VetReviewDto> getReviewsForVet(Long vetId) {
         return vetReviewRepository.findByVetIdOrderByCreatedAtDesc(vetId).stream()
                 .map(this::mapToDto)
@@ -105,9 +112,9 @@ public class VetReviewService {
 
         return VetReviewDto.builder()
                 .id(review.getId())
-                .appointmentId(review.getAppointment().getId())
-                .vetId(review.getVet().getId())
-                .vetName(review.getVet().getName())
+                .appointmentId(review.getAppointment() != null ? review.getAppointment().getId() : null)
+                .vetId(review.getVet() != null ? review.getVet().getId() : null)
+                .vetName(review.getVet() != null ? review.getVet().getName() : "Veterinarian")
                 .customerId(review.getCustomer() != null ? review.getCustomer().getId() : null)
                 .customerName(displayName)
                 .rating(review.getRating())

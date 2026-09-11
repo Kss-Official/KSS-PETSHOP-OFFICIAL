@@ -38,6 +38,10 @@ public class AdminProductController {
     public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) {
         product.setId(null);
         if (product.getIsActive() == null) product.setIsActive(true);
+        if (product.getImageUrl() != null) {
+            String trimmed = product.getImageUrl().trim();
+            product.setImageUrl(trimmed.isEmpty() ? null : trimmed);
+        }
         Product saved = productRepository.save(product);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -51,7 +55,10 @@ public class AdminProductController {
                     product.setPrice(productDetails.getPrice());
                     product.setCategory(productDetails.getCategory());
                     product.setStockQuantity(productDetails.getStockQuantity());
-                    product.setImageUrl(productDetails.getImageUrl());
+                    if (productDetails.getImageUrl() != null) {
+                        String trimmed = productDetails.getImageUrl().trim();
+                        product.setImageUrl(trimmed.isEmpty() ? null : trimmed);
+                    }
                     if (productDetails.getIsActive() != null) {
                         product.setIsActive(productDetails.getIsActive());
                     }

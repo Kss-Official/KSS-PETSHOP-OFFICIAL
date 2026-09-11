@@ -886,6 +886,7 @@ export const ProfilePage: React.FC = () => {
       setCartItems([]);
       showToast('Order placed successfully!');
       window.dispatchEvent(new Event('cart-updated'));
+      window.dispatchEvent(new Event('admin-notifications-updated'));
       setSearchParams({ tab: 'orders' });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Checkout failed. Please try again.';

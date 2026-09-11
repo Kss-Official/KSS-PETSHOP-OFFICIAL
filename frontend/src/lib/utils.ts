@@ -69,15 +69,48 @@ const ARTICLE_IMAGE_MAP: Record<string, string> = {
   'service_05_toys_kittens_play': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896779/Playful_cat_with_colorful_ball.png',
 };
 
+export function getServiceImageUrl(serviceName: string = '', iconUrl?: string): string {
+  if (iconUrl && (iconUrl.startsWith('http://') || iconUrl.startsWith('https://'))) {
+    return iconUrl;
+  }
+  const name = (serviceName || '').toLowerCase();
+  const icon = (iconUrl || '').toLowerCase();
+  if (name.includes('vet') || name.includes('doctor') || icon.includes('vet')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png';
+  }
+  if (name.includes('food') || name.includes('nutrition') || icon.includes('food')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png';
+  }
+  if (name.includes('grooming') || icon.includes('grooming')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png';
+  }
+  if (name.includes('pharmacy') || name.includes('med') || icon.includes('pharmacy')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png';
+  }
+  if (name.includes('toy') || name.includes('enrichment') || icon.includes('toy')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png';
+  }
+  if (name.includes('boarding') || name.includes('daycare') || icon.includes('boarding')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png';
+  }
+  if (name.includes('training') || name.includes('behaviour') || name.includes('behavior') || icon.includes('training')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896174/c1b76666-8097-4311-911e-8b51d62c4739_1.png';
+  }
+  if (name.includes('transport') || name.includes('ambulance') || icon.includes('transport')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png';
+  }
+  return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png';
+}
+
 export function getArticleImageUrl(title?: string, imageUrl?: string): string {
-  if (title && ARTICLE_IMAGE_MAP[title]) {
-    return ARTICLE_IMAGE_MAP[title];
+  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+    return imageUrl;
   }
   if (imageUrl && ARTICLE_IMAGE_MAP[imageUrl]) {
     return ARTICLE_IMAGE_MAP[imageUrl];
   }
-  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
-    return imageUrl;
+  if (title && ARTICLE_IMAGE_MAP[title]) {
+    return ARTICLE_IMAGE_MAP[title];
   }
   return getCloudinaryImageUrl(imageUrl || 'health_tips_hero');
 }

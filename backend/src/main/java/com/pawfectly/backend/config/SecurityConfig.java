@@ -98,7 +98,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/vets/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/services/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/articles/**", "/api/v1/articles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/health-tips/**", "/api/v1/health-tips/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/newsletter/subscribe").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/insurance/quote").permitAll()
                         

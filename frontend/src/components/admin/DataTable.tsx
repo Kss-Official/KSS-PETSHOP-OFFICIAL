@@ -24,6 +24,7 @@ interface DataTableProps<T> {
   filterOptions?: FilterOption[];
   filterKey?: keyof T | ((row: T) => string);
   filterLabel?: string;
+  beforeSearch?: React.ReactNode;
   actions?: React.ReactNode;
   emptyTitle?: string;
   emptySubtitle?: string;
@@ -39,6 +40,7 @@ export function DataTable<T extends Record<string, any>>({
   filterOptions,
   filterKey,
   filterLabel = 'All Statuses',
+  beforeSearch,
   actions,
   emptyTitle = 'No data found',
   emptySubtitle = 'Try adjusting your search or filters to find what you are looking for.',
@@ -151,7 +153,8 @@ export function DataTable<T extends Record<string, any>>({
     <div className="bg-white rounded-2xl border border-[#EBEBE8] shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
       {/* Controls Header */}
       <div className="p-4 border-b border-[#F3F4F6] flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-white">
-        <div className="flex flex-1 items-center gap-3 max-w-lg">
+        <div className="flex flex-1 items-center gap-3 max-w-xl">
+          {beforeSearch}
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
             <input

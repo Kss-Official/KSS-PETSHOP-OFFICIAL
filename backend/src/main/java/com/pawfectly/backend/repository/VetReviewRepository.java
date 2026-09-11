@@ -15,6 +15,8 @@ public interface VetReviewRepository extends JpaRepository<VetReview, Long> {
 
     Optional<VetReview> findByAppointmentId(Long appointmentId);
 
+    List<VetReview> findByCustomerId(Long customerId);
+
     boolean existsByAppointmentId(Long appointmentId);
 
     List<VetReview> findByCustomerIdOrderByCreatedAtDesc(Long customerId);

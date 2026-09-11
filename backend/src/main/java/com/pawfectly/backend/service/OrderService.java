@@ -81,7 +81,7 @@ public class OrderService {
                 .customer(customer)
                 .totalAmount(total)
                 .orderStatus(OrderStatus.PLACED)
-                .paymentStatus(PaymentStatus.PAID)
+                .paymentStatus(PaymentStatus.UNPAID)
                 .build();
 
         Order savedOrder = orderRepository.save(order);
@@ -122,6 +122,7 @@ public class OrderService {
 
         OrderStatus oldStatus = order.getOrderStatus();
         order.setOrderStatus(OrderStatus.CANCELLED);
+        order.setPaymentStatus(PaymentStatus.FAILED);
         Order updated = orderRepository.save(order);
 
         // Restore stock for all order items since stock was deducted at placement

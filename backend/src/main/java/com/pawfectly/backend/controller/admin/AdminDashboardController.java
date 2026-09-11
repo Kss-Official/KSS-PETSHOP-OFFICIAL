@@ -4,6 +4,8 @@ import com.pawfectly.backend.entity.Appointment;
 import com.pawfectly.backend.entity.AppointmentStatus;
 import com.pawfectly.backend.entity.Order;
 import com.pawfectly.backend.entity.OrderItem;
+import com.pawfectly.backend.entity.OrderStatus;
+import com.pawfectly.backend.entity.PaymentStatus;
 import com.pawfectly.backend.entity.Product;
 import com.pawfectly.backend.entity.Role;
 import com.pawfectly.backend.repository.AppointmentRepository;
@@ -188,7 +190,7 @@ public class AdminDashboardController {
                     .collect(Collectors.toList());
 
             BigDecimal apptRev = monthAppts.stream()
-                    .map(a -> BigDecimal.valueOf(a.getVet() != null && a.getVet().getConsultationFee() != null ? a.getVet().getConsultationFee() : 50.0))
+                    .map(a -> BigDecimal.valueOf(a.getVet() != null && a.getVet().getConsultationFee() != null ? a.getVet().getConsultationFee() : 500.0))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal totalRev = orderRev.add(apptRev);
@@ -218,6 +220,20 @@ public class AdminDashboardController {
 
         return limitedOrders.stream()
                 .map(order -> {
+                    boolean needsSave = false;
+                    if ((order.getOrderStatus() == OrderStatus.PLACED || order.getOrderStatus() == OrderStatus.READY_FOR_PICKUP)
+                            && order.getPaymentStatus() != PaymentStatus.UNPAID) {
+                        order.setPaymentStatus(PaymentStatus.UNPAID);
+                        needsSave = true;
+                    } else if (order.getOrderStatus() == OrderStatus.COMPLETED
+                            && order.getPaymentStatus() != PaymentStatus.PAID) {
+                        order.setPaymentStatus(PaymentStatus.PAID);
+                        needsSave = true;
+                    }
+                    if (needsSave) {
+                        orderRepository.save(order);
+                    }
+
                     List<OrderItem> items = itemsByOrderId.getOrDefault(order.getId(), List.of());
                     String itemName = "General Order";
                     if (!items.isEmpty() && items.get(0).getProduct() != null) {
@@ -245,7 +261,7 @@ public class AdminDashboardController {
         return appointmentRepository.findRecentAppointmentsWithDetails(PageRequest.of(0, 8))
                 .stream()
                 .map(apt -> {
-                    Double fee = apt.getVet() != null && apt.getVet().getConsultationFee() != null ? apt.getVet().getConsultationFee() : 50.0;
+                    Double fee = apt.getVet() != null && apt.getVet().getConsultationFee() != null ? apt.getVet().getConsultationFee() : 500.0;
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", apt.getId());
                     map.put("petName", apt.getPet() != null ? apt.getPet().getName() : "Unknown");

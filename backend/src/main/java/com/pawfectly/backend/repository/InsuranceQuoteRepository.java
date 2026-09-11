@@ -14,4 +14,6 @@ public interface InsuranceQuoteRepository extends JpaRepository<InsuranceQuote, 
     List<InsuranceQuote> findByStatusOrderByCreatedAtDesc(String status);
 
     List<InsuranceQuote> findByCustomerEmailOrderByCreatedAtDesc(String customerEmail);
+
+    List<InsuranceQuote> findByCustomerId(Long customerId);
 }

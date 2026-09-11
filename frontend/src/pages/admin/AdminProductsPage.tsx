@@ -4,6 +4,7 @@ import { AdminLayout, useAdminToast } from '../../components/admin/AdminLayout';
 import { DataTable, type Column } from '../../components/admin/DataTable';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminStatusBadge } from '../../components/admin/AdminStatusBadge';
+import { AdminImageUrlInput } from '../../components/admin/AdminImageUrlInput';
 import api from '../../lib/axios';
 
 interface Product {
@@ -197,7 +198,7 @@ export const AdminProductsPage: React.FC = () => {
       header: 'Price',
       sortable: true,
       className: 'w-[12%]',
-      render: (row) => <span className="font-semibold text-gray-900">${row.price?.toFixed(2)}</span>,
+      render: (row) => <span className="font-semibold text-gray-900">₹{row.price?.toFixed(2)}</span>,
     },
     {
       key: 'stockQuantity',
@@ -347,7 +348,7 @@ export const AdminProductsPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Price ($) *
+                Price (₹) *
               </label>
               <input
                 type="number"
@@ -376,19 +377,16 @@ export const AdminProductsPage: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Image URL
-              </label>
-              <input
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="https://..."
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/30 focus:border-[#3FA65C]"
-              />
-            </div>
           </div>
+
+          <AdminImageUrlInput
+            label="Product Image URL"
+            value={formData.imageUrl}
+            onChange={(val) => setFormData({ ...formData, imageUrl: val })}
+            placeholder="https://images.unsplash.com/... or https://..."
+            entityName={formData.name || 'Product'}
+            helperText="Provide a direct URL to a product photograph (starts with http:// or https://, max 512 chars)."
+          />
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
