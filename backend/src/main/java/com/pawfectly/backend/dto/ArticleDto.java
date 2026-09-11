@@ -22,7 +22,6 @@ public class ArticleDto {
     private String content;
 
     @jakarta.validation.constraints.Size(max = 512, message = "Image URL must not exceed 512 characters")
-    @jakarta.validation.constraints.Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
     private String imageUrl;
     private String petType;
     private String category;

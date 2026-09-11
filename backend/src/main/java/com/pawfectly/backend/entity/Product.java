@@ -48,7 +48,6 @@ public class Product {
     private Integer stockQuantity = 0;
 
     @jakarta.validation.constraints.Size(max = 512, message = "Image URL must not exceed 512 characters")
-    @jakarta.validation.constraints.Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
     @Column(name = "image_url", length = 512)
     private String imageUrl;
 
@@ -57,8 +56,9 @@ public class Product {
     private Boolean isActive = true;
 
     @Version
+    @Builder.Default
     @Column(nullable = false)
-    private Integer version;
+    private Integer version = 0;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -67,4 +67,14 @@ public class Product {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (version == null) {
+            version = 0;
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }
