@@ -8,8 +8,6 @@ import { ErrorState } from '../../components/feedback/ErrorState';
 import { getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
-import { useWishlistIds } from '../../hooks/useWishlistIds';
-import { HeartToggle } from '../../components/common/HeartToggle';
 import {
   ChevronLeft,
   Star,
@@ -55,7 +53,6 @@ export const VetProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { isSaved } = useWishlistIds();
 
   const [vet, setVet] = useState<VetDoctor | null>(null);
   const [reviews, setReviews] = useState<VetReview[]>([]);
@@ -177,14 +174,8 @@ export const VetProfilePage: React.FC = () => {
                   <p className="text-sm font-bold text-[#EF7C3C] mt-1">{vet.specialization}</p>
                 </div>
 
-                {/* Rating & Favorite Controls */}
+                {/* Rating Display */}
                 <div className="flex items-center gap-3">
-                  <HeartToggle
-                    itemType="VET"
-                    itemId={vet.id}
-                    isInitiallySaved={isSaved('VET', vet.id)}
-                    className="w-10 h-10 bg-[#FAF6EE] border border-[#EDE7D9] hover:scale-105"
-                  />
                   <div className="bg-[#FAF6EE] border border-[#EDE7D9] px-4 py-2 rounded-2xl flex items-center gap-2">
                     {hasReviews && vet.rating ? (
                       <>

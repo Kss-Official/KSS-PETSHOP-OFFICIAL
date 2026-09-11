@@ -2517,7 +2517,7 @@ export const ProfilePage: React.FC = () => {
                   <EmptyState
                     icon={Heart}
                     title="No Saved Items Yet"
-                    description="Tap the heart icon on any pet service, vet profile, or pharmacy product to save it to your personal wishlist."
+                    description="Tap the heart icon on any pharmacy product or care service to save it to your personal wishlist."
                     actionLabel="Explore Pharmacy"
                     actionLink="/pharmacy"
                   />

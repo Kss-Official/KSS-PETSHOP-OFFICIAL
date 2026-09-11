@@ -4,6 +4,7 @@ import com.pawfectly.backend.dto.NotificationPreferenceDto;
 import com.pawfectly.backend.security.CustomUserDetails;
 import com.pawfectly.backend.service.CustomerPreferenceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +20,9 @@ public class CustomerPreferenceController {
 
     @GetMapping
     public ResponseEntity<NotificationPreferenceDto> getPreferences(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(customerPreferenceService.getPreferences(userDetails.getId()));
     }
 
@@ -26,6 +30,9 @@ public class CustomerPreferenceController {
     public ResponseEntity<NotificationPreferenceDto> updatePreferences(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody NotificationPreferenceDto dto) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(customerPreferenceService.updatePreferences(userDetails.getId(), dto));
     }
 }

@@ -5,7 +5,7 @@ import { Footer } from '../../components/layout/Footer';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl } from '../../lib/utils';
+import { getCloudinaryImageUrl, getServiceImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
 import { useWishlistIds } from '../../hooks/useWishlistIds';
@@ -68,46 +68,7 @@ export const ServicesPage: React.FC = () => {
   }, []);
 
   const resolveServiceImageUrl = (service: ServiceDto) => {
-    const customUrl = (service.iconUrl || service.imageUrl || '').trim();
-    if (customUrl && (customUrl.startsWith('http://') || customUrl.startsWith('https://'))) {
-      return customUrl;
-    }
-    const name = service.name.toLowerCase();
-    if (name.includes('vet') || name.includes('doctor')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png';
-    }
-    if (name.includes('food') || name.includes('nutrition')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png';
-    }
-    if (name.includes('grooming')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png';
-    }
-    if (name.includes('pharmacy') || name.includes('med')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png';
-    }
-    if (name.includes('toy') || name.includes('enrichment')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png';
-    }
-    if (name.includes('boarding') || name.includes('daycare')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png';
-    }
-    if (name.includes('training') || name.includes('behaviour') || name.includes('behavior')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896174/c1b76666-8097-4311-911e-8b51d62c4739_1.png';
-    }
-    if (name.includes('transport') || name.includes('ambulance')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png';
-    }
-    const fallbacks = [
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896174/c1b76666-8097-4311-911e-8b51d62c4739_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png',
-    ];
-    return fallbacks[(service.id - 1) % fallbacks.length];
+    return getServiceImageUrl(service.name, service.iconUrl || service.imageUrl, service.id);
   };
 
   const serviceIconsMap: Record<string, { icon: React.ElementType; bg: string; text: string }> = {
@@ -284,7 +245,7 @@ export const ServicesPage: React.FC = () => {
                         <img
                           src={resolveServiceImageUrl(service)}
                           alt={service.name}
-                          className="w-full h-full object-contain rounded-[14px]"
+                          className="w-full h-full object-cover rounded-[14px]"
                         />
 
                         <div
