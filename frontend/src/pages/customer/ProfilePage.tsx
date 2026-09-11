@@ -26,7 +26,6 @@ import {
   EyeOff,
   Bell,
   Mail,
-  ShieldCheck,
   Clock,
   Star,
   Stethoscope,
@@ -2836,31 +2835,6 @@ export const ProfilePage: React.FC = () => {
                             preferences.orderUpdates ? 'left-6.5' : 'left-0.5'
                           }`}
                         />
-                      </button>
-                    </div>
-
-                    {/* Health & Vaccination Alerts */}
-                    <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4 opacity-75">
-                      <div className="space-y-0.5">
-                        <h4 className="text-sm font-medium text-[#16241B] flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-[#7E22CE]" />
-                          <span>Health & Vaccination Alerts</span>
-                          <span className="px-2 py-0.5 text-[10px] font-medium bg-[#EAE3D4] text-[#67796B] rounded-full uppercase tracking-wider">
-                            Coming Soon
-                          </span>
-                        </h4>
-                        <p className="text-xs text-[#67796B] font-normal">
-                          Reminders when your pet’s annual vaccinations or checkups are due (Feature in development).
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled
-                        onClick={() => handleTogglePreference('healthAlerts')}
-                        title="Vaccination tracking is coming soon"
-                        className="w-12 h-6 rounded-full transition-colors relative cursor-not-allowed bg-[#D1D5DB]"
-                      >
-                        <div className="w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 left-0.5" />
                       </button>
                     </div>
                   </div>
