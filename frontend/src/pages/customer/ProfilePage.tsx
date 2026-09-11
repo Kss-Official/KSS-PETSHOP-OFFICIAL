@@ -2468,7 +2468,7 @@ export const ProfilePage: React.FC = () => {
             {currentTab === 'wishlist' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">Saved & Liked Items</h1>
+                  <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">Saved Items</h1>
                   <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
                     Your favorite pharmacy products, supplements, and bookmarked care services.
                   </p>
@@ -2477,7 +2477,7 @@ export const ProfilePage: React.FC = () => {
                 {wishlistItems.length === 0 ? (
                   <EmptyState
                     icon={Heart}
-                    title="No Liked Items Saved Yet"
+                    title="No Saved Items Yet"
                     description="Tap the heart icon on any pet service, vet profile, or pharmacy product to save it to your personal wishlist."
                     actionLabel="Explore Pharmacy"
                     actionLink="/pharmacy"
