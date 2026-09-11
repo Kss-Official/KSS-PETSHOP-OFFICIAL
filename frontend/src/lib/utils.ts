@@ -1,10 +1,17 @@
 const ASSET_VERSIONS: Record<string, string> = {
   cta_cat_sunglasses_flawless_seamless: 'v1788852915',
-  health_tips_hero: 'v1788887698',
+  health_tips_hero: 'v1789130830',
   profile_dog_cat_watermark: 'v1788887750',
   ChatGPT_Image_Sep_8_2026_10_21_30_PM: 'v1788886319',
   ChatGPT_Image_Sep_9_2026_11_10_18_AM: 'v1788932508',
+  copy_of_chatgpt_image_sep_9_2026_11_14_55_am: 'v1788935693',
+  ChatGPT_Image_Sep_11_2026_12_16_35_PM: 'v1789109212',
+  ChatGPT_Image_Sep_11_2026_12_54_54_PM: 'v1789111520',
+  ChatGPT_Image_Sep_11_2026_01_19_07_PM: 'v1789112963',
+  ChatGPT_Image_Sep_11_2026_02_49_10_PM: 'v1789118365',
+  ChatGPT_Image_Sep_11_2026_06_16_49_PM: 'v1789130830',
   ChatGPT_Image_Sep_9_2026_11_21_47_AM: 'v1788933125',
+  ChatGPT_Image_Sep_9_2026_12_39_49_PM: 'v1788937905',
   ChatGPT_Image_Sep_9_2026_01_10_44_PM: 'v1788939755',
 };
 
@@ -14,14 +21,15 @@ const ASSET_ALIASES: Record<string, string> = {
   find_vet_cta_bunny: 'ChatGPT_Image_Sep_8_2026_10_21_30_PM',
   pharmacy_cta: 'ChatGPT_Image_Sep_9_2026_11_21_47_AM',
   pharmacy_cts: 'ChatGPT_Image_Sep_9_2026_11_21_47_AM',
-  services_cta: 'ChatGPT_Image_Sep_9_2026_11_10_18_AM',
-  services_cts: 'ChatGPT_Image_Sep_9_2026_11_10_18_AM',
-  service_cta: 'ChatGPT_Image_Sep_9_2026_11_10_18_AM',
-  service_cts: 'ChatGPT_Image_Sep_9_2026_11_10_18_AM',
-  health_tips_cta: 'ChatGPT_Image_Sep_9_2026_11_10_18_AM',
-  health_tips_cts: 'ChatGPT_Image_Sep_9_2026_11_10_18_AM',
-  insurance_cta: 'ChatGPT_Image_Sep_9_2026_11_21_47_AM',
-  insurance_cts: 'ChatGPT_Image_Sep_9_2026_11_21_47_AM',
+  services_cta: 'ChatGPT_Image_Sep_11_2026_12_16_35_PM',
+  services_cts: 'ChatGPT_Image_Sep_11_2026_12_16_35_PM',
+  service_cta: 'ChatGPT_Image_Sep_11_2026_12_16_35_PM',
+  service_cts: 'ChatGPT_Image_Sep_11_2026_12_16_35_PM',
+  health_tips_cta: 'ChatGPT_Image_Sep_11_2026_02_49_10_PM',
+  health_tips_cts: 'ChatGPT_Image_Sep_11_2026_02_49_10_PM',
+  health_tips_hero: 'ChatGPT_Image_Sep_11_2026_06_16_49_PM',
+  insurance_cta: 'ChatGPT_Image_Sep_11_2026_12_54_54_PM',
+  insurance_cts: 'ChatGPT_Image_Sep_11_2026_12_54_54_PM',
 };
 
 /**
@@ -164,10 +172,10 @@ export function getPetSpeciesImage(species?: string, customImage?: string): stri
   const s = (species || '').trim().toLowerCase();
 
   if (s.includes('dog') || s.includes('puppy') || s.includes('canine')) {
-    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895238/be7aa286-04e9-4307-b2f4-6dc218dfb17f_1.png';
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1789131563/ChatGPT_Image_Sep_11_2026_06_29_05_PM.png';
   }
   if (s.includes('cat') || s.includes('kitten') || s.includes('feline')) {
-    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895237/17d0f799-c458-4c6c-a0a6-80d8cf71e496_1.png';
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1789132287/ChatGPT_Image_Sep_11_2026_06_41_13_PM.png';
   }
   if (s.includes('rabbit') || s.includes('bunny') || s.includes('hare')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/886e967f-9a24-48c5-aeff-ff8e6f6a00e6_1.png';
@@ -239,58 +247,57 @@ export function getConsultationFeeINR(experienceYears?: number | null): number {
   return 500;
 }
 
+export function getProductImageUrl(name: string = '', imageUrl?: string, id: number = 1): string {
+  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) && !imageUrl.includes('service_')) {
+    return imageUrl;
+  }
+  const n = name.toLowerCase();
+  if (n.includes('hill') || n.includes('dog food')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png';
+  }
+  if (n.includes('frontline')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png';
+  }
+  if (n.includes('royal canin') || n.includes('kitten')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png';
+  }
+  if (n.includes('vetplus') || n.includes('joint')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png';
+  }
+  if (n.includes('virbac') || n.includes('epi-otic') || n.includes('ear cleaner')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png';
+  }
+  if (n.includes('nexgard') || n.includes('chews')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png';
+  }
+  if (imageUrl && imageUrl.trim() !== '' && !imageUrl.startsWith('service_')) {
+    return getCloudinaryImageUrl(imageUrl);
+  }
+  const fallbacks = [
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png',
+  ];
+  return fallbacks[(Math.max(1, id) - 1) % fallbacks.length];
+}
+
+export type WishlistItemType = 'PRODUCT' | 'SERVICE' | 'VET';
+
 export interface WishlistItem {
   id: number;
+  itemType: WishlistItemType;
+  itemId: number;
   name: string;
-  category: string;
-  price: number;
-  rating?: number;
-  stockQuantity?: number;
+  price?: number;
   imageUrl?: string;
+  category?: string;
+  specialization?: string;
   description?: string;
+  createdAt?: string;
 }
 
-export function getWishlistItems(): WishlistItem[] {
-  try {
-    const data = localStorage.getItem('pawsitive_wishlist');
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
 
-export function isItemWishlisted(id: number): boolean {
-  const items = getWishlistItems();
-  return items.some((item) => item.id === id);
-}
-
-export function toggleWishlistItem(product: WishlistItem): boolean {
-  try {
-    const items = getWishlistItems();
-    const index = items.findIndex((i) => i.id === product.id);
-    let isAdded = false;
-    if (index > -1) {
-      items.splice(index, 1);
-      isAdded = false;
-    } else {
-      items.push(product);
-      isAdded = true;
-    }
-    localStorage.setItem('pawsitive_wishlist', JSON.stringify(items));
-    window.dispatchEvent(new Event('wishlist-updated'));
-    return isAdded;
-  } catch {
-    return false;
-  }
-}
-
-export function removeWishlistItem(id: number): void {
-  try {
-    const items = getWishlistItems().filter((item) => item.id !== id);
-    localStorage.setItem('pawsitive_wishlist', JSON.stringify(items));
-    window.dispatchEvent(new Event('wishlist-updated'));
-  } catch {
-    // Fail safe
-  }
-}
 

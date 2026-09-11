@@ -32,8 +32,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         </div>
       )}
       <div className="space-y-1.5">
-        <h3 className="text-lg sm:text-xl font-black text-[#16241B]">{title}</h3>
-        <p className="text-xs sm:text-sm text-[#556658] font-medium leading-relaxed max-w-md">
+        <h3 className="text-lg sm:text-xl font-bold text-[#16241B]">{title}</h3>
+        <p className="text-xs sm:text-sm text-[#556658] font-normal leading-relaxed max-w-md">
           {description}
         </p>
       </div>
@@ -42,7 +42,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {actionLink ? (
             <Link
               to={actionLink}
-              className="inline-flex items-center justify-center font-black rounded-full transition-all duration-200 cursor-pointer text-xs sm:text-sm px-5 py-2.5 bg-[#009E66] hover:bg-[#008757] text-white shadow-xs"
+              className="inline-flex items-center justify-center font-semibold rounded-full transition-all duration-200 cursor-pointer text-xs sm:text-sm px-5 py-2.5 bg-[#009E66] hover:bg-[#008757] text-white shadow-xs"
             >
               {actionLabel}
             </Link>

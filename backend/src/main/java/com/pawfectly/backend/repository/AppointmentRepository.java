@@ -52,4 +52,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     @Query("SELECT a FROM Appointment a WHERE a.pet.owner.id = :customerId ORDER BY a.createdAt DESC, a.id DESC")
     List<Appointment> findByCustomerId(@Param("customerId") Long customerId);
+
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN FETCH a.pet p " +
+           "LEFT JOIN FETCH p.owner " +
+           "LEFT JOIN FETCH a.vet " +
+           "LEFT JOIN FETCH a.service " +
+           "WHERE a.status = :status AND a.dateTime >= :startRange AND a.dateTime <= :endRange")
+    List<Appointment> findUpcomingAppointmentsByStatusAndRange(
+            @Param("status") AppointmentStatus status,
+            @Param("startRange") LocalDateTime startRange,
+            @Param("endRange") LocalDateTime endRange
+    );
 }

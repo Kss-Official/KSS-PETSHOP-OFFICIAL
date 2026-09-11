@@ -5,8 +5,9 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
 import { useAuth } from '../../features/auth/AuthContext';
-import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getWishlistItems, formatCurrency, type WishlistItem } from '../../lib/utils';
+import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getVetImageUrl, getProductImageUrl, formatCurrency, type WishlistItem } from '../../lib/utils';
 import apiClient from '../../lib/axios';
+import { HeartToggle } from '../../components/common/HeartToggle';
 import {
   User,
   PawPrint,
@@ -26,7 +27,6 @@ import {
   EyeOff,
   Bell,
   Mail,
-  ShieldCheck,
   Clock,
   Star,
   Stethoscope,
@@ -39,7 +39,7 @@ import {
   Minus,
   FileText,
   BookOpen,
-  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 
 interface PetItem {
@@ -540,7 +540,7 @@ export const ProfilePage: React.FC = () => {
         dateTime: isoDateTime,
       });
 
-      showToast('Appointment booked successfully! 📅');
+      showToast('Appointment booked successfully!');
       window.dispatchEvent(new Event('admin-notifications-updated'));
       setIsBookingModalOpen(false);
       setBookingNotesInput('');
@@ -660,15 +660,40 @@ export const ProfilePage: React.FC = () => {
 
   // 5. Wishlist State
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const syncWishlist = useCallback(() => {
-    setWishlistItems(getWishlistItems());
+  const [wishlistLoading, setWishlistLoading] = useState<boolean>(false);
+  const [wishlistError, setWishlistError] = useState<string | null>(null);
+
+  const fetchWishlist = useCallback(async () => {
+    setWishlistLoading(true);
+    setWishlistError(null);
+    try {
+      const res = await apiClient.get<WishlistItem[]>('/customer/wishlist');
+      setWishlistItems(res.data || []);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load saved items.';
+      setWishlistError(msg);
+    } finally {
+      setWishlistLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    syncWishlist();
-    window.addEventListener('wishlist-updated', syncWishlist);
-    return () => window.removeEventListener('wishlist-updated', syncWishlist);
-  }, [syncWishlist]);
+    if (currentTab === 'wishlist' || currentTab === 'overview') {
+      fetchWishlist();
+    }
+  }, [currentTab, fetchWishlist]);
+
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      fetchWishlist();
+    };
+    window.addEventListener('wishlist-ids-updated', handleWishlistUpdate);
+    window.addEventListener('wishlist-updated', handleWishlistUpdate);
+    return () => {
+      window.removeEventListener('wishlist-ids-updated', handleWishlistUpdate);
+      window.removeEventListener('wishlist-updated', handleWishlistUpdate);
+    };
+  }, [fetchWishlist]);
 
   // 6. Articles State (Recommended Health Tips)
   const [articles, setArticles] = useState<ArticleItem[]>([]);
@@ -732,24 +757,63 @@ export const ProfilePage: React.FC = () => {
   };
 
   // 8. Preferences State
-  const [preferences, setPreferences] = useState(() => {
-    const saved = localStorage.getItem('pawfectly_user_preferences');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          newsletter: true,
-          appointmentReminders: true,
-          orderUpdates: true,
-          healthTips: true,
-          promotions: false,
-        };
-  });
+  interface NotificationPreferenceData {
+    newsletter: boolean;
+    appointmentReminders: boolean;
+    orderUpdates: boolean;
+    healthAlerts: boolean;
+  }
 
-  const handleTogglePreference = (key: keyof typeof preferences) => {
-    const updated = { ...preferences, [key]: !preferences[key] };
-    setPreferences(updated);
-    localStorage.setItem('pawfectly_user_preferences', JSON.stringify(updated));
-    showToast('Preferences updated.');
+  const [preferences, setPreferences] = useState<NotificationPreferenceData>({
+    newsletter: true,
+    appointmentReminders: true,
+    orderUpdates: true,
+    healthAlerts: true,
+  });
+  const [togglingPreference, setTogglingPreference] = useState<string | null>(null);
+
+  const fetchPreferences = useCallback(async () => {
+    try {
+      const res = await apiClient.get<NotificationPreferenceData>('/customer/preferences');
+      if (res.data) {
+        setPreferences({
+          newsletter: res.data.newsletter ?? true,
+          appointmentReminders: res.data.appointmentReminders ?? true,
+          orderUpdates: res.data.orderUpdates ?? true,
+          healthAlerts: res.data.healthAlerts ?? true,
+        });
+      }
+    } catch {
+      // Use defaults if fetch fails
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPreferences();
+  }, [fetchPreferences]);
+
+  const handleTogglePreference = async (key: keyof NotificationPreferenceData) => {
+    if (key === 'healthAlerts') {
+      showToast('Health & Vaccination Alerts coming soon!', 'error');
+      return;
+    }
+    if (togglingPreference) return;
+
+    const prevValue = preferences[key];
+    const newValue = !prevValue;
+    setPreferences((prev) => ({ ...prev, [key]: newValue }));
+    setTogglingPreference(key);
+
+    try {
+      await apiClient.put('/customer/preferences', { [key]: newValue });
+      showToast('Preferences updated.');
+    } catch (err: unknown) {
+      setPreferences((prev) => ({ ...prev, [key]: prevValue }));
+      const msg = err instanceof Error ? err.message : 'Failed to update preferences.';
+      showToast(msg, 'error');
+    } finally {
+      setTogglingPreference(null);
+    }
   };
 
   // Cart State (In Profile)
@@ -1020,7 +1084,7 @@ export const ProfilePage: React.FC = () => {
                     className="bg-[#EFF8F0] border border-[#D5EAD9] hover:border-[#009E66]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold tracking-wider text-[#287A41] uppercase">
+                      <span className="text-[11px] font-semibold tracking-wider text-[#287A41] uppercase">
                         NEXT APPOINTMENT
                       </span>
                       <div className="w-7 h-7 rounded-full bg-white/90 border border-[#C3ECD0] flex items-center justify-center text-[#287A41] shadow-2xs group-hover:scale-105 transition-transform">
@@ -1041,10 +1105,10 @@ export const ProfilePage: React.FC = () => {
                         </>
                       ) : nextAppointment ? (
                         <>
-                          <p className="text-sm font-black text-[#16241B] truncate">
+                          <p className="text-sm font-semibold text-[#16241B] truncate">
                             {nextAppointment.vetName || 'Assigned Veterinarian'}
                           </p>
-                          <p className="text-xs font-semibold text-[#556658] truncate">
+                          <p className="text-xs font-normal text-[#556658] truncate">
                             {(() => {
                               const { date, time } = formatAptDateTime(nextAppointment);
                               return `${date}${time ? ` at ${time}` : ''}`;
@@ -1053,8 +1117,8 @@ export const ProfilePage: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <p className="text-sm font-black text-[#16241B] truncate">No upcoming appointments</p>
-                          <p className="text-xs font-semibold text-[#556658] truncate">Book one with a vet</p>
+                          <p className="text-sm font-semibold text-[#16241B] truncate">No upcoming appointments</p>
+                          <p className="text-xs font-normal text-[#556658] truncate">Book one with a vet</p>
                         </>
                       )}
                     </div>
@@ -1066,7 +1130,7 @@ export const ProfilePage: React.FC = () => {
                     className="bg-[#FFF5EE] border border-[#FED7AA] hover:border-[#EF7C3C]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold tracking-wider text-[#EF7C3C] uppercase">
+                      <span className="text-[11px] font-semibold tracking-wider text-[#EF7C3C] uppercase">
                         ACTIVE ORDER
                       </span>
                       <div className="w-7 h-7 rounded-full bg-white/90 border border-[#FED7AA] flex items-center justify-center text-[#EF7C3C] shadow-2xs group-hover:scale-105 transition-transform">
@@ -1087,17 +1151,17 @@ export const ProfilePage: React.FC = () => {
                         </>
                       ) : activeOrder ? (
                         <>
-                          <p className="text-sm font-black text-[#16241B] truncate">
+                          <p className="text-sm font-semibold text-[#16241B] truncate">
                             Order {activeOrder.orderStatus ? activeOrder.orderStatus.replace(/_/g, ' ') : (activeOrder.status || 'Placed')}
                           </p>
-                          <p className="text-xs font-semibold text-[#556658] truncate">
+                          <p className="text-xs font-normal text-[#556658] truncate">
                             {activeOrder.orderNumber || `Order #${activeOrder.id}`}
                           </p>
                         </>
                       ) : (
                         <>
-                          <p className="text-sm font-black text-[#16241B] truncate">No active orders</p>
-                          <p className="text-xs font-semibold text-[#556658] truncate">Browse the pharmacy</p>
+                          <p className="text-sm font-semibold text-[#16241B] truncate">No active orders</p>
+                          <p className="text-xs font-normal text-[#556658] truncate">Browse the pharmacy</p>
                         </>
                       )}
                     </div>
@@ -1109,7 +1173,7 @@ export const ProfilePage: React.FC = () => {
                     className="bg-[#EEF2FF] border border-[#C7D2FE] hover:border-[#3B82F6]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold tracking-wider text-[#3B82F6] uppercase">
+                      <span className="text-[11px] font-semibold tracking-wider text-[#3B82F6] uppercase">
                         YOUR PETS
                       </span>
                       <div className="w-7 h-7 rounded-full bg-white/90 border border-[#BFDBFE] flex items-center justify-center text-[#3B82F6] shadow-2xs group-hover:scale-105 transition-transform">
@@ -1130,17 +1194,17 @@ export const ProfilePage: React.FC = () => {
                         </>
                       ) : pets.length > 0 ? (
                         <>
-                          <p className="text-sm font-black text-[#16241B] truncate">
+                          <p className="text-sm font-semibold text-[#16241B] truncate">
                             {pets.length} {pets.length === 1 ? 'pet registered' : 'pets registered'}
                           </p>
-                          <p className="text-xs font-semibold text-[#556658] truncate">
+                          <p className="text-xs font-normal text-[#556658] truncate">
                             {pets.map((p) => p.name).join(', ')}
                           </p>
                         </>
                       ) : (
                         <>
-                          <p className="text-sm font-black text-[#16241B] truncate">No pets added yet</p>
-                          <p className="text-xs font-semibold text-[#556658] truncate">Add your first pet</p>
+                          <p className="text-sm font-semibold text-[#16241B] truncate">No pets added yet</p>
+                          <p className="text-xs font-normal text-[#556658] truncate">Add your first pet</p>
                         </>
                       )}
                     </div>
@@ -1152,7 +1216,7 @@ export const ProfilePage: React.FC = () => {
                     className="bg-[#FFF0F5] border border-[#FBCFE8] hover:border-[#EC4899]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold tracking-wider text-[#EC4899] uppercase">
+                      <span className="text-[11px] font-semibold tracking-wider text-[#EC4899] uppercase">
                         WISHLIST
                       </span>
                       <div className="w-7 h-7 rounded-full bg-white/90 border border-[#F9A8D4] flex items-center justify-center text-[#EC4899] shadow-2xs group-hover:scale-105 transition-transform">
@@ -1163,17 +1227,17 @@ export const ProfilePage: React.FC = () => {
                     <div className="mt-3 space-y-0.5">
                       {wishlistItems.length > 0 ? (
                         <>
-                          <p className="text-sm font-black text-[#16241B] truncate">
+                          <p className="text-sm font-semibold text-[#16241B] truncate">
                             {wishlistItems.length} {wishlistItems.length === 1 ? 'item saved' : 'items saved'}
                           </p>
-                          <p className="text-xs font-semibold text-[#556658] truncate">
+                          <p className="text-xs font-normal text-[#556658] truncate">
                             {wishlistItems.map((i) => i.name).join(', ')}
                           </p>
                         </>
                       ) : (
                         <>
-                          <p className="text-sm font-black text-[#16241B] truncate">No items saved</p>
-                          <p className="text-xs font-semibold text-[#556658] truncate">Browse the pharmacy</p>
+                          <p className="text-sm font-semibold text-[#16241B] truncate">No items saved</p>
+                          <p className="text-xs font-normal text-[#556658] truncate">Browse the pharmacy</p>
                         </>
                       )}
                     </div>
@@ -1185,11 +1249,11 @@ export const ProfilePage: React.FC = () => {
                 <div className="space-y-4 pt-4 border-t border-[#E8E4D8]">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-base font-black text-[#16241B] flex items-center gap-2">
+                      <h2 className="text-base font-semibold text-[#16241B] flex items-center gap-2">
                         <FileText className="w-4.5 h-4.5 text-[#009E66]" />
                         <span>Recent Prescriptions</span>
                       </h2>
-                      <p className="text-xs text-[#556658] font-medium mt-0.5">
+                      <p className="text-xs text-[#556658] font-normal mt-0.5">
                         Clinical instructions & medical prescriptions issued by your veterinarians.
                       </p>
                     </div>
@@ -1223,28 +1287,28 @@ export const ProfilePage: React.FC = () => {
                           >
                             <div className="space-y-1.5 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[11px] font-black border border-[#C3ECD0]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[11px] font-semibold border border-[#C3ECD0]">
                                   {apt.petName || 'Pet'}
                                 </span>
-                                <span className="text-xs text-[#88998C] font-semibold">
+                                <span className="text-xs text-[#88998C] font-normal">
                                   • {date}
                                 </span>
                               </div>
 
                               {apt.prescription && (
-                                <p className="text-sm font-black text-[#16241B] whitespace-pre-line">
+                                <p className="text-sm font-medium text-[#16241B] whitespace-pre-line">
                                   {apt.prescription}
                                 </p>
                               )}
 
                               {apt.diagnosis && (
-                                <p className="text-xs font-medium text-[#556658]">
-                                  <span className="font-bold text-[#16241B]">Diagnosis:</span> {apt.diagnosis}
+                                <p className="text-xs font-normal text-[#556658]">
+                                  <span className="font-semibold text-[#16241B]">Diagnosis:</span> {apt.diagnosis}
                                 </p>
                               )}
 
-                              <p className="text-xs text-[#88998C] font-medium">
-                                Prescribed by <span className="font-bold text-[#16241B]">{apt.vetName || 'Veterinarian'}</span>
+                              <p className="text-xs text-[#88998C] font-normal">
+                                Prescribed by <span className="font-semibold text-[#16241B]">{apt.vetName || 'Veterinarian'}</span>
                               </p>
                             </div>
                           </div>
@@ -1258,7 +1322,7 @@ export const ProfilePage: React.FC = () => {
                 <div className="space-y-4 pt-4 border-t border-[#E8E4D8]">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-base font-black text-[#16241B] flex items-center gap-2">
+                      <h2 className="text-base font-semibold text-[#16241B] flex items-center gap-2">
                         <BookOpen className="w-4.5 h-4.5 text-[#009E66]" />
                         <span>
                           {pets.length > 0
@@ -1266,16 +1330,15 @@ export const ProfilePage: React.FC = () => {
                             : 'Recommended Health Tips'}
                         </span>
                       </h2>
-                      <p className="text-xs text-[#556658] font-medium mt-0.5">
+                      <p className="text-xs text-[#556658] font-normal mt-0.5">
                         Veterinary articles and wellness guides curated for your companion animals.
                       </p>
                     </div>
                     <button
                       onClick={() => navigate('/health-tips')}
-                      className="text-xs font-bold text-[#009E66] hover:text-[#008757] flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                      className="text-xs font-semibold text-[#009E66] hover:text-[#008757] flex items-center gap-1 transition-colors cursor-pointer shrink-0"
                     >
                       <span>View All</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
@@ -1319,31 +1382,30 @@ export const ProfilePage: React.FC = () => {
 
                             <div className="flex items-center gap-2">
                               {article.petType && (
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[10px] font-black uppercase border border-[#C3ECD0]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[10px] font-semibold uppercase border border-[#C3ECD0]">
                                   {article.petType}
                                 </span>
                               )}
                               {article.isFeatured && (
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-[10px] font-black uppercase border border-[#FED7AA]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-[10px] font-semibold uppercase border border-[#FED7AA]">
                                   Featured
                                 </span>
                               )}
                             </div>
 
-                            <h3 className="text-sm font-black text-[#16241B] group-hover:text-[#009E66] transition-colors line-clamp-2">
+                            <h3 className="text-sm font-semibold text-[#16241B] group-hover:text-[#009E66] transition-colors line-clamp-2">
                               {article.title}
                             </h3>
 
                             {article.content && (
-                              <p className="text-xs text-[#556658] line-clamp-2 font-medium">
+                              <p className="text-xs text-[#556658] line-clamp-2 font-normal">
                                 {article.content.replace(/<[^>]*>?/gm, '')}
                               </p>
                             )}
                           </div>
 
-                          <div className="pt-3 border-t border-[#EAE3D4] mt-3 flex items-center justify-between text-xs font-bold text-[#009E66]">
+                          <div className="pt-3 border-t border-[#EAE3D4] mt-3 flex items-center justify-between text-xs font-semibold text-[#009E66]">
                             <span>Read Article</span>
-                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                           </div>
                         </div>
                       ))}
@@ -1359,14 +1421,14 @@ export const ProfilePage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">My Shopping Cart</h1>
-                    <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                    <p className="text-xs sm:text-sm text-[#67796B] font-normal mt-1">
                       Review selected pharmacy items and proceed to instant checkout.
                     </p>
                   </div>
                   {cartItems.length > 0 && (
                     <button
                       onClick={handleClearCart}
-                      className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                      className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors cursor-pointer"
                     >
                       Clear Cart
                     </button>
@@ -1409,16 +1471,9 @@ export const ProfilePage: React.FC = () => {
                             className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
-                                {item.imageUrl ? (
-                                  <img src={getCloudinaryImageUrl(item.imageUrl)} alt={item.productName} className="w-full h-full object-cover" />
-                                ) : (
-                                  <ShoppingBag className="w-6 h-6 text-[#009E66]" />
-                                )}
-                              </div>
                               <div>
-                                <h3 className="text-sm font-black text-[#16241B]">{item.productName}</h3>
-                                <p className="text-xs font-bold text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
+                                <h3 className="text-sm font-normal text-[#16241B]">{item.productName}</h3>
+                                <p className="text-xs font-normal text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
                               </div>
                             </div>
 
@@ -1430,7 +1485,7 @@ export const ProfilePage: React.FC = () => {
                                 >
                                   <Minus className="w-3 h-3" />
                                 </button>
-                                <span className="text-xs font-black text-[#16241B] px-1">{item.quantity}</span>
+                                <span className="text-xs font-normal text-[#16241B] px-1">{item.quantity}</span>
                                 <button
                                   onClick={() => handleUpdateCartQuantity(item.id, item.quantity + 1)}
                                   className="w-6 h-6 rounded-full bg-[#F8F6F0] hover:bg-[#E6F9EC] text-[#16241B] flex items-center justify-center cursor-pointer transition-colors"
@@ -1439,7 +1494,7 @@ export const ProfilePage: React.FC = () => {
                                 </button>
                               </div>
 
-                              <span className="text-sm font-black text-[#16241B] min-w-[70px] text-right">
+                              <span className="text-sm font-normal text-[#16241B] min-w-[70px] text-right">
                                 ₹{itemTotal.toLocaleString('en-IN')}
                               </span>
 
@@ -1458,19 +1513,15 @@ export const ProfilePage: React.FC = () => {
 
                     {/* Cart Summary Card */}
                     <div className="bg-[#FAF8F3] rounded-2xl p-5 border border-[#E8E4D8] space-y-3">
-                      <div className="flex items-center justify-between text-xs font-semibold text-[#556658]">
+                      <div className="flex items-center justify-between text-xs font-normal text-[#556658]">
                         <span>Items ({cartItems.reduce((acc, i) => acc + i.quantity, 0)}):</span>
-                        <span className="font-bold text-[#16241B]">
+                        <span className="font-normal text-[#16241B]">
                           ₹{cartItems.reduce((acc, i) => acc + (i.price || 0) * i.quantity, 0).toLocaleString('en-IN')}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-xs font-semibold text-[#556658]">
-                        <span>Delivery / In-Store Pickup:</span>
-                        <span className="font-bold text-[#009E66]">FREE</span>
-                      </div>
-                      <div className="pt-2 border-t border-[#E8E4D8] flex items-center justify-between text-base font-black text-[#16241B]">
+                      <div className="pt-2 border-t border-[#E8E4D8] flex items-center justify-between text-base font-medium text-[#16241B]">
                         <span>Total Amount:</span>
-                        <span className="text-lg text-[#009E66]">
+                        <span className="text-lg font-medium text-[#009E66]">
                           ₹{cartItems.reduce((acc, i) => acc + (i.price || 0) * i.quantity, 0).toLocaleString('en-IN')}
                         </span>
                       </div>
@@ -1478,14 +1529,14 @@ export const ProfilePage: React.FC = () => {
                       <button
                         onClick={handleCheckoutCart}
                         disabled={checkoutLoading}
-                        className="w-full mt-2 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
+                        className="w-full mt-2 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-semibold rounded-full shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
                       >
                         {checkoutLoading ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" /> Processing Order...
                           </>
                         ) : (
-                          'Proceed to Checkout →'
+                          'Proceed to Checkout'
                         )}
                       </button>
                     </div>
@@ -1500,7 +1551,7 @@ export const ProfilePage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">My Pets</h1>
-                    <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                    <p className="text-xs sm:text-sm text-[#67796B] font-normal mt-1">
                       Add, edit, or remove your registered family pets.
                     </p>
                   </div>
@@ -1511,7 +1562,7 @@ export const ProfilePage: React.FC = () => {
                       setPetFormData({ name: '', species: 'Dog', breed: '', age: 1, medicalNotes: '' });
                       setIsAddPetModalOpen(true);
                     }}
-                    className="px-6 py-3 bg-[#548B60] hover:bg-[#437750] text-white font-bold rounded-full text-xs sm:text-sm shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                    className="px-6 py-3 bg-[#548B60] hover:bg-[#437750] text-white font-semibold rounded-full text-xs sm:text-sm shadow-xs transition-all flex items-center gap-2 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Add Pet</span>
@@ -1564,12 +1615,12 @@ export const ProfilePage: React.FC = () => {
                             />
                           </div>
                           <div>
-                            <h3 className="text-base font-black text-[#16241B]">{pet.name}</h3>
-                            <p className="text-xs text-[#67796B] font-semibold">
+                            <h3 className="text-base font-semibold text-[#16241B]">{pet.name}</h3>
+                            <p className="text-xs text-[#67796B] font-normal">
                               {pet.breed || pet.species} • {pet.age ?? 0} {(pet.age ?? 0) === 1 ? 'year' : 'years'} old
                             </p>
                             {pet.medicalNotes && (
-                              <p className="text-[11px] text-[#88998C] truncate max-w-[150px] mt-0.5">
+                              <p className="text-[11px] text-[#88998C] truncate max-w-[150px] mt-0.5 font-normal">
                                 {pet.medicalNotes}
                               </p>
                             )}
@@ -1615,22 +1666,22 @@ export const ProfilePage: React.FC = () => {
                       <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
                         <AlertCircle className="w-6 h-6" />
                       </div>
-                      <h3 className="text-lg font-black text-[#16241B]">Remove Pet?</h3>
-                      <p className="text-xs text-[#67796B] font-medium">
+                      <h3 className="text-lg font-semibold text-[#16241B]">Remove Pet?</h3>
+                      <p className="text-xs text-[#67796B] font-normal">
                         Are you sure you want to remove this pet from your profile?
                       </p>
                       <div className="flex items-center justify-center gap-3 pt-2">
                         <button
                           onClick={() => setPetToDelete(null)}
                           disabled={petDeleting}
-                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-bold text-xs cursor-pointer"
+                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-medium text-xs cursor-pointer"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={() => handleRemovePetConfirm(petToDelete)}
                           disabled={petDeleting}
-                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
                         >
                           {petDeleting ? (
                             <>
@@ -1650,7 +1701,7 @@ export const ProfilePage: React.FC = () => {
                   <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-[#EDE7D9] shadow-2xl space-y-5">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-black text-[#16241B]">
+                        <h3 className="text-lg font-semibold text-[#16241B]">
                           {editingPetId ? 'Edit Pet Profile' : 'Add a New Pet'}
                         </h3>
                         <button
@@ -1663,7 +1714,7 @@ export const ProfilePage: React.FC = () => {
 
                       <form onSubmit={handleSavePet} className="space-y-4">
                         <div>
-                          <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-1.5">
+                          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#16241B] mb-1.5">
                             Pet Name
                           </label>
                           <input
@@ -1678,7 +1729,7 @@ export const ProfilePage: React.FC = () => {
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-1.5">
+                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#16241B] mb-1.5">
                               Species
                             </label>
                             <select
@@ -1695,7 +1746,7 @@ export const ProfilePage: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-1.5">
+                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#16241B] mb-1.5">
                               Age (Years)
                             </label>
                             <input
@@ -1711,7 +1762,7 @@ export const ProfilePage: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-1.5">
+                          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#16241B] mb-1.5">
                             Breed
                           </label>
                           <input
@@ -1724,7 +1775,7 @@ export const ProfilePage: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-1.5">
+                          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#16241B] mb-1.5">
                             Medical Notes / Allergies
                           </label>
                           <textarea
@@ -1740,14 +1791,14 @@ export const ProfilePage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setIsAddPetModalOpen(false)}
-                            className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-bold text-xs cursor-pointer"
+                            className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-medium text-xs cursor-pointer"
                           >
                             Cancel
                           </button>
                           <button
                             type="submit"
                             disabled={petSubmitting}
-                            className="px-6 py-2.5 rounded-full bg-[#548B60] hover:bg-[#437750] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                            className="px-6 py-2.5 rounded-full bg-[#548B60] hover:bg-[#437750] text-white font-semibold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
                           >
                             {petSubmitting ? (
                               <>
@@ -1814,11 +1865,11 @@ export const ProfilePage: React.FC = () => {
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="space-y-0.5">
-                              <span className="text-xs font-black text-[#16241B]">
+                              <span className="text-xs font-semibold text-[#16241B]">
                                 {order.orderNumber || `ORD-${order.id}`}
                               </span>
                               {order.createdAt && (
-                                <p className="text-xs text-[#88998C] font-medium">
+                                <p className="text-xs text-[#88998C] font-normal">
                                   Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', {
                                     day: 'numeric',
                                     month: 'short',
@@ -1830,7 +1881,7 @@ export const ProfilePage: React.FC = () => {
 
                             <div className="flex items-center gap-3">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-black border shadow-2xs ${getStatusBadge(
+                                className={`px-3 py-1 rounded-full text-xs font-semibold border shadow-2xs ${getStatusBadge(
                                   currentStatus
                                 )}`}
                               >
@@ -1840,7 +1891,7 @@ export const ProfilePage: React.FC = () => {
                               {isCancellable && (
                                 <button
                                   onClick={() => setOrderToCancel(order.id)}
-                                  className="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                                  className="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-medium transition-colors cursor-pointer shrink-0"
                                 >
                                   Cancel Order
                                 </button>
@@ -1870,7 +1921,7 @@ export const ProfilePage: React.FC = () => {
                                       <span>
                                         {item.quantity}x {item.productName}
                                       </span>
-                                      <span className="font-bold text-[#16241B]">
+                                      <span className="font-normal text-[#16241B]">
                                         ₹{(unitPrice * item.quantity).toLocaleString('en-IN')}
                                       </span>
                                     </div>
@@ -1880,7 +1931,7 @@ export const ProfilePage: React.FC = () => {
                                 <p className="text-[#88998C]">No item details available.</p>
                               )}
 
-                              <div className="flex items-center justify-between pt-2.5 border-t border-[#EAE3D4] mt-2 text-sm font-black text-[#16241B]">
+                              <div className="flex items-center justify-between pt-2.5 border-t border-[#EAE3D4] mt-2 text-sm font-medium text-[#16241B]">
                                 <span>Total Amount:</span>
                                 <span>₹{order.totalAmount.toLocaleString('en-IN')}</span>
                               </div>
@@ -1899,22 +1950,22 @@ export const ProfilePage: React.FC = () => {
                       <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
                         <AlertCircle className="w-6 h-6" />
                       </div>
-                      <h3 className="text-lg font-black text-[#16241B]">Cancel Order?</h3>
-                      <p className="text-xs text-[#67796B] font-medium">
+                      <h3 className="text-lg font-bold text-[#16241B]">Cancel Order?</h3>
+                      <p className="text-xs text-[#67796B] font-normal">
                         Are you sure you want to cancel order #{orderToCancel}? Your order will be directly cancelled and reserved items restored to store inventory.
                       </p>
                       <div className="flex items-center justify-center gap-3 pt-2">
                         <button
                           onClick={() => setOrderToCancel(null)}
                           disabled={cancellingOrder}
-                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-bold text-xs cursor-pointer"
+                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-medium text-xs cursor-pointer"
                         >
                           Keep Order
                         </button>
                         <button
                           onClick={() => handleCancelOrderConfirm(orderToCancel)}
                           disabled={cancellingOrder}
-                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
                         >
                           {cancellingOrder ? (
                             <>
@@ -1937,7 +1988,7 @@ export const ProfilePage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">My Appointments</h1>
-                    <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                    <p className="text-xs sm:text-sm text-[#67796B] font-normal mt-1">
                       Manage upcoming veterinary bookings and review past visit history.
                     </p>
                   </div>
@@ -1949,7 +2000,7 @@ export const ProfilePage: React.FC = () => {
                       }
                       setIsBookingModalOpen(true);
                     }}
-                    className="px-6 py-3 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-full text-xs sm:text-sm shadow-xs transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                    className="px-6 py-3 bg-[#009E66] hover:bg-[#008757] text-white font-semibold rounded-full text-xs sm:text-sm shadow-xs transition-all flex items-center gap-2 cursor-pointer shrink-0"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Book New Appointment</span>
@@ -1975,14 +2026,14 @@ export const ProfilePage: React.FC = () => {
                   <>
                     {/* Upcoming Appointments */}
                     <div className="space-y-4">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-[#16241B] flex items-center gap-2">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#16241B] flex items-center gap-2">
                         <Clock className="w-4 h-4 text-[#548B60]" />
                         <span>Upcoming Visits</span>
                       </h3>
 
                       {appointments.filter((a) => a.status === 'CONFIRMED' || a.status === 'PENDING').length === 0 ? (
                         <div className="text-center py-8 bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4]">
-                          <p className="text-xs text-[#67796B] font-medium">No upcoming appointments scheduled.</p>
+                          <p className="text-xs text-[#67796B] font-normal">No upcoming appointments scheduled.</p>
                         </div>
                       ) : (
                         appointments
@@ -1994,28 +2045,28 @@ export const ProfilePage: React.FC = () => {
                             >
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                  <h4 className="text-base font-black text-[#16241B]">
+                                  <h4 className="text-base font-medium text-[#16241B]">
                                     {apt.vetName || 'Assigned Veterinarian'}
                                   </h4>
                                   <span
-                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${getAptStatusBadge(
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${getAptStatusBadge(
                                       apt.status
                                     )}`}
                                   >
                                     {apt.status}
                                   </span>
                                 </div>
-                                <p className="text-xs font-semibold text-[#EF7C3C]">
+                                <p className="text-xs font-normal text-[#EF7C3C]">
                                   {apt.serviceName || 'General Consultation'}
                                 </p>
-                                <p className="text-xs text-[#67796B] font-medium">
+                                <p className="text-xs text-[#67796B] font-normal">
                                   {(() => {
                                     const { date, time } = formatAptDateTime(apt);
                                     return `${date}${time ? ` at ${time}` : ''}`;
                                   })()}
                                 </p>
                                 {apt.petName && (
-                                  <p className="text-[11px] text-[#88998C] flex items-center gap-1">
+                                  <p className="text-[11px] text-[#88998C] flex items-center gap-1 font-normal">
                                     <MapPin className="w-3 h-3 text-[#548B60]" /> Pet: {apt.petName}{' '}
                                     {apt.petSpecies ? `(${apt.petSpecies})` : (apt.petBreed ? `(${apt.petBreed})` : '')}
                                   </p>
@@ -2024,7 +2075,7 @@ export const ProfilePage: React.FC = () => {
 
                               <button
                                 onClick={() => setAppointmentToCancel(apt.id)}
-                                className="px-4 py-2 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                                className="px-4 py-2 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-medium transition-colors cursor-pointer shrink-0"
                               >
                                 Cancel Appointment
                               </button>
@@ -2035,13 +2086,13 @@ export const ProfilePage: React.FC = () => {
 
                     {/* Past Appointments */}
                     <div className="space-y-4 pt-4 border-t border-[#EAE3D4]">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-[#16241B] flex items-center gap-2">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#16241B] flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-[#88998C]" />
                         <span>Past History</span>
                       </h3>
 
                       {appointments.filter((a) => a.status === 'COMPLETED' || a.status === 'CANCELLED').length === 0 ? (
-                        <p className="text-xs text-[#88998C] italic">No past appointments recorded.</p>
+                        <p className="text-xs text-[#88998C] italic font-normal">No past appointments recorded.</p>
                       ) : (
                         appointments
                           .filter((a) => a.status === 'COMPLETED' || a.status === 'CANCELLED')
@@ -2052,24 +2103,24 @@ export const ProfilePage: React.FC = () => {
                             >
                               <div className="flex items-center justify-between gap-4">
                                 <div className="space-y-0.5 text-left">
-                                  <h4 className="text-sm font-black text-[#16241B]">
+                                  <h4 className="text-sm font-semibold text-[#16241B]">
                                     {apt.vetName || 'Veterinary Consultation'}
                                   </h4>
-                                  <p className="text-xs text-[#67796B]">
+                                  <p className="text-xs text-[#67796B] font-normal">
                                     {apt.serviceName || 'Consultation'} • {(() => {
                                       const { date, time } = formatAptDateTime(apt);
                                       return `${date}${time ? ` at ${time}` : ''}`;
                                     })()}
                                   </p>
                                   {apt.petName && (
-                                    <p className="text-[11px] text-[#88998C]">
-                                      Patient: <span className="font-bold text-[#16241B]">{apt.petName}</span>{' '}
+                                    <p className="text-[11px] text-[#88998C] font-normal">
+                                      Patient: <span className="font-semibold text-[#16241B]">{apt.petName}</span>{' '}
                                       {apt.petSpecies ? `(${apt.petSpecies})` : ''}
                                     </p>
                                   )}
                                 </div>
                                 <span
-                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${getAptStatusBadge(
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${getAptStatusBadge(
                                     apt.status
                                   )}`}
                                 >
@@ -2080,32 +2131,32 @@ export const ProfilePage: React.FC = () => {
                               {/* Clinical Medical Record (if added by Doctor/Admin) */}
                               {(apt.diagnosis || apt.prescription || apt.notes) && (
                                 <div className="pt-3 border-t border-[#F2ECE0] bg-[#FBF9F4] p-3 rounded-xl space-y-2 text-left">
-                                  <div className="flex items-center gap-1.5 text-xs font-black text-[#287A41]">
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#287A41]">
                                     <FileText className="w-3.5 h-3.5" />
                                     <span>Medical Record</span>
                                   </div>
                                   {apt.diagnosis && (
                                     <div>
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#67796B] block">
+                                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#67796B] block">
                                         Diagnosis
                                       </span>
-                                      <p className="text-xs font-bold text-[#16241B]">{apt.diagnosis}</p>
+                                      <p className="text-xs font-medium text-[#16241B]">{apt.diagnosis}</p>
                                     </div>
                                   )}
                                   {apt.prescription && (
                                     <div>
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#67796B] block">
+                                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#67796B] block">
                                         Prescription & Treatment
                                       </span>
-                                      <p className="text-xs text-[#334437] font-medium whitespace-pre-line">{apt.prescription}</p>
+                                      <p className="text-xs text-[#334437] font-normal whitespace-pre-line">{apt.prescription}</p>
                                     </div>
                                   )}
                                   {apt.notes && (
                                     <div>
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#67796B] block">
+                                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#67796B] block">
                                         Clinical Notes
                                       </span>
-                                      <p className="text-xs text-[#556658] italic">{apt.notes}</p>
+                                      <p className="text-xs text-[#556658] italic font-normal">{apt.notes}</p>
                                     </div>
                                   )}
                                 </div>
@@ -2119,16 +2170,16 @@ export const ProfilePage: React.FC = () => {
                                     if (existingRev) {
                                       return (
                                         <div className="flex items-center justify-between bg-[#FEFCE8] p-2.5 rounded-xl border border-[#FEF08A] text-xs">
-                                          <div className="flex items-center gap-1.5 font-extrabold text-[#B45309]">
+                                          <div className="flex items-center gap-1.5 font-semibold text-[#B45309]">
                                             <Star className="w-4 h-4 fill-current text-[#F5A623]" />
                                             <span>Your Rating: {existingRev.rating} / 5</span>
                                           </div>
                                           {existingRev.reviewText && (
-                                            <span className="text-[#556658] italic truncate max-w-[200px]">
+                                            <span className="text-[#556658] italic truncate max-w-[200px] font-normal">
                                               "{existingRev.reviewText}"
                                             </span>
                                           )}
-                                          <span className="text-[10px] text-[#88998C] font-semibold">Reviewed ✓</span>
+                                          <span className="text-[10px] text-[#88998C] font-normal">Reviewed ✓</span>
                                         </div>
                                       );
                                     }
@@ -2137,7 +2188,7 @@ export const ProfilePage: React.FC = () => {
                                       <button
                                         type="button"
                                         onClick={() => handleOpenReviewModal(apt)}
-                                        className="px-3.5 py-1.5 bg-[#FEF9C3] hover:bg-[#FDE047] text-[#B45309] text-xs font-bold rounded-full border border-[#FDE047] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                        className="px-3.5 py-1.5 bg-[#FEF9C3] hover:bg-[#FDE047] text-[#B45309] text-xs font-semibold rounded-full border border-[#FDE047] flex items-center gap-1.5 transition-colors cursor-pointer"
                                       >
                                         <Star className="w-3.5 h-3.5 fill-current" />
                                         <span>Rate & Review Visit</span>
@@ -2160,22 +2211,22 @@ export const ProfilePage: React.FC = () => {
                       <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
                         <AlertCircle className="w-6 h-6" />
                       </div>
-                      <h3 className="text-lg font-black text-[#16241B]">Cancel Appointment?</h3>
-                      <p className="text-xs text-[#67796B] font-medium">
+                      <h3 className="text-lg font-semibold text-[#16241B]">Cancel Appointment?</h3>
+                      <p className="text-xs text-[#67796B] font-normal">
                         Are you sure you want to cancel this booking?
                       </p>
                       <div className="flex items-center justify-center gap-3 pt-2">
                         <button
                           onClick={() => setAppointmentToCancel(null)}
                           disabled={cancellingAppointment}
-                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-bold text-xs cursor-pointer"
+                          className="px-5 py-2.5 rounded-full bg-[#F8F6F0] text-[#16241B] font-medium text-xs cursor-pointer"
                         >
                           Keep Appointment
                         </button>
                         <button
                           onClick={() => handleCancelAppointmentConfirm(appointmentToCancel)}
                           disabled={cancellingAppointment}
-                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
                         >
                           {cancellingAppointment ? (
                             <>
@@ -2203,9 +2254,9 @@ export const ProfilePage: React.FC = () => {
 
                       <form onSubmit={handleConfirmNewAppointment} className="space-y-4">
                         <div>
-                          <span className="text-xs font-bold text-[#EF7C3C] uppercase tracking-wider">Book an Appointment</span>
-                          <h3 className="text-xl font-black text-[#16241B] mt-0.5">Schedule Vet Visit</h3>
-                          <p className="text-xs text-[#556658]">Select your preferred veterinarian and appointment details.</p>
+                          <span className="text-xs font-semibold text-[#EF7C3C] uppercase tracking-wider">Book an Appointment</span>
+                          <h3 className="text-xl font-semibold text-[#16241B] mt-0.5">Schedule Vet Visit</h3>
+                          <p className="text-xs text-[#556658] font-normal">Select your preferred veterinarian and appointment details.</p>
                         </div>
 
                         {bookingErrorMsg && (
@@ -2216,12 +2267,12 @@ export const ProfilePage: React.FC = () => {
 
                         {/* Vet Selection */}
                         <div className="space-y-1 text-left">
-                          <label className="text-xs font-bold text-[#334437]">Select Veterinarian</label>
+                          <label className="text-xs font-semibold text-[#334437]">Select Veterinarian</label>
                           <select
                             required
                             value={selectedVetId || ''}
                             onChange={(e) => setSelectedVetId(Number(e.target.value))}
-                            className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                            className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-medium text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
                           >
                             <option value="">-- Choose a Veterinarian --</option>
                             {vetsList.map((vet) => (
@@ -2234,12 +2285,12 @@ export const ProfilePage: React.FC = () => {
 
                         {/* Service Selection */}
                         <div className="space-y-1 text-left">
-                          <label className="text-xs font-bold text-[#334437]">Select Service</label>
+                          <label className="text-xs font-semibold text-[#334437]">Select Service</label>
                           <select
                             required
                             value={selectedServiceId || (servicesList[0]?.id || '')}
                             onChange={(e) => setSelectedServiceId(Number(e.target.value))}
-                            className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                            className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-medium text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
                           >
                             {servicesList.map((service) => (
                               <option key={service.id} value={service.id}>
@@ -2251,7 +2302,7 @@ export const ProfilePage: React.FC = () => {
 
                         {/* Pet Selection */}
                         <div className="space-y-1 text-left">
-                          <label className="text-xs font-bold text-[#334437]">Pet Selection</label>
+                          <label className="text-xs font-semibold text-[#334437]">Pet Selection</label>
                           {petsLoading ? (
                             <div className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-medium text-[#67796B] flex items-center gap-2">
                               <Loader2 className="w-3.5 h-3.5 animate-spin text-[#009E66]" /> Loading your pets...
@@ -2260,7 +2311,7 @@ export const ProfilePage: React.FC = () => {
                             <select
                               value={selectedPetId ?? pets[0]?.id ?? ''}
                               onChange={(e) => setSelectedPetId(Number(e.target.value))}
-                              className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C] cursor-pointer"
+                              className="w-full px-3.5 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-medium text-[#16241B] focus:outline-none focus:border-[#3FA65C] cursor-pointer"
                             >
                               {pets.map((p) => (
                                 <option key={p.id} value={p.id}>
@@ -2277,7 +2328,7 @@ export const ProfilePage: React.FC = () => {
                                   setIsBookingModalOpen(false);
                                   setSearchParams({ tab: 'pets' });
                                 }}
-                                className="text-[#009E66] font-bold underline cursor-pointer"
+                                className="text-[#009E66] font-semibold underline cursor-pointer"
                               >
                                 add a pet under 'My Pets' tab
                               </button>{' '}
@@ -2289,22 +2340,22 @@ export const ProfilePage: React.FC = () => {
                         {/* Date and Time */}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1 text-left">
-                            <label className="text-xs font-bold text-[#334437]">Preferred Date</label>
+                            <label className="text-xs font-semibold text-[#334437]">Preferred Date</label>
                             <input
                               type="date"
                               required
                               value={bookingDate}
                               onChange={(e) => setBookingDate(e.target.value)}
-                              className="w-full px-3 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                              className="w-full px-3 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-medium text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
                             />
                           </div>
 
                           <div className="space-y-1 text-left">
-                            <label className="text-xs font-bold text-[#334437]">Preferred Time</label>
+                            <label className="text-xs font-semibold text-[#334437]">Preferred Time</label>
                             <select
                               value={bookingTime}
                               onChange={(e) => setBookingTime(e.target.value)}
-                              className="w-full px-3 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-bold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                              className="w-full px-3 py-2.5 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-medium text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
                             >
                               <option value="09:00 AM">09:00 AM</option>
                               <option value="10:00 AM">10:00 AM</option>
@@ -2318,20 +2369,20 @@ export const ProfilePage: React.FC = () => {
 
                         {/* Reason / Symptoms */}
                         <div className="space-y-1 text-left">
-                          <label className="text-xs font-bold text-[#334437]">Reason / Symptoms</label>
+                          <label className="text-xs font-semibold text-[#334437]">Reason / Symptoms</label>
                           <textarea
                             rows={2}
                             placeholder="e.g. Routine vaccination and annual checkup"
                             value={bookingNotesInput}
                             onChange={(e) => setBookingNotesInput(e.target.value)}
-                            className="w-full px-3.5 py-2 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-semibold text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
+                            className="w-full px-3.5 py-2 bg-[#FAF6EE] border border-[#E5DFCE] rounded-xl text-xs font-normal text-[#16241B] focus:outline-none focus:border-[#3FA65C]"
                           />
                         </div>
 
                         {selectedVetId && (
-                          <div className="p-3 bg-[#EFF8F0] border border-[#D5EAD9] rounded-xl flex items-center justify-between text-xs font-bold text-[#16241B]">
+                          <div className="p-3 bg-[#EFF8F0] border border-[#D5EAD9] rounded-xl flex items-center justify-between text-xs font-medium text-[#16241B]">
                             <span>Consultation Fee:</span>
-                            <span className="text-sm font-black text-[#287A41]">
+                            <span className="text-sm font-semibold text-[#287A41]">
                               {formatCurrency(vetsList.find((v) => v.id === selectedVetId)?.consultationFee ?? 50)}
                             </span>
                           </div>
@@ -2340,7 +2391,7 @@ export const ProfilePage: React.FC = () => {
                         <button
                           type="submit"
                           disabled={bookingSubmitting}
-                          className="w-full bg-[#009E66] hover:bg-[#008757] text-white font-black py-3 rounded-full shadow-xs cursor-pointer flex items-center justify-center gap-2 text-sm transition-all"
+                          className="w-full bg-[#009E66] hover:bg-[#008757] text-white font-semibold py-3 rounded-full shadow-xs cursor-pointer flex items-center justify-center gap-2 text-sm transition-all"
                         >
                           {bookingSubmitting ? (
                             <>
@@ -2385,6 +2436,7 @@ export const ProfilePage: React.FC = () => {
                         if (n.type === 'APPOINTMENT_CONFIRMED') return <CheckCircle2 className="w-5 h-5 text-[#287A41]" />;
                         if (n.type === 'APPOINTMENT_REJECTED') return <AlertCircle className="w-5 h-5 text-[#DC2626]" />;
                         if (n.type === 'NEW_VET') return <Stethoscope className="w-5 h-5 text-[#0284C7]" />;
+                        if (n.type && n.type.includes('ORDER')) return <ShoppingBag className="w-5 h-5 text-[#009E66]" />;
                         return <Bell className="w-5 h-5 text-[#EF7C3C]" />;
                       };
 
@@ -2442,50 +2494,114 @@ export const ProfilePage: React.FC = () => {
             {currentTab === 'wishlist' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">Saved & Liked Items</h1>
-                  <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                  <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">Saved Items</h1>
+                  <p className="text-xs sm:text-sm text-[#67796B] font-normal mt-1">
                     Your favorite pharmacy products, supplements, and bookmarked care services.
                   </p>
                 </div>
 
-                {wishlistItems.length === 0 ? (
+                {wishlistLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((n) => (
+                      <div key={n} className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center gap-3.5">
+                        <Skeleton className="w-14 h-14 rounded-xl shrink-0" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : wishlistError ? (
+                  <ErrorState title="Unable to load wishlist" message={wishlistError} onRetry={fetchWishlist} />
+                ) : wishlistItems.length === 0 ? (
                   <EmptyState
                     icon={Heart}
-                    title="No Liked Items Saved Yet"
+                    title="No Saved Items Yet"
                     description="Tap the heart icon on any pet service, vet profile, or pharmacy product to save it to your personal wishlist."
                     actionLabel="Explore Pharmacy"
                     actionLink="/pharmacy"
                   />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {wishlistItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
-                            {item.imageUrl ? (
-                              <img src={getCloudinaryImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <Heart className="w-6 h-6 text-[#EC4899] fill-[#EC4899]" />
-                            )}
+                    {wishlistItems.map((item) => {
+                      let itemLink = '/pharmacy';
+                      if (item.itemType === 'VET') {
+                        itemLink = `/vets/${item.itemId}`;
+                      } else if (item.itemType === 'SERVICE') {
+                        itemLink = '/services';
+                      }
+
+                      let imageSrc = '';
+                      if (item.itemType === 'PRODUCT') {
+                        imageSrc = getProductImageUrl(item.name, item.imageUrl, item.itemId);
+                      } else if (item.itemType === 'VET') {
+                        imageSrc = getVetImageUrl(item.name, item.imageUrl);
+                      } else if (item.itemType === 'SERVICE') {
+                        imageSrc = getArticleImageUrl(item.name, item.imageUrl);
+                      } else if (item.imageUrl) {
+                        imageSrc = getCloudinaryImageUrl(item.imageUrl);
+                      }
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center justify-between gap-4 group hover:shadow-xs transition-shadow"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
+                              {imageSrc ? (
+                                <img src={imageSrc} alt={item.name} className="w-full h-full object-cover" />
+                              ) : item.itemType === 'VET' ? (
+                                <Stethoscope className="w-6 h-6 text-[#287A41]" />
+                              ) : item.itemType === 'SERVICE' ? (
+                                <Sparkles className="w-6 h-6 text-[#7E22CE]" />
+                              ) : (
+                                <ShoppingBag className="w-6 h-6 text-[#009E66]" />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                                  item.itemType === 'VET'
+                                    ? 'bg-[#E3F3E9] text-[#287A41]'
+                                    : item.itemType === 'SERVICE'
+                                    ? 'bg-[#F3E8FF] text-[#7E22CE]'
+                                    : 'bg-[#E6F9EC] text-[#009E66]'
+                                }`}>
+                                  {item.itemType}
+                                </span>
+                              </div>
+                              <h3 className="text-sm font-bold text-[#16241B] truncate mt-1">{item.name}</h3>
+                              {item.price !== undefined && item.price !== null && (
+                                <p className="text-xs font-semibold text-[#009E66]">{formatCurrency(item.price)}</p>
+                              )}
+                              {item.specialization && (
+                                <p className="text-xs text-[#EF7C3C] font-semibold truncate">{item.specialization}</p>
+                              )}
+                              {item.category && (
+                                <p className="text-[11px] text-[#88998C] font-normal truncate">{item.category}</p>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="text-sm font-black text-[#16241B]">{item.name}</h3>
-                            <p className="text-xs font-bold text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
-                            {item.category && <p className="text-[11px] text-[#88998C] font-semibold">{item.category}</p>}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <HeartToggle
+                              itemType={item.itemType}
+                              itemId={item.itemId}
+                              isInitiallySaved={true}
+                              onToggle={() => fetchWishlist()}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => navigate(itemLink)}
+                              className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-semibold hover:bg-[#008757] transition-colors cursor-pointer"
+                            >
+                              View Item
+                            </button>
                           </div>
                         </div>
-
-                        <button
-                          onClick={() => navigate('/pharmacy')}
-                          className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-bold hover:bg-[#008757] transition-colors cursor-pointer shrink-0"
-                        >
-                          View Item
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -2498,14 +2614,14 @@ export const ProfilePage: React.FC = () => {
                   <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">
                     Settings & Profile
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                  <p className="text-xs sm:text-sm text-[#67796B] font-normal mt-1">
                     Manage your personal details, security credentials, and communication preferences.
                   </p>
                 </div>
 
                 {/* Section 1: Personal Details */}
                 <div className="space-y-4 pt-2">
-                  <h2 className="text-base font-black text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
+                  <h2 className="text-base font-semibold text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
                     <User className="w-4 h-4 text-[#009E66]" />
                     <span>Personal Details</span>
                   </h2>
@@ -2521,7 +2637,7 @@ export const ProfilePage: React.FC = () => {
                     <form onSubmit={handleSaveProfile} className="space-y-6 max-w-2xl">
                       {/* Full Name */}
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-[#16241B] font-sans mb-2">
                           FULL NAME
                         </label>
                         <div className="relative">
@@ -2531,14 +2647,14 @@ export const ProfilePage: React.FC = () => {
                             required
                             value={formProfile.name}
                             onChange={(e) => setFormProfile({ ...formProfile, name: e.target.value })}
-                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-normal font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
                           />
                         </div>
                       </div>
 
                       {/* Email Address */}
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-[#16241B] font-sans mb-2">
                           EMAIL ADDRESS
                         </label>
                         <div className="relative">
@@ -2548,14 +2664,14 @@ export const ProfilePage: React.FC = () => {
                             required
                             value={formProfile.email}
                             onChange={(e) => setFormProfile({ ...formProfile, email: e.target.value })}
-                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-normal font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
                           />
                         </div>
                       </div>
 
                       {/* Phone Number */}
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-[#16241B] font-sans mb-2">
                           PHONE NUMBER
                         </label>
                         <div className="relative">
@@ -2571,14 +2687,14 @@ export const ProfilePage: React.FC = () => {
                                 phone: e.target.value.replace(/\D/g, '').slice(0, 10),
                               })
                             }
-                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-normal font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
                           />
                         </div>
                       </div>
 
                       {/* Primary Address */}
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] font-sans mb-2">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-[#16241B] font-sans mb-2">
                           PRIMARY ADDRESS
                         </label>
                         <div className="relative">
@@ -2588,7 +2704,7 @@ export const ProfilePage: React.FC = () => {
                             value={formProfile.address}
                             placeholder="Street Address, City, Postal Code"
                             onChange={(e) => setFormProfile({ ...formProfile, address: e.target.value })}
-                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-medium font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-sm text-[#16241B] font-normal font-sans focus:outline-none focus:ring-2 focus:ring-[#009E66] focus:border-transparent transition-all"
                           />
                         </div>
                       </div>
@@ -2598,7 +2714,7 @@ export const ProfilePage: React.FC = () => {
                         <button
                           type="submit"
                           disabled={!isProfileDirty || profileSaving}
-                          className={`px-8 py-3.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 font-sans ${
+                          className={`px-8 py-3.5 rounded-full font-semibold text-sm transition-all flex items-center gap-2 font-sans ${
                             isProfileDirty && !profileSaving
                               ? 'bg-[#009E66] hover:bg-[#008757] text-white shadow-md cursor-pointer'
                               : 'bg-[#009E66]/40 text-white cursor-not-allowed opacity-70'
@@ -2619,7 +2735,7 @@ export const ProfilePage: React.FC = () => {
 
                 {/* Section 2: Security & Password */}
                 <div className="space-y-4 pt-6 border-t border-[#E8E4D8]">
-                  <h2 className="text-base font-black text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
+                  <h2 className="text-base font-semibold text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
                     <Lock className="w-4 h-4 text-[#009E66]" />
                     <span>Security & Password</span>
                   </h2>
@@ -2627,7 +2743,7 @@ export const ProfilePage: React.FC = () => {
                   <form onSubmit={handleChangePassword} className="space-y-6 max-w-2xl">
                     {/* Current Password */}
                     <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#16241B] mb-2">
                         Current Password
                       </label>
                       <div className="relative">
@@ -2638,7 +2754,7 @@ export const ProfilePage: React.FC = () => {
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
+                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-normal focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
                         />
                         <button
                           type="button"
@@ -2652,7 +2768,7 @@ export const ProfilePage: React.FC = () => {
 
                     {/* New Password */}
                     <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#16241B] mb-2">
                         New Password
                       </label>
                       <div className="relative">
@@ -2663,7 +2779,7 @@ export const ProfilePage: React.FC = () => {
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
+                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-normal focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
                         />
                         <button
                           type="button"
@@ -2673,14 +2789,14 @@ export const ProfilePage: React.FC = () => {
                           {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
-                      <span className="text-[11px] text-[#88998C] font-medium block mt-1.5">
+                      <span className="text-[11px] text-[#88998C] font-normal block mt-1.5">
                         Must be at least 8 characters long.
                       </span>
                     </div>
 
                     {/* Confirm New Password */}
                     <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-[#16241B] mb-2">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#16241B] mb-2">
                         Confirm New Password
                       </label>
                       <div className="relative">
@@ -2691,7 +2807,7 @@ export const ProfilePage: React.FC = () => {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-medium focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
+                          className="w-full pl-12 pr-12 py-3.5 rounded-full bg-[#F8F6F0] border border-[#EAE3D4] text-sm text-[#16241B] font-normal focus:outline-hidden focus:ring-2 focus:ring-[#548B60]"
                         />
                         <button
                           type="button"
@@ -2702,7 +2818,7 @@ export const ProfilePage: React.FC = () => {
                         </button>
                       </div>
                       {confirmPassword.length > 0 && !isPasswordMatching && (
-                        <span className="text-[11px] text-red-500 font-bold block mt-1.5">
+                        <span className="text-[11px] text-red-500 font-semibold block mt-1.5">
                           Passwords do not match.
                         </span>
                       )}
@@ -2712,7 +2828,7 @@ export const ProfilePage: React.FC = () => {
                       <button
                         type="submit"
                         disabled={!canSubmitPassword || passwordSubmitting}
-                        className={`px-8 py-3.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
+                        className={`px-8 py-3.5 rounded-full font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
                           canSubmitPassword && !passwordSubmitting
                             ? 'bg-[#548B60] hover:bg-[#437750] text-white shadow-md'
                             : 'bg-[#84A88C] text-white cursor-not-allowed opacity-80'
@@ -2732,7 +2848,7 @@ export const ProfilePage: React.FC = () => {
 
                 {/* Section 3: Preferences & Notifications */}
                 <div className="space-y-4 pt-6 border-t border-[#E8E4D8]">
-                  <h2 className="text-base font-black text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
+                  <h2 className="text-base font-semibold text-[#16241B] flex items-center gap-2 border-b border-[#E8E4D8] pb-2">
                     <Sliders className="w-4 h-4 text-[#009E66]" />
                     <span>Preferences & Notifications</span>
                   </h2>
@@ -2741,11 +2857,11 @@ export const ProfilePage: React.FC = () => {
                     {/* Newsletter */}
                     <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
                       <div className="space-y-0.5">
-                        <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-[#16241B] flex items-center gap-2">
                           <Mail className="w-4 h-4 text-[#548B60]" />
                           <span>Pawfectly Newsletter</span>
                         </h4>
-                        <p className="text-xs text-[#67796B]">
+                        <p className="text-xs text-[#67796B] font-normal">
                           Receive monthly pet wellness articles, guides, and care advice.
                         </p>
                       </div>
@@ -2767,11 +2883,11 @@ export const ProfilePage: React.FC = () => {
                     {/* Appointment Reminders */}
                     <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
                       <div className="space-y-0.5">
-                        <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-[#16241B] flex items-center gap-2">
                           <Bell className="w-4 h-4 text-[#EF7C3C]" />
                           <span>Appointment Reminders</span>
                         </h4>
-                        <p className="text-xs text-[#67796B]">
+                        <p className="text-xs text-[#67796B] font-normal">
                           Email & SMS notifications 24 hours before your vet appointments.
                         </p>
                       </div>
@@ -2793,11 +2909,11 @@ export const ProfilePage: React.FC = () => {
                     {/* Order Status Updates */}
                     <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
                       <div className="space-y-0.5">
-                        <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-[#16241B] flex items-center gap-2">
                           <ShoppingBag className="w-4 h-4 text-[#0284C7]" />
                           <span>Order & Pickup Updates</span>
                         </h4>
-                        <p className="text-xs text-[#67796B]">
+                        <p className="text-xs text-[#67796B] font-normal">
                           Real-time status tracking for your pet pharmacy orders.
                         </p>
                       </div>
@@ -2811,32 +2927,6 @@ export const ProfilePage: React.FC = () => {
                         <div
                           className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
                             preferences.orderUpdates ? 'left-6.5' : 'left-0.5'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    {/* Health & Vaccination Alerts */}
-                    <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
-                      <div className="space-y-0.5">
-                        <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-[#7E22CE]" />
-                          <span>Health & Vaccination Alerts</span>
-                        </h4>
-                        <p className="text-xs text-[#67796B]">
-                          Reminders when your pet’s annual vaccinations or checkups are due.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePreference('healthTips')}
-                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                          preferences.healthTips ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
-                        }`}
-                      >
-                        <div
-                          className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
-                            preferences.healthTips ? 'left-6.5' : 'left-0.5'
                           }`}
                         />
                       </button>
@@ -2861,18 +2951,18 @@ export const ProfilePage: React.FC = () => {
             </button>
 
             <div>
-              <span className="text-xs font-bold text-[#EF7C3C] uppercase tracking-wider">Rate & Review Visit</span>
-              <h3 className="text-xl font-black text-[#16241B] mt-0.5">
+              <span className="text-xs font-semibold text-[#EF7C3C] uppercase tracking-wider">Rate & Review Visit</span>
+              <h3 className="text-xl font-semibold text-[#16241B] mt-0.5">
                 How was your appointment?
               </h3>
-              <p className="text-xs text-[#556658]">
+              <p className="text-xs text-[#556658] font-normal">
                 Dr. {reviewModalApt.vetName || 'Veterinarian'} • {reviewModalApt.serviceName || 'Consultation'}
               </p>
             </div>
 
             <form onSubmit={handleSubmitReview} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#16241B] mb-2">
                   Star Rating *
                 </label>
                 <div className="flex items-center gap-2">
@@ -2892,12 +2982,12 @@ export const ProfilePage: React.FC = () => {
                       />
                     </button>
                   ))}
-                  <span className="ml-2 text-sm font-black text-[#16241B]">{reviewRating} / 5</span>
+                  <span className="ml-2 text-sm font-semibold text-[#16241B]">{reviewRating} / 5</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#16241B] mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#16241B] mb-1.5">
                   Written Review (Optional)
                 </label>
                 <textarea
@@ -2905,7 +2995,7 @@ export const ProfilePage: React.FC = () => {
                   placeholder="Share details about your experience..."
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-xs font-medium text-[#16241B] focus:outline-none focus:ring-2 focus:ring-[#009E66]"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF8F3] border border-[#D3D1C7] text-xs font-normal text-[#16241B] focus:outline-none focus:ring-2 focus:ring-[#009E66]"
                 />
               </div>
 
@@ -2913,14 +3003,14 @@ export const ProfilePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setReviewModalApt(null)}
-                  className="px-4 py-2 text-xs font-bold text-[#67796B] hover:bg-[#FAF8F3] rounded-full cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-[#67796B] hover:bg-[#FAF8F3] rounded-full cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={reviewSubmitting}
-                  className="px-6 py-2.5 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-full text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 bg-[#009E66] hover:bg-[#008757] text-white font-semibold rounded-full text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 >
                   {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
                 </button>

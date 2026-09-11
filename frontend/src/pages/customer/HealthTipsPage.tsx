@@ -200,7 +200,7 @@ export const HealthTipsPage: React.FC = () => {
       text: 'text-[#B45309]',
       hoverText: 'group-hover:text-[#B45309]',
       hoverBg: 'hover:bg-[#FEF9C3]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895238/be7aa286-04e9-4307-b2f4-6dc218dfb17f_1.png',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1789131563/ChatGPT_Image_Sep_11_2026_06_29_05_PM.png',
     },
     {
       name: 'Cats',
@@ -211,7 +211,7 @@ export const HealthTipsPage: React.FC = () => {
       text: 'text-[#287A41]',
       hoverText: 'group-hover:text-[#287A41]',
       hoverBg: 'hover:bg-[#E6F9EC]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895237/17d0f799-c458-4c6c-a0a6-80d8cf71e496_1.png',
+      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1789132287/ChatGPT_Image_Sep_11_2026_06_41_13_PM.png',
     },
     {
       name: 'Rabbits',
@@ -445,16 +445,14 @@ export const HealthTipsPage: React.FC = () => {
                 <button
                   key={tab.name}
                   onClick={() => setActiveTab(tab.name)}
-                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${
-                    isActive
-                      ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41] shadow-xs ring-2 ring-[#3FA65C]/20'
-                      : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B] shadow-2xs'
-                  }`}
+                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${isActive
+                    ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41] shadow-xs ring-2 ring-[#3FA65C]/20'
+                    : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B] shadow-2xs'
+                    }`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                      isActive ? 'bg-[#3FA65C] text-white' : `${tab.bg} ${tab.text}`
-                    }`}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-[#3FA65C] text-white' : `${tab.bg} ${tab.text}`
+                      }`}
                   >
                     <TabIcon className="w-3.5 h-3.5" />
                   </div>
@@ -619,11 +617,10 @@ export const HealthTipsPage: React.FC = () => {
                         setSelectedPetType(pet.name);
                       }
                     }}
-                    className={`min-w-[130px] sm:min-w-[150px] flex-1 rounded-[20px] p-2.5 sm:p-3 border transition-all flex flex-col items-center text-center group cursor-pointer ${
-                      isSelected
-                        ? `${pet.bg} ${pet.activeBorder} shadow-md ring-2 ring-current/20`
-                        : `bg-white ${pet.border} ${pet.hoverBorder} ${pet.hoverBg} shadow-2xs hover:shadow-md`
-                    }`}
+                    className={`min-w-[130px] sm:min-w-[150px] flex-1 rounded-[20px] p-2.5 sm:p-3 border transition-all flex flex-col items-center text-center group cursor-pointer ${isSelected
+                      ? `${pet.bg} ${pet.activeBorder} shadow-md ring-2 ring-current/20`
+                      : `bg-white ${pet.border} ${pet.hoverBorder} ${pet.hoverBg} shadow-2xs hover:shadow-md`
+                      }`}
                   >
                     <div className="w-full aspect-[4/3] rounded-[14px] overflow-hidden bg-[#FAF6EE] mb-2 border border-black/5">
                       <img
@@ -632,9 +629,8 @@ export const HealthTipsPage: React.FC = () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <span className={`text-xs sm:text-sm font-bold transition-colors ${
-                      isSelected ? pet.text : `text-[#16241B] ${pet.hoverText}`
-                    }`}>
+                    <span className={`text-xs sm:text-sm font-bold transition-colors ${isSelected ? pet.text : `text-[#16241B] ${pet.hoverText}`
+                      }`}>
                       {pet.name}
                     </span>
                   </div>
@@ -777,11 +773,11 @@ export const HealthTipsPage: React.FC = () => {
               </div>
 
               <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
-                <div className="relative w-full max-w-[250px] sm:max-w-[270px] h-[250px] sm:h-[270px] flex justify-center items-center overflow-visible">
+                <div className="relative w-full max-w-[320px] sm:max-w-[390px] lg:max-w-[440px] h-[240px] sm:h-[290px] lg:h-[330px] flex justify-center items-center overflow-visible translate-x-6 sm:translate-x-10 lg:translate-x-16.5 -translate-y-10 sm:-translate-y-14 lg:-translate-y-15">
                   <img
                     src={getCloudinaryImageUrl('health_tips_cta')}
                     alt="Pet Health Care"
-                    className="relative z-10 w-[118%] max-w-[320px] h-auto object-contain -mt-14 -mb-2 pointer-events-none drop-shadow-md"
+                    className="relative z-10 translate-y-[3px] w-[100%] sm:w-[115%] lg:w-[70%] max-w-[500px] sm:max-w-[460px] lg:max-w-[480px] h-auto object-contain scale-[1.15] sm:scale-[1.3] lg:scale-[1.35] pointer-events-none drop-shadow-xl"
                   />
                 </div>
               </div>

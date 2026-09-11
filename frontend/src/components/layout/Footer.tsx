@@ -5,7 +5,7 @@ export const Footer: React.FC = () => {
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
 
   return (
-    <footer className="bg-[#16241B] text-white py-4 sm:py-5 border-t border-[#23382A]">
+    <footer id="site-footer" className="bg-[#16241B] text-white py-4 sm:py-5 border-t border-[#23382A]">
       <div className="w-full px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Leftmost: Brand */}
         <a

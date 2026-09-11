@@ -8,6 +8,8 @@ import { ErrorState } from '../../components/feedback/ErrorState';
 import { getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
+import { useWishlistIds } from '../../hooks/useWishlistIds';
+import { HeartToggle } from '../../components/common/HeartToggle';
 import {
   ChevronLeft,
   Star,
@@ -53,6 +55,7 @@ export const VetProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { isSaved } = useWishlistIds();
 
   const [vet, setVet] = useState<VetDoctor | null>(null);
   const [reviews, setReviews] = useState<VetReview[]>([]);
@@ -174,24 +177,32 @@ export const VetProfilePage: React.FC = () => {
                   <p className="text-sm font-bold text-[#EF7C3C] mt-1">{vet.specialization}</p>
                 </div>
 
-                {/* Rating Badge */}
-                <div className="bg-[#FAF6EE] border border-[#EDE7D9] px-4 py-2 rounded-2xl flex items-center gap-2">
-                  {hasReviews && vet.rating ? (
-                    <>
-                      <Star className="w-5 h-5 text-amber-400 fill-amber-400 shrink-0" />
+                {/* Rating & Favorite Controls */}
+                <div className="flex items-center gap-3">
+                  <HeartToggle
+                    itemType="VET"
+                    itemId={vet.id}
+                    isInitiallySaved={isSaved('VET', vet.id)}
+                    className="w-10 h-10 bg-[#FAF6EE] border border-[#EDE7D9] hover:scale-105"
+                  />
+                  <div className="bg-[#FAF6EE] border border-[#EDE7D9] px-4 py-2 rounded-2xl flex items-center gap-2">
+                    {hasReviews && vet.rating ? (
+                      <>
+                        <Star className="w-5 h-5 text-amber-400 fill-amber-400 shrink-0" />
+                        <div>
+                          <span className="text-base font-black text-[#16241B]">{vet.rating.toFixed(1)}</span>
+                          <span className="text-xs text-[#556658] font-bold block">
+                            {vet.reviewsCount} review{vet.reviewsCount! > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
                       <div>
-                        <span className="text-base font-black text-[#16241B]">{vet.rating.toFixed(1)}</span>
-                        <span className="text-xs text-[#556658] font-bold block">
-                          {vet.reviewsCount} review{vet.reviewsCount! > 1 ? 's' : ''}
-                        </span>
+                        <span className="text-xs font-bold text-[#556658] block">No reviews yet</span>
+                        <span className="text-[10px] text-gray-400">Be the first to review</span>
                       </div>
-                    </>
-                  ) : (
-                    <div>
-                      <span className="text-xs font-bold text-[#556658] block">No reviews yet</span>
-                      <span className="text-[10px] text-gray-400">Be the first to review</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
 
