@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { CtaBanner } from '../../components/layout/CtaBanner';
-import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
+import { getCloudinaryImageUrl, getVetImageUrl, getServiceImageUrl, formatCurrency } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
@@ -56,11 +56,6 @@ export const HomePage: React.FC = () => {
 
   // Cloudinary image assets
   const heroCloudinaryUrl = getCloudinaryImageUrl('hero_dog_cat_green_bg');
-  const service01Url = getCloudinaryImageUrl('service_01_vet_care');
-  const service02Url = getCloudinaryImageUrl('service_03_grooming_puppy_tub');
-  const service03Url = getCloudinaryImageUrl('service_02_pet_food_rabbit_bowl');
-  const service04Url = getCloudinaryImageUrl('service_04_pharmacy_cat_med');
-  const service05Url = getCloudinaryImageUrl('service_05_toys_kittens_play');
   const avatar1Url = getCloudinaryImageUrl('avatar_user_1');
   const avatar2Url = getCloudinaryImageUrl('avatar_user_2');
   const avatar3Url = getCloudinaryImageUrl('avatar_user_3');
@@ -124,49 +119,34 @@ export const HomePage: React.FC = () => {
     const lower = (name || '').toLowerCase();
     let icon = <Sparkles className="w-5 h-5" />;
     let badgeBg = 'bg-[#D6F842] text-[#163824]';
-    let defaultImg = service01Url;
 
     if (lower.includes('vet') || lower.includes('care') || lower.includes('health') || lower.includes('doctor')) {
       icon = <Stethoscope className="w-5 h-5" />;
       badgeBg = 'bg-[#D6F842] text-[#163824]';
-      defaultImg = service01Url;
     } else if (lower.includes('food') || lower.includes('nutri') || lower.includes('diet')) {
       icon = <Utensils className="w-5 h-5" />;
       badgeBg = 'bg-[#FEE440] text-[#634700]';
-      defaultImg = service03Url;
     } else if (lower.includes('groom') || lower.includes('bath') || lower.includes('spa')) {
       icon = <Scissors className="w-5 h-5" />;
       badgeBg = 'bg-[#FFD6E8] text-[#9E1B58]';
-      defaultImg = service02Url;
     } else if (lower.includes('pharm') || lower.includes('med') || lower.includes('drug')) {
       icon = <Pill className="w-5 h-5" />;
       badgeBg = 'bg-[#BAE6FD] text-[#0369A1]';
-      defaultImg = service04Url;
     } else if (lower.includes('toy') || lower.includes('play') || lower.includes('enrich')) {
       icon = <Gamepad2 className="w-5 h-5" />;
       badgeBg = 'bg-[#E9D5FF] text-[#6B21A8]';
-      defaultImg = service05Url;
     } else if (lower.includes('board') || lower.includes('daycare') || lower.includes('stay')) {
       icon = <ShieldCheck className="w-5 h-5" />;
       badgeBg = 'bg-[#FED7AA] text-[#9A3412]';
-      defaultImg = avatar2Url;
     } else if (lower.includes('train') || lower.includes('behav') || lower.includes('class')) {
       icon = <Sparkles className="w-5 h-5" />;
       badgeBg = 'bg-[#C7D2FE] text-[#3730A3]';
-      defaultImg = avatar3Url;
     } else if (lower.includes('trans') || lower.includes('ambul') || lower.includes('ride')) {
       icon = <Truck className="w-5 h-5" />;
       badgeBg = 'bg-[#FBCFE8] text-[#9D174D]';
-      defaultImg = avatar4Url;
     }
 
-    const customUrl = (iconUrl || '').trim();
-    const img =
-      customUrl && (customUrl.startsWith('http://') || customUrl.startsWith('https://'))
-        ? customUrl
-        : customUrl
-          ? getCloudinaryImageUrl(customUrl)
-          : defaultImg;
+    const img = getServiceImageUrl(name, iconUrl);
     return { icon, badgeBg, img };
   };
 
