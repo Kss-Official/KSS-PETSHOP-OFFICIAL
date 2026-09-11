@@ -62,11 +62,6 @@ const ARTICLE_IMAGE_MAP: Record<string, string> = {
   'Essential Vaccinations for Dogs and Cats': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896780/Vet_examining_a_cat_with_stethoscope.png',
   'The Right Nutrition for a Healthier, Happier Pet': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png',
   'How to Keep Your Indoor Cat Active and Engaged': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896779/Playful_cat_with_colorful_ball.png',
-  'service_01_vet_care': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png',
-  'service_02_pet_food_rabbit_bowl': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png',
-  'service_03_grooming_puppy_tub': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png',
-  'service_04_pharmacy_cat_med': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png',
-  'service_05_toys_kittens_play': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png',
 };
 
 export function getServiceImageUrl(name: string = '', imageUrl?: string, id: number = 1): string {
@@ -76,19 +71,19 @@ export function getServiceImageUrl(name: string = '', imageUrl?: string, id: num
   const lower = (name || '').toLowerCase();
   const icon = (imageUrl || '').toLowerCase();
   if (lower.includes('vet') || lower.includes('care') || lower.includes('health') || lower.includes('doctor') || icon.includes('vet')) {
-    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png';
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788797640/service_01_vet_care.jpg';
   }
   if (lower.includes('food') || lower.includes('nutri') || lower.includes('diet') || icon.includes('food')) {
-    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png';
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788802670/service_02_pet_food_rabbit_bowl.jpg';
   }
   if (lower.includes('groom') || lower.includes('bath') || lower.includes('spa') || icon.includes('groom')) {
-    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png';
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788802830/service_03_grooming_puppy_tub.jpg';
   }
   if (lower.includes('pharm') || lower.includes('med') || lower.includes('drug') || icon.includes('pharm')) {
-    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png';
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788802595/service_04_pharmacy_cat_med.jpg';
   }
   if (lower.includes('toy') || lower.includes('play') || lower.includes('enrich') || icon.includes('toy')) {
-    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png';
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788802179/service_05_toys_kittens_play.jpg';
   }
   if (lower.includes('board') || lower.includes('daycare') || lower.includes('stay') || icon.includes('board')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png';
@@ -100,11 +95,11 @@ export function getServiceImageUrl(name: string = '', imageUrl?: string, id: num
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png';
   }
   const fallbacks = [
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788797640/service_01_vet_care.jpg',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788802670/service_02_pet_food_rabbit_bowl.jpg',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788802830/service_03_grooming_puppy_tub.jpg',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788802595/service_04_pharmacy_cat_med.jpg',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788802179/service_05_toys_kittens_play.jpg',
   ];
   return fallbacks[(Math.max(1, id) - 1) % fallbacks.length];
 }
@@ -113,13 +108,37 @@ export function getArticleImageUrl(title?: string, imageUrl?: string): string {
   if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
     return imageUrl;
   }
+  const cleanTitle = (title || '').trim();
+  if (cleanTitle && ARTICLE_IMAGE_MAP[cleanTitle]) {
+    return ARTICLE_IMAGE_MAP[cleanTitle];
+  }
+  if (cleanTitle) {
+    const lowerTitle = cleanTitle.toLowerCase();
+    for (const [key, url] of Object.entries(ARTICLE_IMAGE_MAP)) {
+      if (lowerTitle.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerTitle)) {
+        return url;
+      }
+    }
+    if (lowerTitle.includes('nutri') || lowerTitle.includes('food') || lowerTitle.includes('diet')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png';
+    }
+    if (lowerTitle.includes('vaccin') || lowerTitle.includes('shot') || lowerTitle.includes('doctor')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896780/Vet_examining_a_cat_with_stethoscope.png';
+    }
+    if (lowerTitle.includes('groom') || lowerTitle.includes('bath') || lowerTitle.includes('clean')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896776/Golden_retriever_getting_a_bath_with_bubbles_and_rubber_duck.png';
+    }
+    if (lowerTitle.includes('sick') || lowerTitle.includes('sign') || lowerTitle.includes('emerg')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896775/Sick_dog_with_ice_pack_on_head.png';
+    }
+    if (lowerTitle.includes('indoor') || lowerTitle.includes('cat') || lowerTitle.includes('play') || lowerTitle.includes('engag') || lowerTitle.includes('behav')) {
+      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896779/Playful_cat_with_colorful_ball.png';
+    }
+  }
   if (imageUrl && ARTICLE_IMAGE_MAP[imageUrl]) {
     return ARTICLE_IMAGE_MAP[imageUrl];
   }
-  if (title && ARTICLE_IMAGE_MAP[title]) {
-    return ARTICLE_IMAGE_MAP[title];
-  }
-  return getCloudinaryImageUrl(imageUrl || 'health_tips_hero');
+  return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png';
 }
 
 /**

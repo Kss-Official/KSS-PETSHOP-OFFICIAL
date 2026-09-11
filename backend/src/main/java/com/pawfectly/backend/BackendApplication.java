@@ -33,6 +33,7 @@ public class BackendApplication {
                 admin -> {
                     admin.setPassword(passwordEncoder.encode("admin123"));
                     admin.setRole(Role.ADMIN);
+                    admin.setIsActive(true);
                     userRepository.save(admin);
                 },
                 () -> userRepository.save(User.builder()
@@ -41,6 +42,7 @@ public class BackendApplication {
                     .password(passwordEncoder.encode("admin123"))
                     .role(Role.ADMIN)
                     .phone("+91 99999 99999")
+                    .isActive(true)
                     .build())
             );
 
@@ -49,6 +51,7 @@ public class BackendApplication {
                 cust -> {
                     cust.setPassword(passwordEncoder.encode("customer123"));
                     cust.setRole(Role.CUSTOMER);
+                    cust.setIsActive(true);
                     userRepository.save(cust);
                 },
                 () -> userRepository.save(User.builder()
@@ -57,6 +60,7 @@ public class BackendApplication {
                     .password(passwordEncoder.encode("customer123"))
                     .role(Role.CUSTOMER)
                     .phone("+91 98765 43210")
+                    .isActive(true)
                     .build())
             );
         };
