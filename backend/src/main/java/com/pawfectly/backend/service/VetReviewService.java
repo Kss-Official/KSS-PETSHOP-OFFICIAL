@@ -94,10 +94,7 @@ public class VetReviewService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public List<VetReviewDto> getReviewsForCustomer(Long customerId) {
-        return getReviewsByCustomer(customerId);
-    }
+
 
     @Transactional(readOnly = true)
     public VetReviewDto getReviewForAppointment(Long appointmentId) {
