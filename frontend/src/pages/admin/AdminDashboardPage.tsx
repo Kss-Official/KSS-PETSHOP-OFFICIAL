@@ -139,7 +139,7 @@ export const AdminDashboardPage: React.FC = () => {
   }, []);
 
   const maxRevenue = Math.max(
-    ...monthlyRevenue.map((m) => m.totalRevenue),
+    ...monthlyRevenue.flatMap((m) => [m.orderRevenue, m.appointmentRevenue, m.totalRevenue]),
     200
   );
 
@@ -269,7 +269,7 @@ export const AdminDashboardPage: React.FC = () => {
                         Monthly Revenue Analytics
                       </h3>
                       <p className="text-xs font-medium text-gray-500">
-                        Total revenue performance over the last 6 months
+                        Monthly order and vet consultation revenue over the last 6 months
                       </p>
                     </div>
                   </div>
@@ -278,7 +278,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#3FA65C]"></span>
-                    <span>Total Rev</span>
+                    <span>Order Revenue</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#EF7C3C]"></span>
@@ -321,9 +321,8 @@ export const AdminDashboardPage: React.FC = () => {
                     <div className="relative z-10 grid grid-cols-6 gap-2 sm:gap-4 pl-9 h-full items-end pb-7">
                       {monthlyRevenue.map((item, idx) => {
                         const isHovered = hoveredMonthIndex === idx;
-                        const totalHeightPct = maxRevenue > 0 ? (item.totalRevenue / maxRevenue) * 100 : 0;
-                        const orderHeightPct = item.totalRevenue > 0 ? (item.orderRevenue / item.totalRevenue) * 100 : 100;
-                        const aptHeightPct = item.totalRevenue > 0 ? (item.appointmentRevenue / item.totalRevenue) * 100 : 0;
+                        const orderHeightPct = maxRevenue > 0 ? (item.orderRevenue / maxRevenue) * 100 : 0;
+                        const aptHeightPct = maxRevenue > 0 ? (item.appointmentRevenue / maxRevenue) * 100 : 0;
 
                         return (
                           <div
@@ -332,30 +331,38 @@ export const AdminDashboardPage: React.FC = () => {
                             onMouseEnter={() => setHoveredMonthIndex(idx)}
                             onMouseLeave={() => setHoveredMonthIndex(null)}
                           >
-                            {/* Bar Column */}
-                            <div className="w-full flex items-end justify-center h-full pb-1">
-                              {item.totalRevenue === 0 ? (
-                                <div className="w-7 sm:w-9 h-2 bg-gray-100 rounded-full transition-all group-hover:bg-gray-200" />
+                            {/* Side-by-Side Grouped Bar Columns */}
+                            <div className="w-full flex items-end justify-center gap-1 sm:gap-1.5 h-full pb-1">
+                              {/* 1. Order Revenue Bar */}
+                              {item.orderRevenue === 0 ? (
+                                <div
+                                  className="w-3 sm:w-4.5 h-1.5 bg-gray-100 rounded-full transition-all group-hover:bg-gray-200"
+                                  title="Order Revenue: ₹0.00"
+                                />
                               ) : (
                                 <div
-                                  className="w-7 sm:w-9 rounded-t-xl overflow-hidden flex flex-col justify-end shadow-xs transition-all duration-300 group-hover:scale-y-[1.02] group-hover:shadow-md"
+                                  className="w-3 sm:w-4.5 bg-[#3FA65C] rounded-t-md shadow-xs transition-all duration-300 group-hover:bg-[#2F8A4B] group-hover:shadow-md"
                                   style={{
-                                    height: `${Math.max(8, Math.min(100, totalHeightPct))}%`,
+                                    height: `${Math.max(6, Math.min(100, orderHeightPct))}%`,
                                   }}
-                                >
-                                  {aptHeightPct > 0 && (
-                                    <div
-                                      className="w-full bg-[#EF7C3C] transition-all"
-                                      style={{ height: `${aptHeightPct}%` }}
-                                    />
-                                  )}
-                                  {orderHeightPct > 0 && (
-                                    <div
-                                      className="w-full bg-[#3FA65C] transition-all"
-                                      style={{ height: `${orderHeightPct}%` }}
-                                    />
-                                  )}
-                                </div>
+                                  title={`Order Revenue: ₹${item.orderRevenue.toFixed(2)}`}
+                                />
+                              )}
+
+                              {/* 2. Vet Visits Bar */}
+                              {item.appointmentRevenue === 0 ? (
+                                <div
+                                  className="w-3 sm:w-4.5 h-1.5 bg-gray-100 rounded-full transition-all group-hover:bg-gray-200"
+                                  title="Vet Visits: ₹0.00"
+                                />
+                              ) : (
+                                <div
+                                  className="w-3 sm:w-4.5 bg-[#EF7C3C] rounded-t-md shadow-xs transition-all duration-300 group-hover:bg-[#D96B2C] group-hover:shadow-md"
+                                  style={{
+                                    height: `${Math.max(6, Math.min(100, aptHeightPct))}%`,
+                                  }}
+                                  title={`Vet Visits: ₹${item.appointmentRevenue.toFixed(2)}`}
+                                />
                               )}
                             </div>
 
@@ -374,10 +381,10 @@ export const AdminDashboardPage: React.FC = () => {
                                 <p className="font-bold text-white text-xs">{item.fullMonth}</p>
                                 <div className="mt-1 space-y-0.5">
                                   <p className="text-emerald-400">
-                                    Orders: ₹{item.orderRevenue.toFixed(2)} ({item.orderCount})
+                                    Order Revenue: ₹{item.orderRevenue.toFixed(2)} ({item.orderCount} {item.orderCount === 1 ? 'order' : 'orders'})
                                   </p>
                                   <p className="text-orange-400">
-                                    Vet Visits: ₹{item.appointmentRevenue.toFixed(2)} ({item.appointmentCount})
+                                    Vet Visits: ₹{item.appointmentRevenue.toFixed(2)} ({item.appointmentCount} {item.appointmentCount === 1 ? 'visit' : 'visits'})
                                   </p>
                                   <p className="font-black text-white pt-1 border-t border-white/20">
                                     Total: ₹{item.totalRevenue.toFixed(2)}

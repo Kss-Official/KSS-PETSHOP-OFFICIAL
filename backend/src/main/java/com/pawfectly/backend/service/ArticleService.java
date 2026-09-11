@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,9 +21,58 @@ public class ArticleService {
 
     private final ArticleRepository articleRepository;
 
+    @PostConstruct
+    public void ensureActiveArticles() {
+        try {
+            List<Article> articles = articleRepository.findAll();
+            boolean changed = false;
+            for (Article a : articles) {
+                if (a.getIsActive() == null || !a.getIsActive()) {
+                    a.setIsActive(true);
+                    changed = true;
+                }
+                String t = a.getTitle() != null ? a.getTitle().toLowerCase() : "";
+                String currentCat = a.getCategory();
+                String targetCat = currentCat;
+                if (currentCat == null || currentCat.isBlank() || currentCat.equalsIgnoreCase("Preventive Care") || currentCat.equalsIgnoreCase("General")) {
+                    if (t.contains("nutrition") || t.contains("food") || t.contains("diet")) {
+                        targetCat = "Nutrition";
+                    } else if (t.contains("vaccin") || t.contains("shot")) {
+                        targetCat = "Vaccination";
+                    } else if (t.contains("groom") || t.contains("bath") || t.contains("wash")) {
+                        targetCat = "Grooming";
+                    } else if (t.contains("sign") || t.contains("sick") || t.contains("emergenc")) {
+                        targetCat = "Emergency Care";
+                    } else if (t.contains("cat") || t.contains("indoor") || t.contains("play") || t.contains("behaviour") || t.contains("behavior")) {
+                        targetCat = "Behaviour";
+                    } else if (t.contains("senior") || t.contains("aging") || t.contains("old")) {
+                        targetCat = "Senior Pet Care";
+                    } else if (t.contains("prevent") || t.contains("flea") || t.contains("tick") || t.contains("dental") || t.contains("checkup")) {
+                        targetCat = "Preventive Care";
+                    }
+                }
+                if (targetCat != null && !targetCat.equalsIgnoreCase(currentCat)) {
+                    a.setCategory(targetCat);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                articleRepository.saveAll(articles);
+                log.info("Initialized and normalized {} articles with active status and correct categories", articles.size());
+            }
+        } catch (Exception e) {
+            log.warn("Could not auto-activate or normalize articles: {}", e.getMessage());
+        }
+    }
+
     @Transactional(readOnly = true)
     public List<ArticleDto> getArticles(String petType, String category, Boolean featured, String search) {
         List<Article> articles = articleRepository.findAll();
+
+        // Only active articles are visible publicly
+        articles = articles.stream()
+                .filter(a -> a.getIsActive() == null || Boolean.TRUE.equals(a.getIsActive()))
+                .collect(Collectors.toList());
 
         if (featured != null && featured) {
             articles = articles.stream().filter(a -> Boolean.TRUE.equals(a.getIsFeatured())).collect(Collectors.toList());
@@ -69,6 +119,7 @@ public class ArticleService {
                 .category(dto.getCategory() != null ? dto.getCategory() : "Preventive Care")
                 .excerpt(dto.getExcerpt())
                 .isFeatured(dto.getIsFeatured() != null ? dto.getIsFeatured() : false)
+                .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
                 .publishedAt(dto.getPublishedAt() != null ? dto.getPublishedAt() : LocalDateTime.now())
                 .build();
 
@@ -89,6 +140,7 @@ public class ArticleService {
         if (dto.getCategory() != null) article.setCategory(dto.getCategory());
         if (dto.getExcerpt() != null) article.setExcerpt(dto.getExcerpt());
         if (dto.getIsFeatured() != null) article.setIsFeatured(dto.getIsFeatured());
+        if (dto.getIsActive() != null) article.setIsActive(dto.getIsActive());
         if (dto.getPublishedAt() != null) article.setPublishedAt(dto.getPublishedAt());
 
         Article updated = articleRepository.save(article);
@@ -114,6 +166,7 @@ public class ArticleService {
                 .category(article.getCategory() != null ? article.getCategory() : "Preventive Care")
                 .excerpt(article.getExcerpt())
                 .isFeatured(article.getIsFeatured())
+                .isActive(article.getIsActive() != null ? article.getIsActive() : true)
                 .publishedAt(article.getPublishedAt())
                 .build();
     }

@@ -41,10 +41,16 @@ public class AdminArticleController {
         article.setId(null);
         if (article.getIsFeatured() == null)
             article.setIsFeatured(false);
+        if (article.getIsActive() == null)
+            article.setIsActive(true);
         if (article.getCategory() == null)
             article.setCategory("Preventive Care");
         if (article.getPublishedAt() == null)
             article.setPublishedAt(LocalDateTime.now());
+        if (article.getImageUrl() != null) {
+            String trimmed = article.getImageUrl().trim();
+            article.setImageUrl(trimmed.isEmpty() ? null : trimmed);
+        }
         Article saved = articleRepository.save(article);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -55,7 +61,10 @@ public class AdminArticleController {
                 .map(article -> {
                     article.setTitle(articleDetails.getTitle());
                     article.setContent(articleDetails.getContent());
-                    article.setImageUrl(articleDetails.getImageUrl());
+                    if (articleDetails.getImageUrl() != null) {
+                        String trimmed = articleDetails.getImageUrl().trim();
+                        article.setImageUrl(trimmed.isEmpty() ? null : trimmed);
+                    }
                     article.setPetType(articleDetails.getPetType());
                     if (articleDetails.getCategory() != null)
                         article.setCategory(articleDetails.getCategory());
@@ -63,6 +72,8 @@ public class AdminArticleController {
                         article.setExcerpt(articleDetails.getExcerpt());
                     if (articleDetails.getIsFeatured() != null)
                         article.setIsFeatured(articleDetails.getIsFeatured());
+                    if (articleDetails.getIsActive() != null)
+                        article.setIsActive(articleDetails.getIsActive());
                     Article updated = articleRepository.save(article);
                     return ResponseEntity.ok(updated);
                 })
@@ -79,6 +90,21 @@ public class AdminArticleController {
                             "id", updated.getId(),
                             "isFeatured", updated.getIsFeatured(),
                             "message", "Article featured flag updated"));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/toggle-status")
+    public ResponseEntity<?> toggleArticleStatus(@PathVariable Long id) {
+        return articleRepository.findById(id)
+                .map(article -> {
+                    boolean newStatus = !Boolean.TRUE.equals(article.getIsActive());
+                    article.setIsActive(newStatus);
+                    Article updated = articleRepository.save(article);
+                    return ResponseEntity.ok(Map.of(
+                            "id", updated.getId(),
+                            "isActive", updated.getIsActive(),
+                            "message", "Article status updated to " + (newStatus ? "Active" : "Inactive")));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

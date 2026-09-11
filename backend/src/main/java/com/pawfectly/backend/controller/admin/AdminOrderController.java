@@ -61,6 +61,20 @@ public class AdminOrderController {
                         .collect(Collectors.groupingBy(oi -> oi.getOrder().getId(), Collectors.summingInt(oi -> 1)));
 
         List<Map<String, Object>> response = orders.stream().map(order -> {
+            boolean needsSave = false;
+            if ((order.getOrderStatus() == OrderStatus.PLACED || order.getOrderStatus() == OrderStatus.READY_FOR_PICKUP)
+                    && order.getPaymentStatus() != PaymentStatus.UNPAID) {
+                order.setPaymentStatus(PaymentStatus.UNPAID);
+                needsSave = true;
+            } else if (order.getOrderStatus() == OrderStatus.COMPLETED
+                    && order.getPaymentStatus() != PaymentStatus.PAID) {
+                order.setPaymentStatus(PaymentStatus.PAID);
+                needsSave = true;
+            }
+            if (needsSave) {
+                orderRepository.save(order);
+            }
+
             Map<String, Object> map = new HashMap<>();
             map.put("id", order.getId());
             map.put("customerId", order.getCustomer() != null ? order.getCustomer().getId() : null);
@@ -82,6 +96,20 @@ public class AdminOrderController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrderDetails(@PathVariable Long id) {
         return orderRepository.findById(id).map(order -> {
+            boolean needsSave = false;
+            if ((order.getOrderStatus() == OrderStatus.PLACED || order.getOrderStatus() == OrderStatus.READY_FOR_PICKUP)
+                    && order.getPaymentStatus() != PaymentStatus.UNPAID) {
+                order.setPaymentStatus(PaymentStatus.UNPAID);
+                needsSave = true;
+            } else if (order.getOrderStatus() == OrderStatus.COMPLETED
+                    && order.getPaymentStatus() != PaymentStatus.PAID) {
+                order.setPaymentStatus(PaymentStatus.PAID);
+                needsSave = true;
+            }
+            if (needsSave) {
+                orderRepository.save(order);
+            }
+
             List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
             List<Map<String, Object>> itemDtos = items.stream().map(item -> {
                 Map<String, Object> itemMap = new HashMap<>();
@@ -133,6 +161,16 @@ public class AdminOrderController {
             return orderRepository.findById(id).map(order -> {
                 OrderStatus oldStatus = order.getOrderStatus();
                 order.setOrderStatus(newStatus);
+
+                // Auto-sync payment status based on business rules:
+                if (newStatus == OrderStatus.COMPLETED) {
+                    order.setPaymentStatus(PaymentStatus.PAID);
+                } else if (newStatus == OrderStatus.CANCELLED) {
+                    order.setPaymentStatus(PaymentStatus.FAILED);
+                } else if (newStatus == OrderStatus.READY_FOR_PICKUP || newStatus == OrderStatus.PLACED) {
+                    order.setPaymentStatus(PaymentStatus.UNPAID);
+                }
+
                 Order saved = orderRepository.save(order);
 
                 // Auto stock deduction on delivery / completion:
@@ -163,6 +201,7 @@ public class AdminOrderController {
                 return ResponseEntity.ok(Map.of(
                         "id", saved.getId(),
                         "orderStatus", saved.getOrderStatus().name(),
+                        "paymentStatus", saved.getPaymentStatus() != null ? saved.getPaymentStatus().name() : "UNPAID",
                         "message", "Order status updated to " + saved.getOrderStatus().name()
                 ));
             }).orElse(ResponseEntity.notFound().build());

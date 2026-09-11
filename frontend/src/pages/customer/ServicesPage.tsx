@@ -26,13 +26,15 @@ import {
 interface ServiceDto {
   id: number;
   name: string;
-  category: string;
-  tagline: string;
+  category?: string;
+  tagline?: string;
   description: string;
-  price: number;
-  durationMinutes: number;
-  available: boolean;
+  price?: number;
+  durationMinutes?: number;
+  available?: boolean;
+  isActive?: boolean;
   imageUrl?: string;
+  iconUrl?: string;
 }
 
 export const ServicesPage: React.FC = () => {
@@ -63,8 +65,9 @@ export const ServicesPage: React.FC = () => {
   }, []);
 
   const resolveServiceImageUrl = (service: ServiceDto) => {
-    if (service.imageUrl && (service.imageUrl.startsWith('http://') || service.imageUrl.startsWith('https://'))) {
-      return service.imageUrl;
+    const customUrl = (service.iconUrl || service.imageUrl || '').trim();
+    if (customUrl && (customUrl.startsWith('http://') || customUrl.startsWith('https://'))) {
+      return customUrl;
     }
     const name = service.name.toLowerCase();
     if (name.includes('vet') || name.includes('doctor')) {
@@ -302,7 +305,7 @@ export const ServicesPage: React.FC = () => {
                             {service.name}
                           </h3>
                           <span className="text-xs font-black text-[#287A41]">
-                            ${service.price ? service.price.toFixed(2) : '35.00'}
+                            ₹{service.price ? service.price.toFixed(2) : '500.00'}
                           </span>
                         </div>
                         <p className="text-xs text-[#556658] font-medium leading-relaxed mt-1.5 mb-4 flex-grow line-clamp-2">

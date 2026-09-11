@@ -26,12 +26,19 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message?: string; status?: number }>) => {
+    const isAuthEndpoint = error.config?.url?.includes('/auth/');
+
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('pawfectly_token');
-      localStorage.removeItem('pawfectly_user');
-      window.dispatchEvent(new Event('auth-unauthorized'));
-      const authErr = new Error('Session expired or authentication failed. Please log in again.');
+      if (!isAuthEndpoint) {
+        // Token expired or invalid for authenticated requests
+        localStorage.removeItem('pawfectly_token');
+        localStorage.removeItem('pawfectly_user');
+        window.dispatchEvent(new Event('auth-unauthorized'));
+      }
+      const authMessage = isAuthEndpoint
+        ? error.response.data?.message || 'Invalid email or password. Please check your credentials.'
+        : 'Session expired or authentication failed. Please log in again.';
+      const authErr = new Error(authMessage);
       (authErr as any).response = error.response;
       (authErr as any).status = 401;
       return Promise.reject(authErr);
@@ -42,6 +49,18 @@ apiClient.interceptors.response.use(
         return Promise.reject(new Error('Request timeout: The server took too long to respond. Please check your connection.'));
       }
       return Promise.reject(new Error(error.message || 'Network error: Unable to connect to server. Please check your connection.'));
+    }
+
+    if (
+      error.response.status === 403 &&
+      !isAuthEndpoint &&
+      typeof error.response.data?.message === 'string' &&
+      (error.response.data.message.toLowerCase().includes('deactivated') ||
+       error.response.data.message.toLowerCase().includes('locked'))
+    ) {
+      localStorage.removeItem('pawfectly_token');
+      localStorage.removeItem('pawfectly_user');
+      window.dispatchEvent(new Event('auth-unauthorized'));
     }
 
     const message =

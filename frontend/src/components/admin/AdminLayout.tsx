@@ -29,7 +29,7 @@ import {
 
 interface AdminNotification {
   id: string;
-  type: 'ORDER' | 'APPOINTMENT' | 'STOCK' | 'CUSTOMER';
+  type: 'ORDER' | 'APPOINTMENT' | 'CUSTOMER' | 'INSURANCE' | 'NEWSLETTER';
   title: string;
   description: string;
   time: string;
@@ -87,7 +87,7 @@ export const AdminToastProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
@@ -120,21 +120,26 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
     } catch {}
   };
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (forceClearDismissed = false) => {
     try {
       setLoadingNotifications(true);
-      const [ordersRes, apptsRes, statsRes, custRes] = await Promise.all([
-        api.get('/admin/orders').catch(() => api.get('/admin/dashboard/recent-orders')),
-        api.get('/admin/dashboard/recent-appointments').catch(() => ({ data: [] })),
+      if (forceClearDismissed) {
+        localStorage.removeItem(DELETED_STORAGE_KEY);
+      }
+      const [ordersRes, apptsRes, statsRes, custRes, quotesRes, newsRes] = await Promise.all([
+        api.get('/admin/orders').catch(() => api.get('/admin/dashboard/recent-orders')).catch(() => ({ data: [] })),
+        api.get('/admin/appointments').catch(() => api.get('/admin/dashboard/recent-appointments')).catch(() => ({ data: [] })),
         api.get('/admin/dashboard/stats').catch(() => ({ data: {} })),
         api.get('/admin/customers').catch(() => ({ data: [] })),
+        api.get('/admin/insurance-quotes').catch(() => api.get('/admin/insurance')).catch(() => ({ data: [] })),
+        api.get('/admin/newsletter/subscribers').catch(() => api.get('/admin/newsletter')).catch(() => ({ data: [] })),
       ]);
 
       const readIds = getStoredIds(READ_STORAGE_KEY);
-      const deletedIds = getStoredIds(DELETED_STORAGE_KEY);
+      const deletedIds = forceClearDismissed ? new Set<string>() : getStoredIds(DELETED_STORAGE_KEY);
       const items: AdminNotification[] = [];
 
-      // 1. Orders (All statuses: Placed, Ready, Completed, Cancelled)
+      // 1. Customer Orders (only newly placed orders from customer checkout)
       const orders = ordersRes.data || [];
       orders.forEach((o: any) => {
         const orderId = o.id;
@@ -142,35 +147,23 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
         const custName = o.customerName || 'Customer';
         const status = o.orderStatus || 'PLACED';
 
-        let title = `New Order #${orderId}`;
-        let description = `${custName} placed an in-store pickup order (₹${total})`;
-
-        if (status === 'READY_FOR_PICKUP') {
-          title = `Order #${orderId} Ready`;
-          description = `Order #${orderId} (${custName}) is prepared and ready for customer pickup`;
-        } else if (status === 'COMPLETED') {
-          title = `Order #${orderId} Completed`;
-          description = `Order #${orderId} (${custName}) was successfully picked up and completed`;
-        } else if (status === 'CANCELLED') {
-          title = `Order #${orderId} Cancelled`;
-          description = `Order #${orderId} for ${custName} was cancelled`;
-        }
-
-        const notifId = `order-${orderId}-${status}`;
-        if (!deletedIds.has(notifId)) {
-          items.push({
-            id: notifId,
-            type: 'ORDER',
-            title,
-            description,
-            time: o.createdAt || new Date().toISOString(),
-            link: '/admin/orders',
-            isUnread: !readIds.has(notifId),
-          });
+        if (status === 'PLACED') {
+          const notifId = `order-${orderId}`;
+          if (!deletedIds.has(notifId)) {
+            items.push({
+              id: notifId,
+              type: 'ORDER',
+              title: `New Order #${orderId}`,
+              description: `${custName} placed an in-store pickup order (₹${total})`,
+              time: o.createdAt || new Date().toISOString(),
+              link: '/admin/orders',
+              isUnread: !readIds.has(notifId),
+            });
+          }
         }
       });
 
-      // 2. Appointments (Pending, Confirmed, Cancelled, Completed)
+      // 2. Customer Appointments (only new incoming appointment requests from customer panel)
       const appointments = apptsRes.data || [];
       appointments.forEach((a: any) => {
         const apptId = a.id;
@@ -178,55 +171,65 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
         const vetName = a.vetName || 'Doctor';
         const serviceName = a.serviceName || 'Consultation';
         const status = a.status || 'PENDING';
+        const custName = a.customerName || a.ownerName || 'Customer';
 
-        let title = `New Appointment Request`;
-        let description = `${petName} with ${vetName} (${serviceName})`;
-
-        if (status === 'CONFIRMED') {
-          title = `Appointment Confirmed`;
-          description = `Appointment #${apptId} for ${petName} with ${vetName} confirmed`;
-        } else if (status === 'CANCELLED') {
-          title = `Appointment Cancelled`;
-          description = `Appointment #${apptId} for ${petName} with ${vetName} was cancelled`;
-        } else if (status === 'COMPLETED') {
-          title = `Appointment Completed`;
-          description = `Appointment #${apptId} for ${petName} completed`;
+        if (status === 'PENDING') {
+          const notifId = `appt-${apptId}`;
+          if (!deletedIds.has(notifId)) {
+            items.push({
+              id: notifId,
+              type: 'APPOINTMENT',
+              title: `New Appointment Request`,
+              description: `${custName}'s pet ${petName} with Dr. ${vetName} (${serviceName})`,
+              time: a.dateTime || a.createdAt || new Date().toISOString(),
+              link: '/admin/appointments',
+              isUnread: !readIds.has(notifId),
+            });
+          }
         }
+      });
 
-        const notifId = `appt-${apptId}-${status}`;
+      // 3. Customer Insurance Quotes (requests from customer panel)
+      const quotes = quotesRes.data || [];
+      quotes.forEach((q: any) => {
+        const quoteId = q.id;
+        const petName = q.petName || 'Pet';
+        const plan = q.planType || 'Standard';
+        const owner = q.ownerName || 'Customer';
+        const notifId = `quote-${quoteId}`;
         if (!deletedIds.has(notifId)) {
           items.push({
             id: notifId,
-            type: 'APPOINTMENT',
-            title,
-            description,
-            time: a.dateTime || a.createdAt || new Date().toISOString(),
-            link: '/admin/appointments',
+            type: 'INSURANCE',
+            title: `New Insurance Quote Request`,
+            description: `${owner} requested ${plan} plan for ${petName} (${q.petSpecies || 'Pet'})`,
+            time: q.createdAt || new Date().toISOString(),
+            link: '/admin/quotes',
             isUnread: !readIds.has(notifId),
           });
         }
       });
 
-      // 3. Low Stock Inventory Alerts
-      const lowStockProducts = statsRes.data?.lowStockProducts || [];
-      lowStockProducts.forEach((p: any) => {
-        const notifId = `stock-${p.id}-${p.stockQuantity}`;
+      // 4. Customer Newsletter Subscribers (subscriptions from customer panel)
+      const subscribers = newsRes.data || [];
+      subscribers.slice(0, 10).forEach((s: any) => {
+        const notifId = `news-${s.id}`;
         if (!deletedIds.has(notifId)) {
           items.push({
             id: notifId,
-            type: 'STOCK',
-            title: `Low Stock Alert`,
-            description: `${p.name} has only ${p.stockQuantity} units left in stock`,
-            time: new Date().toISOString(),
-            link: '/admin/products',
+            type: 'NEWSLETTER',
+            title: `New Newsletter Subscriber`,
+            description: `${s.email} subscribed to the newsletter`,
+            time: s.subscribedAt || s.createdAt || new Date().toISOString(),
+            link: '/admin/newsletter',
             isUnread: !readIds.has(notifId),
           });
         }
       });
 
-      // 4. Customer Signups
+      // 5. Customer Signups (new accounts registered by customers)
       const customers = custRes.data || [];
-      customers.slice(0, 5).forEach((c: any) => {
+      customers.slice(0, 10).forEach((c: any) => {
         const notifId = `cust-${c.id}`;
         if (!deletedIds.has(notifId)) {
           items.push({
@@ -297,6 +300,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
 
   useEffect(() => {
     fetchNotifications();
+
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 20000);
+
+    const handleUpdate = () => {
+      fetchNotifications();
+    };
+
+    window.addEventListener('admin-notifications-updated', handleUpdate);
+    window.addEventListener('notifications-updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('admin-notifications-updated', handleUpdate);
+      window.removeEventListener('notifications-updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, [location.pathname]);
 
   const handleLogout = () => {
@@ -400,7 +422,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
             >
               <Menu className="w-5 h-5" />
             </button>
-            <h1 className="text-lg sm:text-xl font-black text-[#16241B] tracking-tight">{title}</h1>
+            {typeof title === 'string' ? (
+              <h1 className="text-lg sm:text-xl font-black text-[#16241B] tracking-tight">{title}</h1>
+            ) : (
+              title
+            )}
           </div>
 
           {/* Right Controls */}
@@ -448,27 +474,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
                         {notifications.length > 0 && unreadCount > 0 && (
                           <button
                             onClick={handleMarkAllAsRead}
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-[#3FA65C] hover:bg-emerald-50 transition-colors cursor-pointer text-[11px] font-semibold flex items-center gap-1"
+                            className="px-2 py-1 rounded-lg text-gray-600 hover:text-[#3FA65C] hover:bg-emerald-50 transition-colors cursor-pointer text-xs font-semibold flex items-center gap-1"
                             title="Mark all as read"
                           >
                             <CheckCheck className="w-3.5 h-3.5 text-[#3FA65C]" />
-                            <span className="hidden sm:inline text-xs">Mark read</span>
-                          </button>
-                        )}
-                        {notifications.length > 0 && (
-                          <button
-                            onClick={handleDeleteAll}
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-[11px] font-semibold flex items-center gap-1"
-                            title="Delete all notifications"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                            <span className="hidden sm:inline text-xs">Delete all</span>
+                            <span>Mark read</span>
                           </button>
                         )}
                         <button
-                          onClick={fetchNotifications}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fetchNotifications(true);
+                          }}
                           disabled={loadingNotifications}
-                          className="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                          className="text-gray-400 hover:text-[#16241B] p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                           title="Refresh notifications"
                         >
                           <RefreshCw className={`w-3.5 h-3.5 ${loadingNotifications ? 'animate-spin' : ''}`} />
@@ -501,6 +520,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
                                     ? 'bg-[#FEF3EC] text-[#EF7C3C]'
                                     : n.type === 'STOCK'
                                     ? 'bg-[#FEF2F2] text-[#DC2626]'
+                                    : n.type === 'INSURANCE'
+                                    ? 'bg-[#F5F3FF] text-[#7C3AED]'
+                                    : n.type === 'NEWSLETTER'
+                                    ? 'bg-[#FFFBEB] text-[#D97706]'
                                     : 'bg-[#EBF7EE] text-[#3FA65C]'
                                 }`}
                               >
@@ -510,6 +533,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
                                   <Calendar className="w-4 h-4" />
                                 ) : n.type === 'STOCK' ? (
                                   <AlertTriangle className="w-4 h-4" />
+                                ) : n.type === 'INSURANCE' ? (
+                                  <ShieldCheck className="w-4 h-4" />
+                                ) : n.type === 'NEWSLETTER' ? (
+                                  <Mail className="w-4 h-4" />
                                 ) : (
                                   <User className="w-4 h-4" />
                                 )}
@@ -542,15 +569,42 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
                           </div>
                         ))
                       ) : (
-                        <div className="py-8 text-center px-4">
+                        <div className="py-8 text-center px-4 flex flex-col items-center">
                           <CheckCircle2 className="w-8 h-8 text-[#3FA65C] mx-auto mb-2 opacity-80" />
                           <p className="text-xs font-bold text-gray-800">All caught up!</p>
-                          <p className="text-[11px] text-gray-500 mt-0.5">
+                          <p className="text-[11px] text-gray-500 mt-0.5 mb-3">
                             No notifications to display right now.
                           </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetchNotifications(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F0FDF4] hover:bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0] text-xs font-bold transition-all shadow-xs cursor-pointer"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 text-[#16a34a]" />
+                            <span>Reload Recent Activity</span>
+                          </button>
                         </div>
                       )}
                     </div>
+
+                    {/* Bottom Footer: Left Bottom Delete All Button */}
+                    {notifications.length > 0 && (
+                      <div className="px-4 py-2 border-t border-[#F3F4F6] bg-[#FAFAF8] flex items-center justify-between">
+                        <button
+                          onClick={handleDeleteAll}
+                          className="text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                          title="Delete all notifications"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                          <span>Delete all</span>
+                        </button>
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          {notifications.length} {notifications.length === 1 ? 'item' : 'items'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

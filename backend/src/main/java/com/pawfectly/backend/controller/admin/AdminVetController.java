@@ -42,6 +42,10 @@ public class AdminVetController {
         vet.setId(null);
         if (vet.getIsActive() == null) vet.setIsActive(true);
         if (vet.getRating() == null) vet.setRating(5.0);
+        if (vet.getPhotoUrl() != null) {
+            String trimmed = vet.getPhotoUrl().trim();
+            vet.setPhotoUrl(trimmed.isEmpty() ? null : trimmed);
+        }
         Vet saved = vetRepository.save(vet);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -58,7 +62,10 @@ public class AdminVetController {
                     vet.setReviewsCount(vetDetails.getReviewsCount());
                     vet.setCity(vetDetails.getCity());
                     vet.setConsultationFee(vetDetails.getConsultationFee());
-                    vet.setPhotoUrl(vetDetails.getPhotoUrl());
+                    if (vetDetails.getPhotoUrl() != null) {
+                        String trimmed = vetDetails.getPhotoUrl().trim();
+                        vet.setPhotoUrl(trimmed.isEmpty() ? null : trimmed);
+                    }
                     vet.setAddress(vetDetails.getAddress());
                     if (vetDetails.getRating() != null) vet.setRating(vetDetails.getRating());
                     if (vetDetails.getIsActive() != null) vet.setIsActive(vetDetails.getIsActive());

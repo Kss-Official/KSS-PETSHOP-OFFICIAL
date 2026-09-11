@@ -2,7 +2,7 @@ import React from 'react';
 
 export type StatusType =
   | 'ACTIVE' | 'COMPLETED' | 'CONFIRMED' | 'PAID' | 'Active' | 'Completed' | 'Confirmed' | 'Paid'
-  | 'PENDING' | 'READY_FOR_PICKUP' | 'DRAFT' | 'Pending' | 'Ready for Pickup' | 'Draft'
+  | 'PENDING' | 'READY_FOR_PICKUP' | 'DRAFT' | 'UNPAID' | 'Pending' | 'Ready for Pickup' | 'Draft' | 'Unpaid'
   | 'CANCELLED' | 'INACTIVE' | 'FAILED' | 'DEACTIVATED' | 'Cancelled' | 'Inactive' | 'Failed' | 'Deactivated'
   | 'PROCESSING' | 'INFO' | 'PLACED' | 'Processing' | 'Info' | 'Placed'
   | string;
@@ -19,7 +19,7 @@ export const AdminStatusBadge: React.FC<AdminStatusBadgeProps> = ({ status, clas
 
   if (['ACTIVE', 'COMPLETED', 'CONFIRMED', 'PAID', 'TRUE'].includes(normalized)) {
     colorClasses = 'bg-[#EBF7EE] text-[#3FA65C] border-[#C3E8CC]';
-  } else if (['PENDING', 'READY_FOR_PICKUP', 'DRAFT'].includes(normalized)) {
+  } else if (['PENDING', 'UNPAID', 'READY_FOR_PICKUP', 'DRAFT'].includes(normalized)) {
     colorClasses = 'bg-[#FEF3EC] text-[#EF7C3C] border-[#FCD8C1]';
   } else if (['CANCELLED', 'FAILED'].includes(normalized)) {
     colorClasses = 'bg-[#FDEDEC] text-[#C0392B] border-[#FADBD8]';

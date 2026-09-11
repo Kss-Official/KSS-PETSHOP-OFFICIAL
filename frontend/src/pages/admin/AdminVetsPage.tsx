@@ -4,6 +4,7 @@ import { AdminLayout, useAdminToast } from '../../components/admin/AdminLayout';
 import { DataTable, type Column } from '../../components/admin/DataTable';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminStatusBadge } from '../../components/admin/AdminStatusBadge';
+import { AdminImageUrlInput } from '../../components/admin/AdminImageUrlInput';
 import { getVetImageUrl, formatCurrency } from '../../lib/utils';
 import api from '../../lib/axios';
 
@@ -347,18 +348,14 @@ export const AdminVetsPage: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Photo URL
-            </label>
-            <input
-              type="url"
-              value={formData.photoUrl}
-              onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
-              placeholder="https://..."
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/30 focus:border-[#3FA65C]"
-            />
-          </div>
+          <AdminImageUrlInput
+            label="Photo URL"
+            value={formData.photoUrl}
+            onChange={(val) => setFormData({ ...formData, photoUrl: val })}
+            placeholder="https://images.unsplash.com/... or https://..."
+            entityName={formData.name || 'Veterinarian'}
+            helperText="Provide a direct URL to a profile photo (starts with http:// or https://, max 512 chars)."
+          />
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">

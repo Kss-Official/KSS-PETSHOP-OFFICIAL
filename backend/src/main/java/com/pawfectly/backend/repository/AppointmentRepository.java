@@ -22,7 +22,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
            "LEFT JOIN FETCH p.owner " +
            "LEFT JOIN FETCH a.vet " +
            "LEFT JOIN FETCH a.service " +
-           "ORDER BY a.dateTime DESC")
+           "ORDER BY a.createdAt DESC, a.id DESC")
     List<Appointment> findRecentAppointmentsWithDetails(org.springframework.data.domain.Pageable pageable);
 
     @Query("SELECT a FROM Appointment a " +
@@ -31,12 +31,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
            "LEFT JOIN FETCH a.vet " +
            "LEFT JOIN FETCH a.service " +
            "WHERE (:status IS NULL OR a.status = :status) " +
-           "ORDER BY a.dateTime DESC")
+           "ORDER BY a.createdAt DESC, a.id DESC")
     List<Appointment> findFiltered(@Param("status") AppointmentStatus status);
 
     long countByStatus(AppointmentStatus status);
 
-    @Query("SELECT COALESCE(SUM(COALESCE(a.vet.consultationFee, 50.0)), 0.0) FROM Appointment a WHERE a.status = 'COMPLETED' AND a.dateTime >= :startDate")
+    @Query("SELECT COALESCE(SUM(COALESCE(a.vet.consultationFee, 500.0)), 0.0) FROM Appointment a WHERE a.status = 'COMPLETED' AND a.dateTime >= :startDate")
     Double sumCompletedAppointmentRevenueSince(@Param("startDate") LocalDateTime startDate);
 
     @Query("SELECT a FROM Appointment a " +
@@ -50,6 +50,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("endDate") LocalDateTime endDate
     );
 
-    @Query("SELECT a FROM Appointment a WHERE a.pet.owner.id = :customerId ORDER BY a.dateTime DESC")
+    @Query("SELECT a FROM Appointment a WHERE a.pet.owner.id = :customerId ORDER BY a.createdAt DESC, a.id DESC")
     List<Appointment> findByCustomerId(@Param("customerId") Long customerId);
 }

@@ -4,7 +4,8 @@ import { AdminLayout, useAdminToast } from '../../components/admin/AdminLayout';
 import { DataTable, type Column } from '../../components/admin/DataTable';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminStatusBadge } from '../../components/admin/AdminStatusBadge';
-import { getCloudinaryImageUrl } from '../../lib/utils';
+import { AdminImageUrlInput } from '../../components/admin/AdminImageUrlInput';
+import { getServiceImageUrl } from '../../lib/utils';
 import api from '../../lib/axios';
 
 interface ServiceItem {
@@ -155,7 +156,7 @@ export const AdminServicesPage: React.FC = () => {
       align: 'left',
       className: 'w-[65%]',
       render: (row) => {
-        const imgUrl = getCloudinaryImageUrl(row.iconUrl || 'service_01_vet_care');
+        const imgUrl = getServiceImageUrl(row.name, row.iconUrl);
         return (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#F7F7F5] border border-[#EBEBE8] overflow-hidden flex items-center justify-center shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
@@ -280,18 +281,14 @@ export const AdminServicesPage: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider mb-1.5">
-              Icon Key / Image URL
-            </label>
-            <input
-              type="text"
-              value={formData.iconUrl}
-              onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
-              placeholder="service_01_vet_care / https://..."
-              className="w-full px-3 py-2 bg-[#F9FAF8] border border-[#E5E7EB] rounded-lg text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/20 focus:border-[#3FA65C] transition-all"
-            />
-          </div>
+          <AdminImageUrlInput
+            label="Service Icon / Image URL"
+            value={formData.iconUrl || ''}
+            onChange={(val) => setFormData({ ...formData, iconUrl: val })}
+            placeholder="https://images.unsplash.com/... or https://..."
+            entityName={formData.name || 'Service'}
+            helperText="Provide a direct URL to an image or icon (starts with http:// or https://, max 512 chars)."
+          />
 
           <div>
             <label className="block text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider mb-1.5">

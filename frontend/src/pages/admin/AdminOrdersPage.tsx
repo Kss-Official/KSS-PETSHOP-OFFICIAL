@@ -84,12 +84,15 @@ export const AdminOrdersPage: React.FC = () => {
     setStatusError(null);
 
     try {
-      await api.patch(`/admin/orders/${selectedOrder.id}/order-status`, {
+      const res = await api.patch(`/admin/orders/${selectedOrder.id}/order-status`, {
         orderStatus: newOrderStatus,
       });
 
+      const updatedPaymentStatus = res.data?.paymentStatus || (newOrderStatus === 'COMPLETED' ? 'PAID' : (newOrderStatus === 'PLACED' || newOrderStatus === 'READY_FOR_PICKUP' ? 'UNPAID' : selectedOrder.paymentStatus));
+
       // Update local state and list
-      setSelectedOrder((prev) => (prev ? { ...prev, orderStatus: newOrderStatus } : null));
+      setSelectedOrder((prev) => (prev ? { ...prev, orderStatus: newOrderStatus, paymentStatus: updatedPaymentStatus } : null));
+      setNewPaymentStatus(updatedPaymentStatus);
       showToast('Order status updated successfully!');
       fetchOrders();
     } catch (err: any) {
@@ -124,8 +127,18 @@ export const AdminOrdersPage: React.FC = () => {
       const res = await api.patch(`/admin/orders/${orderId}/order-status`, {
         orderStatus: newStatus,
       });
+      const updatedOrderStatus = res.data?.orderStatus || newStatus;
+      const updatedPaymentStatus = res.data?.paymentStatus || (newStatus === 'COMPLETED' ? 'PAID' : (newStatus === 'PLACED' || newStatus === 'READY_FOR_PICKUP' ? 'UNPAID' : undefined));
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
+        prev.map((o) =>
+          o.id === orderId
+            ? {
+                ...o,
+                orderStatus: updatedOrderStatus,
+                ...(updatedPaymentStatus ? { paymentStatus: updatedPaymentStatus } : {}),
+              }
+            : o
+        )
       );
       showToast(res.data?.message || `Order #${orderId} status updated to ${newStatus}`);
     } catch (err: any) {
@@ -191,20 +204,6 @@ export const AdminOrdersPage: React.FC = () => {
         if (row.orderStatus === 'COMPLETED' || row.orderStatus === 'CANCELLED') {
           return <AdminStatusBadge status={row.orderStatus} />;
         }
-        if (row.orderStatus === 'READY_FOR_PICKUP') {
-          return (
-            <select
-              value={row.orderStatus}
-              onChange={(e) => handleInlineOrderStatusChange(row.id, e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs font-semibold px-2.5 py-1 rounded-full border border-gray-200 bg-white hover:border-[#3FA65C] focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/20 transition-all cursor-pointer shadow-2xs text-gray-800"
-            >
-              <option value="READY_FOR_PICKUP">Ready for Pickup</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          );
-        }
         return (
           <select
             value={row.orderStatus}
@@ -214,6 +213,7 @@ export const AdminOrdersPage: React.FC = () => {
           >
             <option value="PLACED">Placed</option>
             <option value="READY_FOR_PICKUP">Ready for Pickup</option>
+            <option value="COMPLETED">Completed</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
         );
@@ -223,21 +223,24 @@ export const AdminOrdersPage: React.FC = () => {
       key: 'paymentStatus',
       header: 'Payment',
       sortable: true,
-      render: (row) =>
-        row.paymentStatus === 'PAID' ? (
-          <AdminStatusBadge status="PAID" />
-        ) : (
+      render: (row) => {
+        const ps = (row.paymentStatus || 'UNPAID').toUpperCase();
+        if (ps === 'PAID' || ps === 'FAILED') {
+          return <AdminStatusBadge status={ps} />;
+        }
+        return (
           <select
-            value={row.paymentStatus}
+            value={ps}
             onChange={(e) => handleInlinePaymentStatusChange(row.id, e.target.value)}
             onClick={(e) => e.stopPropagation()}
             className="text-xs font-semibold px-2.5 py-1 rounded-full border border-gray-200 bg-white hover:border-[#3FA65C] focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/20 transition-all cursor-pointer shadow-2xs text-gray-800"
           >
-            <option value="PENDING">Pending</option>
+            <option value="UNPAID">Unpaid</option>
             <option value="PAID">Paid</option>
             <option value="FAILED">Failed</option>
           </select>
-        ),
+        );
+      },
     },
     {
       key: 'createdAt',
@@ -406,9 +409,9 @@ export const AdminOrdersPage: React.FC = () => {
                   <label className="block text-xs font-medium text-gray-600">
                     Payment Status
                   </label>
-                  {selectedOrder.paymentStatus === 'PAID' ? (
+                  {selectedOrder.paymentStatus === 'PAID' || selectedOrder.paymentStatus === 'FAILED' ? (
                     <div className="flex items-center gap-2 py-1">
-                      <AdminStatusBadge status="PAID" />
+                      <AdminStatusBadge status={selectedOrder.paymentStatus} />
                       <span className="text-[11px] text-gray-400 font-medium">Payment finalized</span>
                     </div>
                   ) : (
@@ -418,7 +421,7 @@ export const AdminOrdersPage: React.FC = () => {
                         onChange={(e) => setNewPaymentStatus(e.target.value)}
                         className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/30"
                       >
-                        <option value="PENDING">Pending (Pay at counter)</option>
+                        <option value="UNPAID">Unpaid (Pay at pickup)</option>
                         <option value="PAID">Paid</option>
                         <option value="FAILED">Failed</option>
                       </select>
