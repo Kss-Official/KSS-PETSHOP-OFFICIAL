@@ -1446,16 +1446,9 @@ export const ProfilePage: React.FC = () => {
                             className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
-                                {item.imageUrl ? (
-                                  <img src={getCloudinaryImageUrl(item.imageUrl)} alt={item.productName} className="w-full h-full object-cover" />
-                                ) : (
-                                  <ShoppingBag className="w-6 h-6 text-[#009E66]" />
-                                )}
-                              </div>
                               <div>
-                                <h3 className="text-sm font-black text-[#16241B]">{item.productName}</h3>
-                                <p className="text-xs font-bold text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
+                                <h3 className="text-sm font-medium text-[#16241B]">{item.productName}</h3>
+                                <p className="text-xs font-normal text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
                               </div>
                             </div>
 
@@ -1467,7 +1460,7 @@ export const ProfilePage: React.FC = () => {
                                 >
                                   <Minus className="w-3 h-3" />
                                 </button>
-                                <span className="text-xs font-black text-[#16241B] px-1">{item.quantity}</span>
+                                <span className="text-xs font-medium text-[#16241B] px-1">{item.quantity}</span>
                                 <button
                                   onClick={() => handleUpdateCartQuantity(item.id, item.quantity + 1)}
                                   className="w-6 h-6 rounded-full bg-[#F8F6F0] hover:bg-[#E6F9EC] text-[#16241B] flex items-center justify-center cursor-pointer transition-colors"
@@ -1476,7 +1469,7 @@ export const ProfilePage: React.FC = () => {
                                 </button>
                               </div>
 
-                              <span className="text-sm font-black text-[#16241B] min-w-[70px] text-right">
+                              <span className="text-sm font-semibold text-[#16241B] min-w-[70px] text-right">
                                 ₹{itemTotal.toLocaleString('en-IN')}
                               </span>
 
