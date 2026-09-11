@@ -7,6 +7,8 @@ import com.pawfectly.backend.entity.MedicalRecord;
 import com.pawfectly.backend.entity.Vet;
 import com.pawfectly.backend.repository.AppointmentRepository;
 import com.pawfectly.backend.repository.MedicalRecordRepository;
+import com.pawfectly.backend.repository.VetRepository;
+import com.pawfectly.backend.repository.VetReviewRepository;
 import com.pawfectly.backend.service.AppointmentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,14 +29,20 @@ public class AdminAppointmentController {
     private final AppointmentRepository appointmentRepository;
     private final MedicalRecordRepository medicalRecordRepository;
     private final AppointmentService appointmentService;
+    private final VetRepository vetRepository;
+    private final VetReviewRepository vetReviewRepository;
 
     public AdminAppointmentController(
             AppointmentRepository appointmentRepository,
             MedicalRecordRepository medicalRecordRepository,
-            AppointmentService appointmentService) {
+            AppointmentService appointmentService,
+            VetRepository vetRepository,
+            VetReviewRepository vetReviewRepository) {
         this.appointmentRepository = appointmentRepository;
         this.medicalRecordRepository = medicalRecordRepository;
         this.appointmentService = appointmentService;
+        this.vetRepository = vetRepository;
+        this.vetReviewRepository = vetReviewRepository;
     }
 
     @GetMapping
