@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image as ImageIcon, Link as LinkIcon, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Link as LinkIcon, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { ImagePlaceholder } from '../ui/ImagePlaceholder';
 
 interface AdminImageUrlInputProps {

@@ -29,7 +29,7 @@ import {
 
 interface AdminNotification {
   id: string;
-  type: 'ORDER' | 'APPOINTMENT' | 'CUSTOMER' | 'INSURANCE' | 'NEWSLETTER';
+  type: 'ORDER' | 'APPOINTMENT' | 'CUSTOMER' | 'INSURANCE' | 'NEWSLETTER' | 'STOCK';
   title: string;
   description: string;
   time: string;
@@ -126,10 +126,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
       if (forceClearDismissed) {
         localStorage.removeItem(DELETED_STORAGE_KEY);
       }
-      const [ordersRes, apptsRes, statsRes, custRes, quotesRes, newsRes] = await Promise.all([
+      const [ordersRes, apptsRes, custRes, quotesRes, newsRes] = await Promise.all([
         api.get('/admin/orders').catch(() => api.get('/admin/dashboard/recent-orders')).catch(() => ({ data: [] })),
         api.get('/admin/appointments').catch(() => api.get('/admin/dashboard/recent-appointments')).catch(() => ({ data: [] })),
-        api.get('/admin/dashboard/stats').catch(() => ({ data: {} })),
         api.get('/admin/customers').catch(() => ({ data: [] })),
         api.get('/admin/insurance-quotes').catch(() => api.get('/admin/insurance')).catch(() => ({ data: [] })),
         api.get('/admin/newsletter/subscribers').catch(() => api.get('/admin/newsletter')).catch(() => ({ data: [] })),
