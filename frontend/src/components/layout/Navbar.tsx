@@ -12,10 +12,9 @@ import {
   Trash2,
   Clock,
   Sparkles,
-  Heart,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { getCloudinaryImageUrl, getWishlistItems } from '../../lib/utils';
+import { getCloudinaryImageUrl } from '../../lib/utils';
 import { useAuth } from '../../features/auth/AuthContext';
 import { apiClient } from '../../lib/axios';
 
@@ -64,8 +63,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
 
-  const [wishlistCount, setWishlistCount] = useState<number>(0);
-
   const fetchBackendNotifications = useCallback(async () => {
     if (!isAuthenticated) {
       setNotifications([]);
@@ -106,15 +103,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
       fetchBackendNotifications();
     }
   }, [notificationMenuOpen, fetchBackendNotifications]);
-
-  useEffect(() => {
-    const syncCount = () => {
-      setWishlistCount(getWishlistItems().length);
-    };
-    syncCount();
-    window.addEventListener('wishlist-updated', syncCount);
-    return () => window.removeEventListener('wishlist-updated', syncCount);
-  }, []);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -248,22 +236,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
         <div className="hidden sm:flex items-center gap-3 shrink-0">
           {activePage === 'profile' ? (
             <>
-              {/* 1. Liked / Wishlist Items Button */}
-              <button
-                onClick={() => navigate('/profile?tab=wishlist')}
-                aria-label="Liked Items"
-                title="Liked Items"
-                className="relative w-10 h-10 rounded-full bg-white border border-[#E5DFCE] flex items-center justify-center text-[#334437] hover:bg-[#F3EDE0] transition-colors cursor-pointer shadow-2xs group"
-              >
-                <Heart className="w-4.5 h-4.5 text-[#16241B] group-hover:text-red-500 group-hover:fill-red-500 transition-colors" />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-[#E11D48] text-white text-[10px] font-black flex items-center justify-center shadow-xs">
-                    {wishlistCount}
-                  </span>
-                )}
-              </button>
-
-              {/* 3. Notification Bell with Dropdown */}
+              {/* Notification Bell with Dropdown */}
               <div className="relative" ref={notificationDropdownRef}>
                 <button
                   onClick={() => setNotificationMenuOpen(!notificationMenuOpen)}
@@ -414,21 +387,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
             </>
           ) : (
             <>
-              {/* Liked / Wishlist Items Button */}
-              <button
-                onClick={() => navigate(isAuthenticated ? '/profile?tab=wishlist' : '/login')}
-                aria-label="Liked Items"
-                title="Liked Items"
-                className="relative w-10 h-10 rounded-full bg-white border border-[#E5DFCE] flex items-center justify-center text-[#334437] hover:bg-[#F3EDE0] transition-colors cursor-pointer group"
-              >
-                <Heart className="w-4 h-4 text-[#16241B] group-hover:text-red-500 group-hover:fill-red-500 transition-colors" />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-[#E11D48] text-white text-[10px] font-black flex items-center justify-center shadow-xs">
-                    {wishlistCount}
-                  </span>
-                )}
-              </button>
-
               {/* Notification Bell with Dialogue Box */}
               <div className="relative" ref={notificationDropdownRef}>
                 <button
@@ -600,15 +558,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
 
         {/* Mobile menu button & actions */}
         <div className="flex items-center gap-2 lg:hidden">
-          {/* Mobile Liked Items */}
-          <button
-            onClick={() => navigate(isAuthenticated ? '/profile?tab=wishlist' : '/login')}
-            aria-label="Liked Items"
-            className="relative w-9 h-9 rounded-full bg-white border border-[#E5DFCE] flex items-center justify-center text-[#334437] hover:bg-[#F3EDE0] transition-colors cursor-pointer"
-          >
-            <Heart className="w-4 h-4 text-[#16241B]" />
-          </button>
-
           {/* Mobile Bell */}
           <div className="relative">
             <button

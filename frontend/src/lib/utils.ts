@@ -5,6 +5,10 @@ const ASSET_VERSIONS: Record<string, string> = {
   ChatGPT_Image_Sep_8_2026_10_21_30_PM: 'v1788886319',
   ChatGPT_Image_Sep_9_2026_11_10_18_AM: 'v1788932508',
   copy_of_chatgpt_image_sep_9_2026_11_14_55_am: 'v1788935693',
+  ChatGPT_Image_Sep_11_2026_12_16_35_PM: 'v1789109212',
+  ChatGPT_Image_Sep_11_2026_12_54_54_PM: 'v1789111520',
+  ChatGPT_Image_Sep_11_2026_01_19_07_PM: 'v1789112963',
+  ChatGPT_Image_Sep_11_2026_02_49_10_PM: 'v1789118365',
   ChatGPT_Image_Sep_9_2026_11_21_47_AM: 'v1788933125',
   ChatGPT_Image_Sep_9_2026_12_39_49_PM: 'v1788937905',
 };
@@ -15,14 +19,14 @@ const ASSET_ALIASES: Record<string, string> = {
   find_vet_cta_bunny: 'ChatGPT_Image_Sep_8_2026_10_21_30_PM',
   pharmacy_cta: 'ChatGPT_Image_Sep_9_2026_11_21_47_AM',
   pharmacy_cts: 'ChatGPT_Image_Sep_9_2026_11_21_47_AM',
-  services_cta: 'copy_of_chatgpt_image_sep_9_2026_11_14_55_am',
-  services_cts: 'copy_of_chatgpt_image_sep_9_2026_11_14_55_am',
-  service_cta: 'copy_of_chatgpt_image_sep_9_2026_11_14_55_am',
-  service_cts: 'copy_of_chatgpt_image_sep_9_2026_11_14_55_am',
-  health_tips_cta: 'ChatGPT_Image_Sep_9_2026_11_10_18_AM',
-  health_tips_cts: 'ChatGPT_Image_Sep_9_2026_11_10_18_AM',
-  insurance_cta: 'ChatGPT_Image_Sep_9_2026_12_39_49_PM',
-  insurance_cts: 'ChatGPT_Image_Sep_9_2026_12_39_49_PM',
+  services_cta: 'ChatGPT_Image_Sep_11_2026_12_16_35_PM',
+  services_cts: 'ChatGPT_Image_Sep_11_2026_12_16_35_PM',
+  service_cta: 'ChatGPT_Image_Sep_11_2026_12_16_35_PM',
+  service_cts: 'ChatGPT_Image_Sep_11_2026_12_16_35_PM',
+  health_tips_cta: 'ChatGPT_Image_Sep_11_2026_02_49_10_PM',
+  health_tips_cts: 'ChatGPT_Image_Sep_11_2026_02_49_10_PM',
+  insurance_cta: 'ChatGPT_Image_Sep_11_2026_12_54_54_PM',
+  insurance_cts: 'ChatGPT_Image_Sep_11_2026_12_54_54_PM',
 };
 
 /**

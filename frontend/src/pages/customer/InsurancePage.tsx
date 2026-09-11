@@ -67,25 +67,34 @@ export const InsurancePage: React.FC = () => {
 
   const handleSubmitQuote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!quoteFormData.email || !quoteFormData.petName || !quoteFormData.customerName) {
-      showToast('Please fill in all required fields.');
+    if (
+      !quoteFormData.email.trim() ||
+      !quoteFormData.petName.trim() ||
+      !quoteFormData.customerName.trim() ||
+      !quoteFormData.phone.trim()
+    ) {
+      showToast('Please fill in all required fields including phone number.');
       return;
     }
     setQuoteSubmitting(true);
     try {
       await api.post('/insurance/quote', {
-        customerName: quoteFormData.customerName,
-        customerEmail: quoteFormData.email,
-        customerPhone: quoteFormData.phone,
-        petName: quoteFormData.petName,
-        petSpecies: quoteFormData.petType,
-        petAge: parseInt(quoteFormData.ageYears) || 0,
+        customerName: quoteFormData.customerName.trim(),
+        customerEmail: quoteFormData.email.trim(),
+        customerPhone: quoteFormData.phone.trim(),
+        petName: quoteFormData.petName.trim(),
+        petSpecies: quoteFormData.petType.trim(),
+        petAge: parseInt(quoteFormData.ageYears, 10) || 0,
         selectedPlan: selectedPlan || 'Standard',
       });
       setQuoteSubmitted(true);
       showToast(`Quote request for ${quoteFormData.petName} submitted successfully!`);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to submit quote request. Please try again.';
+      const errorMsg =
+        err.response?.data?.message ||
+        (err.response?.data?.errors
+          ? Object.values(err.response.data.errors).join(', ')
+          : 'Failed to submit quote request. Please try again.');
       showToast(errorMsg);
     } finally {
       setQuoteSubmitting(false);
@@ -610,11 +619,11 @@ export const InsurancePage: React.FC = () => {
               </div>
 
               <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
-                <div className="relative w-full max-w-[270px] sm:max-w-[300px] h-[200px] sm:h-[280px] flex justify-center items-center overflow-visible">
+                <div className="relative w-full max-w-[300px] sm:max-w-[360px] lg:max-w-[420px] h-[220px] sm:h-[280px] lg:h-[310px] flex justify-center items-center overflow-visible">
                   <img
                     src={getCloudinaryImageUrl('insurance_cta')}
                     alt="Pet Insurance Protection"
-                    className="relative z-10 w-[138%] max-w-[650px] h-auto object-contain scale-115 -mt-16 -mb-4 pointer-events-none drop-shadow-lg"
+                    className="relative z-10 w-[140%] max-w-[520px] sm:max-w-[480px] lg:max-w-[550px] h-auto object-contain scale-105 lg:scale-100 -mt-12 sm:-mt-15 -mb-2 -translate-y-[3px] rounded-br-[36px] pointer-events-none drop-shadow-xl"
                   />
                 </div>
               </div>
@@ -746,10 +755,11 @@ export const InsurancePage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-[#16241B] mb-1">
-                    Phone Number
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
+                    required
                     placeholder="+91 98765 43210"
                     value={quoteFormData.phone}
                     onChange={(e) => setQuoteFormData({ ...quoteFormData, phone: e.target.value })}

@@ -85,7 +85,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createAppointmentNotification(User customer, String type, String title, String message, Long appointmentId) {
+    public void createCustomerNotification(User customer, String type, String title, String message, Long relatedEntityId) {
         if (customer == null) return;
 
         Notification notification = Notification.builder()
@@ -93,12 +93,17 @@ public class NotificationService {
                 .type(type)
                 .title(title)
                 .message(message)
-                .relatedEntityId(appointmentId)
+                .relatedEntityId(relatedEntityId)
                 .isRead(false)
                 .build();
 
         notificationRepository.save(notification);
-        log.info("Created appointment notification '{}' for customer #{}", type, customer.getId());
+        log.info("Created notification '{}' for customer #{}", type, customer.getId());
+    }
+
+    @Transactional
+    public void createAppointmentNotification(User customer, String type, String title, String message, Long appointmentId) {
+        createCustomerNotification(customer, type, title, message, appointmentId);
     }
 
     @Transactional

@@ -26,6 +26,8 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+    private final NotificationPreferenceRepository notificationPreferenceRepository;
 
     @Transactional(readOnly = true)
     public List<OrderDto> getCustomerOrders(Long customerId) {
@@ -144,9 +146,24 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
+        OrderStatus oldStatus = order.getOrderStatus();
         order.setOrderStatus(newStatus);
         Order updated = orderRepository.save(order);
         log.info("Updated order {} status to {}", orderId, newStatus);
+
+        if (oldStatus != newStatus && order.getCustomer() != null) {
+            User customer = order.getCustomer();
+            NotificationPreference pref = notificationPreferenceRepository.findByUserId(customer.getId()).orElse(null);
+            boolean orderUpdatesEnabled = pref == null || Boolean.TRUE.equals(pref.getOrderUpdates());
+            if (orderUpdatesEnabled) {
+                String title = "Order Status Update";
+                String orderRef = "#" + orderId;
+                String message = String.format("Your order %s status has been updated to %s.", orderRef, newStatus.name());
+                notificationService.createCustomerNotification(customer, "ORDER_STATUS_UPDATE", title, message, orderId);
+                log.info("Sent ORDER_STATUS_UPDATE notification to customer {} for order {}", customer.getId(), orderId);
+            }
+        }
+
         return mapToDto(updated);
     }
 

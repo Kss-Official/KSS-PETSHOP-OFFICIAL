@@ -731,24 +731,63 @@ export const ProfilePage: React.FC = () => {
   };
 
   // 8. Preferences State
-  const [preferences, setPreferences] = useState(() => {
-    const saved = localStorage.getItem('pawfectly_user_preferences');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          newsletter: true,
-          appointmentReminders: true,
-          orderUpdates: true,
-          healthTips: true,
-          promotions: false,
-        };
-  });
+  interface NotificationPreferenceData {
+    newsletter: boolean;
+    appointmentReminders: boolean;
+    orderUpdates: boolean;
+    healthAlerts: boolean;
+  }
 
-  const handleTogglePreference = (key: keyof typeof preferences) => {
-    const updated = { ...preferences, [key]: !preferences[key] };
-    setPreferences(updated);
-    localStorage.setItem('pawfectly_user_preferences', JSON.stringify(updated));
-    showToast('Preferences updated.');
+  const [preferences, setPreferences] = useState<NotificationPreferenceData>({
+    newsletter: true,
+    appointmentReminders: true,
+    orderUpdates: true,
+    healthAlerts: true,
+  });
+  const [togglingPreference, setTogglingPreference] = useState<string | null>(null);
+
+  const fetchPreferences = useCallback(async () => {
+    try {
+      const res = await apiClient.get<NotificationPreferenceData>('/customer/preferences');
+      if (res.data) {
+        setPreferences({
+          newsletter: res.data.newsletter ?? true,
+          appointmentReminders: res.data.appointmentReminders ?? true,
+          orderUpdates: res.data.orderUpdates ?? true,
+          healthAlerts: res.data.healthAlerts ?? true,
+        });
+      }
+    } catch {
+      // Use defaults if fetch fails
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPreferences();
+  }, [fetchPreferences]);
+
+  const handleTogglePreference = async (key: keyof NotificationPreferenceData) => {
+    if (key === 'healthAlerts') {
+      showToast('Health & Vaccination Alerts coming soon!', 'error');
+      return;
+    }
+    if (togglingPreference) return;
+
+    const prevValue = preferences[key];
+    const newValue = !prevValue;
+    setPreferences((prev) => ({ ...prev, [key]: newValue }));
+    setTogglingPreference(key);
+
+    try {
+      await apiClient.put('/customer/preferences', { [key]: newValue });
+      showToast('Preferences updated.');
+    } catch (err: unknown) {
+      setPreferences((prev) => ({ ...prev, [key]: prevValue }));
+      const msg = err instanceof Error ? err.message : 'Failed to update preferences.';
+      showToast(msg, 'error');
+    } finally {
+      setTogglingPreference(null);
+    }
   };
 
   // Cart State (In Profile)
@@ -2815,28 +2854,27 @@ export const ProfilePage: React.FC = () => {
                     </div>
 
                     {/* Health & Vaccination Alerts */}
-                    <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4">
+                    <div className="bg-[#F8F6F0] rounded-2xl p-4 sm:p-5 border border-[#EAE3D4] flex items-center justify-between gap-4 opacity-75">
                       <div className="space-y-0.5">
                         <h4 className="text-sm font-black text-[#16241B] flex items-center gap-2">
                           <ShieldCheck className="w-4 h-4 text-[#7E22CE]" />
                           <span>Health & Vaccination Alerts</span>
+                          <span className="px-2 py-0.5 text-[10px] font-bold bg-[#EAE3D4] text-[#67796B] rounded-full uppercase tracking-wider">
+                            Coming Soon
+                          </span>
                         </h4>
                         <p className="text-xs text-[#67796B]">
-                          Reminders when your pet’s annual vaccinations or checkups are due.
+                          Reminders when your pet’s annual vaccinations or checkups are due (Feature in development).
                         </p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleTogglePreference('healthTips')}
-                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                          preferences.healthTips ? 'bg-[#548B60]' : 'bg-[#D1D5DB]'
-                        }`}
+                        disabled
+                        onClick={() => handleTogglePreference('healthAlerts')}
+                        title="Vaccination tracking is coming soon"
+                        className="w-12 h-6 rounded-full transition-colors relative cursor-not-allowed bg-[#D1D5DB]"
                       >
-                        <div
-                          className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 ${
-                            preferences.healthTips ? 'left-6.5' : 'left-0.5'
-                          }`}
-                        />
+                        <div className="w-5 h-5 rounded-full bg-white shadow-md transition-transform absolute top-0.5 left-0.5" />
                       </button>
                     </div>
                   </div>

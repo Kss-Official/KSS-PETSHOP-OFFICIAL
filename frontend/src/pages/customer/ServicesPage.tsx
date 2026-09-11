@@ -400,11 +400,11 @@ export const ServicesPage: React.FC = () => {
               </div>
 
               <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
-                <div className="relative w-full max-w-[270px] sm:max-w-[300px] h-[200px] sm:h-[280px] flex justify-center items-center overflow-visible">
+                <div className="relative w-full max-w-[230px] sm:max-w-[260px] h-[220px] sm:h-[260px] flex justify-center items-center overflow-visible">
                   <img
                     src={getCloudinaryImageUrl('services_cta')}
                     alt="Pet Services Care"
-                    className="relative z-10 w-[138%] max-w-[350px] h-auto object-contain scale-115 -mt-16 -mb-4 pointer-events-none drop-shadow-lg"
+                    className="relative z-10 max-w-[220px] sm:max-w-[350px] max-h-[350px] sm:max-h-[500px] w-auto h-auto object-contain -mt-8 sm:-mt-12 pointer-events-none drop-shadow-md"
                   />
                 </div>
               </div>

@@ -80,7 +80,8 @@ public class AdminProductController {
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         return productRepository.findById(id)
                 .map(product -> {
-                    productRepository.delete(product);
+                    product.setIsActive(false);
+                    productRepository.save(product);
                     return ResponseEntity.ok(Map.of("message", "Product deleted successfully."));
                 })
                 .orElse(ResponseEntity.notFound().build());
