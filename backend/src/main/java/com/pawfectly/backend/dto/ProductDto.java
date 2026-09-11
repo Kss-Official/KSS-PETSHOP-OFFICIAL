@@ -34,6 +34,8 @@ public class ProductDto {
     @Min(value = 0, message = "Stock quantity cannot be negative")
     private Integer stockQuantity;
 
+    @jakarta.validation.constraints.Size(max = 512, message = "Image URL must not exceed 512 characters")
+    @jakarta.validation.constraints.Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
     private String imageUrl;
 
     @Builder.Default

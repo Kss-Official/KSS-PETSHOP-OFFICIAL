@@ -1,6 +1,8 @@
 package com.pawfectly.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,20 +14,24 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArticleDto {
+public class HealthTipDto {
     private Long id;
 
-    @NotBlank(message = "Article title is required")
+    @NotBlank(message = "Title is required")
     private String title;
 
-    @NotBlank(message = "Article content is required")
+    @NotBlank(message = "Content is required")
     private String content;
 
-    @jakarta.validation.constraints.Size(max = 512, message = "Image URL must not exceed 512 characters")
-    @jakarta.validation.constraints.Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
+    @Size(max = 512, message = "Image URL must not exceed 512 characters")
+    @Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
     private String imageUrl;
+
     private String petType;
-    private String category;
+
+    @Builder.Default
+    private String category = "Preventive Care";
+
     private String excerpt;
 
     @Builder.Default
@@ -35,4 +41,6 @@ public class ArticleDto {
     private Boolean isActive = true;
 
     private LocalDateTime publishedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

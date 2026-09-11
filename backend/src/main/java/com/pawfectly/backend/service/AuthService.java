@@ -52,6 +52,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(userRole)
                 .phone(cleanPhone)
+                .isActive(true)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -74,8 +75,12 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail().toLowerCase().trim(), request.getPassword())
         );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        if (!userDetails.isEnabled()) {
+            throw new org.springframework.security.authentication.DisabledException("Your account has been deactivated. Please contact support.");
+        }
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String jwt = jwtUtils.generateJwtToken(authentication);
 

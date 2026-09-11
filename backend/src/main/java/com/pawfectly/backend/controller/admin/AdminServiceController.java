@@ -38,6 +38,10 @@ public class AdminServiceController {
     public ResponseEntity<ServiceEntity> createService(@Valid @RequestBody ServiceEntity service) {
         service.setId(null);
         if (service.getIsActive() == null) service.setIsActive(true);
+        if (service.getIconUrl() != null) {
+            String trimmed = service.getIconUrl().trim();
+            service.setIconUrl(trimmed.isEmpty() ? null : trimmed);
+        }
         ServiceEntity saved = serviceRepository.save(service);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -48,7 +52,10 @@ public class AdminServiceController {
                 .map(service -> {
                     service.setName(serviceDetails.getName());
                     service.setDescription(serviceDetails.getDescription());
-                    service.setIconUrl(serviceDetails.getIconUrl());
+                    if (serviceDetails.getIconUrl() != null) {
+                        String trimmed = serviceDetails.getIconUrl().trim();
+                        service.setIconUrl(trimmed.isEmpty() ? null : trimmed);
+                    }
                     if (serviceDetails.getIsActive() != null) service.setIsActive(serviceDetails.getIsActive());
                     ServiceEntity updated = serviceRepository.save(service);
                     return ResponseEntity.ok(updated);

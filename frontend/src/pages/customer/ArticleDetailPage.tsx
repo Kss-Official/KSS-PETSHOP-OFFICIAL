@@ -78,30 +78,62 @@ export const ArticleDetailPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
+    const loadRelated = (currentId: number, currentCat: string, currentPetType?: string) => {
+      Promise.allSettled([
+        apiClient.get<ArticleDto[]>('/articles'),
+        apiClient.get<ArticleDto[]>('/health-tips'),
+      ])
+        .then(([artRes, tipRes]) => {
+          const artList =
+            artRes.status === 'fulfilled' && Array.isArray(artRes.value.data)
+              ? artRes.value.data
+              : [];
+          const tipList =
+            tipRes.status === 'fulfilled' && Array.isArray(tipRes.value.data)
+              ? tipRes.value.data
+              : [];
+
+          const combined = [...artList];
+          const existingTitles = new Set(
+            artList.map((a) => a.title.toLowerCase().trim())
+          );
+          for (const tip of tipList) {
+            if (!existingTitles.has(tip.title.toLowerCase().trim())) {
+              combined.push(tip);
+              existingTitles.add(tip.title.toLowerCase().trim());
+            }
+          }
+
+          const list = combined.filter((a) => a.id !== currentId);
+          const matched = list.filter(
+            (a) =>
+              resolveCategory(a.title, a.category) === currentCat ||
+              a.petType === currentPetType
+          );
+          setRelatedArticles(matched.length > 0 ? matched.slice(0, 3) : list.slice(0, 3));
+        })
+        .catch(() => {});
+    };
+
     apiClient
       .get<ArticleDto>(`/articles/${id}`)
       .then((res) => {
         setArticle(res.data);
-        // Fetch related articles
-        apiClient
-          .get<ArticleDto[]>('/articles')
-          .then((allRes) => {
-            const currentId = res.data.id;
-            const currentCat = resolveCategory(res.data.title, res.data.category);
-            const list = (allRes.data || []).filter((a) => a.id !== currentId);
-            // Prioritize matching category or petType
-            const matched = list.filter(
-              (a) =>
-                resolveCategory(a.title, a.category) === currentCat ||
-                a.petType === res.data.petType
-            );
-            setRelatedArticles(matched.length > 0 ? matched.slice(0, 3) : list.slice(0, 3));
-          })
-          .catch(() => {});
+        const currentCat = resolveCategory(res.data.title, res.data.category);
+        loadRelated(res.data.id, currentCat, res.data.petType);
       })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : 'Failed to load article details.';
-        setError(msg);
+      .catch(() => {
+        apiClient
+          .get<ArticleDto>(`/health-tips/${id}`)
+          .then((res) => {
+            setArticle(res.data);
+            const currentCat = resolveCategory(res.data.title, res.data.category);
+            loadRelated(res.data.id, currentCat, res.data.petType);
+          })
+          .catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : 'Failed to load details.';
+            setError(msg);
+          });
       })
       .finally(() => {
         setLoading(false);

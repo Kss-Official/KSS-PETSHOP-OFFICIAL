@@ -30,6 +30,8 @@ public class Article {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @jakarta.validation.constraints.Size(max = 512, message = "Image URL must not exceed 512 characters")
+    @jakarta.validation.constraints.Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
     @Column(name = "image_url", length = 512)
     private String imageUrl;
 
@@ -45,6 +47,10 @@ public class Article {
     @Builder.Default
     @Column(name = "is_featured", nullable = false)
     private Boolean isFeatured = false;
+
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "published_at")
     private LocalDateTime publishedAt;

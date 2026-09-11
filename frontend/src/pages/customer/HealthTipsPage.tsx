@@ -51,14 +51,16 @@ const computeReadTime = (content?: string, excerpt?: string): number => {
 };
 
 const resolveCategory = (title?: string, cat?: string): string => {
-  if (cat && cat !== 'Preventive Care') return cat;
   const t = (title || '').toLowerCase();
+  const c = (cat || '').trim();
   if (t.includes('nutrition') || t.includes('food') || t.includes('diet')) return 'Nutrition';
   if (t.includes('vaccin') || t.includes('shot')) return 'Vaccination';
   if (t.includes('groom') || t.includes('bath') || t.includes('wash')) return 'Grooming';
   if (t.includes('sign') || t.includes('sick') || t.includes('emergenc')) return 'Emergency Care';
-  if (t.includes('cat') || t.includes('indoor') || t.includes('play') || t.includes('behaviour')) return 'Behaviour';
-  return cat || 'Preventive Care';
+  if (t.includes('cat') || t.includes('indoor') || t.includes('play') || t.includes('behaviour') || t.includes('behavior')) return 'Behaviour';
+  if (t.includes('senior') || t.includes('aging') || t.includes('old dog') || t.includes('old cat')) return 'Senior Pet Care';
+  if (c && c !== 'Preventive Care' && c !== 'General') return c;
+  return c || 'Preventive Care';
 };
 
 export const HealthTipsPage: React.FC = () => {
@@ -101,13 +103,34 @@ export const HealthTipsPage: React.FC = () => {
   const fetchArticles = () => {
     setLoading(true);
     setError(null);
-    apiClient
-      .get('/articles')
-      .then((res) => {
-        setArticles(res.data || []);
+    Promise.allSettled([
+      apiClient.get<ArticleDto[]>('/articles'),
+      apiClient.get<ArticleDto[]>('/health-tips'),
+    ])
+      .then(([artRes, tipRes]) => {
+        const artList =
+          artRes.status === 'fulfilled' && Array.isArray(artRes.value.data)
+            ? artRes.value.data
+            : [];
+        const tipList =
+          tipRes.status === 'fulfilled' && Array.isArray(tipRes.value.data)
+            ? tipRes.value.data
+            : [];
+
+        const combined = [...artList];
+        const existingTitles = new Set(
+          artList.map((a) => a.title.toLowerCase().trim())
+        );
+        for (const tip of tipList) {
+          if (!existingTitles.has(tip.title.toLowerCase().trim())) {
+            combined.push(tip);
+            existingTitles.add(tip.title.toLowerCase().trim());
+          }
+        }
+        setArticles(combined);
       })
       .catch(() => {
-        setError('Failed to load health tips. Please try again.');
+        setError('Failed to load articles and health tips. Please try again.');
       })
       .finally(() => {
         setLoading(false);
@@ -119,25 +142,27 @@ export const HealthTipsPage: React.FC = () => {
   }, []);
 
   const filteredArticles = articles.filter((art) => {
-    const category = (art.category || '').toLowerCase();
+    const resolvedCat = resolveCategory(art.title, art.category);
     const title = (art.title || '').toLowerCase();
+    const content = (art.content || '').toLowerCase();
     const excerpt = (art.excerpt || '').toLowerCase();
-    const targetTab = (activeTab || '').toLowerCase();
+    const targetTab = activeTab.toLowerCase();
     const query = (searchQuery || '').toLowerCase();
 
     const matchesCategory =
-      activeTab === 'All Tips' || category.includes(targetTab);
+      activeTab === 'All Tips' ||
+      resolvedCat.toLowerCase() === targetTab;
 
     const matchesSearch =
       searchQuery === '' ||
       title.includes(query) ||
+      content.includes(query) ||
       excerpt.includes(query) ||
-      category.includes(query);
+      resolvedCat.toLowerCase().includes(query);
 
     return matchesCategory && matchesSearch;
   });
 
-  const featuredList = filteredArticles.filter((a) => a.isFeatured).slice(0, 3);
 
   const petTypeFilteredArticles = articles.filter((art) => {
     if (!selectedPetType) return true;
@@ -145,14 +170,23 @@ export const HealthTipsPage: React.FC = () => {
     const petType = (art.petType || '').toLowerCase();
     const title = (art.title || '').toLowerCase();
     const excerpt = (art.excerpt || '').toLowerCase();
-    const category = (art.category || '').toLowerCase();
+    const content = (art.content || '').toLowerCase();
+    const resolvedCat = resolveCategory(art.title, art.category).toLowerCase();
     const target = selectedPetType.toLowerCase();
+    const targetSingular = target.endsWith('s') ? target.slice(0, -1) : target;
 
     return (
-      petType === target ||
+      petType.includes(target) ||
+      petType.includes(targetSingular) ||
+      petType === 'all' ||
       title.includes(target) ||
+      title.includes(targetSingular) ||
       excerpt.includes(target) ||
-      category.includes(target)
+      excerpt.includes(targetSingular) ||
+      content.includes(target) ||
+      content.includes(targetSingular) ||
+      resolvedCat.includes(target) ||
+      resolvedCat.includes(targetSingular)
     );
   });
 
@@ -283,6 +317,7 @@ export const HealthTipsPage: React.FC = () => {
       setSubscribed(true);
       setSubscribeMsg('Thank you for subscribing! Expert tips are on their way.');
       setEmailInput('');
+      window.dispatchEvent(new Event('admin-notifications-updated'));
     } catch {
       setSubscribeMsg('Could not subscribe. Please check your email and try again.');
     } finally {
@@ -447,17 +482,17 @@ export const HealthTipsPage: React.FC = () => {
               <ErrorState message={error} onRetry={fetchArticles} />
             ) : filteredArticles.length === 0 ? (
               <EmptyState
-                title="No articles found"
+                title="No health tips found"
                 description="We couldn't find any health tips matching your selected category or search filter."
-                actionLabel="View All Articles"
+                actionLabel="View All Health Tips"
                 onAction={() => {
                   setActiveTab('All Tips');
                   setSearchQuery('');
                 }}
               />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {(featuredList.length > 0 ? featuredList : filteredArticles.slice(0, 4)).map((tip) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredArticles.map((tip) => {
                   const category = resolveCategory(tip.title, tip.category);
                   const colors = categoryColorMap[category] || {
                     bg: 'bg-[#E6F9EC]',
@@ -553,12 +588,12 @@ export const HealthTipsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* 6. Browse Articles by Pet Type */}
+        {/* 6. Browse Health Tips by Pet Type */}
         <section id="browse-articles-pet-type" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#16241B] tracking-tight">
-                Browse <span className="text-[#EF7C3C]">Articles</span> by Pet Type<span className="text-[#EF7C3C]">.</span>
+                Browse <span className="text-[#EF7C3C]">Health Tips</span> by Pet Type<span className="text-[#EF7C3C]">.</span>
               </h2>
 
               <button
@@ -567,7 +602,7 @@ export const HealthTipsPage: React.FC = () => {
                 }}
                 className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
               >
-                <span>View all articles</span>
+                <span>View all tips</span>
               </button>
             </div>
 
@@ -607,7 +642,7 @@ export const HealthTipsPage: React.FC = () => {
               })}
             </div>
 
-            {/* Articles Grid or Empty State under Pet Types */}
+            {/* Health Tips Grid or Empty State under Pet Types */}
             <div className="pt-2">
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -622,13 +657,13 @@ export const HealthTipsPage: React.FC = () => {
                 </div>
               ) : petTypeFilteredArticles.length === 0 ? (
                 <EmptyState
-                  title="No articles found"
+                  title="No health tips found"
                   description={
                     selectedPetType
-                      ? `We couldn't find any health articles for ${selectedPetType} right now. Check back soon for expert tips!`
-                      : 'We couldn\'t find any articles matching your search filter.'
+                      ? `We couldn't find any health tips for ${selectedPetType} right now. Check back soon for expert advice!`
+                      : 'We couldn\'t find any health tips matching your search filter.'
                   }
-                  actionLabel="View All Articles"
+                  actionLabel="View All Health Tips"
                   onAction={() => {
                     setSelectedPetType(null);
                   }}

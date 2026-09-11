@@ -1,23 +1,13 @@
 package com.pawfectly.backend.controller.admin;
 
-import com.pawfectly.backend.entity.Appointment;
-import com.pawfectly.backend.entity.Order;
-import com.pawfectly.backend.entity.Pet;
-import com.pawfectly.backend.entity.Role;
-import com.pawfectly.backend.entity.User;
-import com.pawfectly.backend.repository.AppointmentRepository;
-import com.pawfectly.backend.repository.OrderItemRepository;
-import com.pawfectly.backend.repository.OrderRepository;
-import com.pawfectly.backend.repository.PetRepository;
-import com.pawfectly.backend.repository.UserRepository;
+import com.pawfectly.backend.entity.*;
+import com.pawfectly.backend.repository.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -31,13 +21,36 @@ public class AdminCustomerController {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final AppointmentRepository appointmentRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
+    private final VetReviewRepository vetReviewRepository;
+    private final NotificationRepository notificationRepository;
+    private final CartItemRepository cartItemRepository;
+    private final InsuranceQuoteRepository insuranceQuoteRepository;
+    private final VetRepository vetRepository;
 
-    public AdminCustomerController(UserRepository userRepository, PetRepository petRepository, OrderRepository orderRepository, OrderItemRepository orderItemRepository, AppointmentRepository appointmentRepository) {
+    public AdminCustomerController(
+            UserRepository userRepository,
+            PetRepository petRepository,
+            OrderRepository orderRepository,
+            OrderItemRepository orderItemRepository,
+            AppointmentRepository appointmentRepository,
+            MedicalRecordRepository medicalRecordRepository,
+            VetReviewRepository vetReviewRepository,
+            NotificationRepository notificationRepository,
+            CartItemRepository cartItemRepository,
+            InsuranceQuoteRepository insuranceQuoteRepository,
+            VetRepository vetRepository) {
         this.userRepository = userRepository;
         this.petRepository = petRepository;
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.appointmentRepository = appointmentRepository;
+        this.medicalRecordRepository = medicalRecordRepository;
+        this.vetReviewRepository = vetReviewRepository;
+        this.notificationRepository = notificationRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.insuranceQuoteRepository = insuranceQuoteRepository;
+        this.vetRepository = vetRepository;
     }
 
     @GetMapping
@@ -70,7 +83,7 @@ public class AdminCustomerController {
             map.put("name", cust.getName());
             map.put("email", cust.getEmail());
             map.put("phone", cust.getPhone() != null ? cust.getPhone() : "");
-            map.put("isActive", true);
+            map.put("isActive", cust.getIsActive() != null ? cust.getIsActive() : true);
             map.put("createdAt", cust.getCreatedAt());
             map.put("petsCount", petsCountByCust.getOrDefault(cust.getId(), 0));
             map.put("ordersCount", ordersCountByCust.getOrDefault(cust.getId(), 0));
@@ -98,7 +111,7 @@ public class AdminCustomerController {
             details.put("name", cust.getName());
             details.put("email", cust.getEmail());
             details.put("phone", cust.getPhone());
-            details.put("isActive", true);
+            details.put("isActive", cust.getIsActive() != null ? cust.getIsActive() : true);
             details.put("createdAt", cust.getCreatedAt());
 
             details.put("pets", pets.stream().map(pet -> Map.of(
@@ -133,10 +146,13 @@ public class AdminCustomerController {
     @PatchMapping("/{id}/toggle-status")
     public ResponseEntity<?> toggleCustomerStatus(@PathVariable Long id) {
         return userRepository.findById(id).map(cust -> {
+            boolean current = cust.getIsActive() != null ? cust.getIsActive() : true;
+            cust.setIsActive(!current);
+            User saved = userRepository.save(cust);
             return ResponseEntity.ok(Map.of(
-                    "id", cust.getId(),
-                    "isActive", true,
-                    "message", "Customer account is active"
+                    "id", saved.getId(),
+                    "isActive", saved.getIsActive(),
+                    "message", "Customer account " + (saved.getIsActive() ? "activated" : "deactivated") + " successfully"
             ));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -153,21 +169,94 @@ public class AdminCustomerController {
         }
         User cust = userOpt.get();
 
-        // 1. Delete all appointments for customer's pets
+        // 1. Delete cart items
+        List<CartItem> cartItems = cartItemRepository.findByCustomerId(id);
+        if (cartItems != null && !cartItems.isEmpty()) {
+            cartItemRepository.deleteAll(cartItems);
+            cartItemRepository.flush();
+        }
+
+        // 2. Delete notifications
+        List<Notification> notifications = notificationRepository.findByCustomerIdOrderByCreatedAtDesc(id);
+        if (notifications != null && !notifications.isEmpty()) {
+            notificationRepository.deleteAll(notifications);
+            notificationRepository.flush();
+        }
+
+        // 3. Clear customer reference on insurance quotes
+        List<InsuranceQuote> quotes = insuranceQuoteRepository.findByCustomerId(id);
+        if (quotes != null && !quotes.isEmpty()) {
+            for (InsuranceQuote quote : quotes) {
+                quote.setCustomer(null);
+            }
+            insuranceQuoteRepository.saveAll(quotes);
+            insuranceQuoteRepository.flush();
+        }
+
+        // 4. Collect all appointments for customer's pets + any appointments referencing customer
         List<Pet> pets = petRepository.findByOwnerId(id);
+        Set<Long> appointmentIds = new HashSet<>();
+        List<Appointment> customerAppointments = appointmentRepository.findByCustomerId(id);
+        for (Appointment a : customerAppointments) {
+            appointmentIds.add(a.getId());
+        }
         for (Pet pet : pets) {
-            var appointments = appointmentRepository.findByPetId(pet.getId());
-            if (appointments != null && !appointments.isEmpty()) {
-                appointmentRepository.deleteAll(appointments);
+            List<Appointment> petAppointments = appointmentRepository.findByPetId(pet.getId());
+            for (Appointment a : petAppointments) {
+                appointmentIds.add(a.getId());
             }
         }
 
-        // 2. Delete all pets
-        if (!pets.isEmpty()) {
-            petRepository.deleteAll(pets);
+        // 5. Delete VetReviews and update affected Vets
+        List<VetReview> customerReviews = vetReviewRepository.findByCustomerId(id);
+        Set<VetReview> reviewsToDelete = new HashSet<>(customerReviews);
+        if (!appointmentIds.isEmpty()) {
+            for (Long apptId : appointmentIds) {
+                vetReviewRepository.findByAppointmentId(apptId).ifPresent(reviewsToDelete::add);
+            }
         }
 
-        // 3. Delete all order items & orders
+        Set<Long> affectedVetIds = new HashSet<>();
+        for (VetReview review : reviewsToDelete) {
+            if (review.getVet() != null) {
+                affectedVetIds.add(review.getVet().getId());
+            }
+        }
+
+        if (!reviewsToDelete.isEmpty()) {
+            vetReviewRepository.deleteAll(reviewsToDelete);
+            vetReviewRepository.flush();
+            for (Long vetId : affectedVetIds) {
+                vetRepository.findById(vetId).ifPresent(vet -> {
+                    Double avgRating = vetReviewRepository.getAverageRatingForVet(vetId);
+                    Long reviewCount = vetReviewRepository.getReviewCountForVet(vetId);
+                    vet.setRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : null);
+                    vet.setReviewsCount(reviewCount != null ? reviewCount.intValue() : 0);
+                    vetRepository.save(vet);
+                });
+            }
+        }
+
+        // 6. Delete MedicalRecords for all appointments
+        for (Long apptId : appointmentIds) {
+            medicalRecordRepository.findByAppointmentId(apptId).ifPresent(medicalRecordRepository::delete);
+        }
+        medicalRecordRepository.flush();
+
+        // 7. Delete all Appointments
+        if (!appointmentIds.isEmpty()) {
+            List<Appointment> apptsToDelete = appointmentRepository.findAllById(appointmentIds);
+            appointmentRepository.deleteAll(apptsToDelete);
+            appointmentRepository.flush();
+        }
+
+        // 8. Delete all Pets
+        if (!pets.isEmpty()) {
+            petRepository.deleteAll(pets);
+            petRepository.flush();
+        }
+
+        // 9. Delete all OrderItems & Orders
         List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(id);
         for (Order order : orders) {
             var items = orderItemRepository.findByOrderId(order.getId());
@@ -176,10 +265,12 @@ public class AdminCustomerController {
             }
         }
         if (!orders.isEmpty()) {
+            orderItemRepository.flush();
             orderRepository.deleteAll(orders);
+            orderRepository.flush();
         }
 
-        // 4. Delete user record
+        // 10. Delete User record
         userRepository.delete(cust);
 
         return ResponseEntity.ok(Map.of(

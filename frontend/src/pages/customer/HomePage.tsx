@@ -160,7 +160,13 @@ export const HomePage: React.FC = () => {
       defaultImg = avatar4Url;
     }
 
-    const img = defaultImg || (iconUrl ? getCloudinaryImageUrl(iconUrl) : '');
+    const customUrl = (iconUrl || '').trim();
+    const img =
+      customUrl && (customUrl.startsWith('http://') || customUrl.startsWith('https://'))
+        ? customUrl
+        : customUrl
+          ? getCloudinaryImageUrl(customUrl)
+          : defaultImg;
     return { icon, badgeBg, img };
   };
 

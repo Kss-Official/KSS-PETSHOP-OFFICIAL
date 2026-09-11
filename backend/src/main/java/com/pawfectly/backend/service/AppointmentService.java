@@ -32,14 +32,7 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public List<AppointmentDto> getCustomerAppointments(Long customerId) {
-        List<Pet> customerPets = petRepository.findByOwnerId(customerId);
-        List<Appointment> allAppointments = new ArrayList<>();
-
-        for (Pet pet : customerPets) {
-            allAppointments.addAll(appointmentRepository.findByPetId(pet.getId()));
-        }
-
-        return allAppointments.stream()
+        return appointmentRepository.findByCustomerId(customerId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -114,6 +107,9 @@ public class AppointmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
 
         appointment.setStatus(newStatus);
+        if (newStatus == AppointmentStatus.COMPLETED) {
+            appointment.setPaymentStatus("PAID");
+        }
         Appointment saved = appointmentRepository.save(appointment);
         log.info("Updated appointment {} status to {}", appointmentId, newStatus);
 

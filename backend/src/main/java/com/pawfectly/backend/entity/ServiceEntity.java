@@ -29,6 +29,8 @@ public class ServiceEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @jakarta.validation.constraints.Size(max = 512, message = "Icon URL must not exceed 512 characters")
+    @jakarta.validation.constraints.Pattern(regexp = "^(https?://.*|[a-zA-Z0-9_-]+)?$", message = "Icon URL must start with http:// or https://")
     @Column(name = "icon_url", length = 512)
     private String iconUrl;
 

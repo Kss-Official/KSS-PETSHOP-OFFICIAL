@@ -168,6 +168,11 @@ public class CustomerController {
     }
 
     // --- Reviews ---
+    @GetMapping("/reviews")
+    public ResponseEntity<List<VetReviewDto>> getCustomerReviews(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(vetReviewService.getReviewsForCustomer(userDetails.getId()));
+    }
+
     @PostMapping("/reviews")
     public ResponseEntity<VetReviewDto> createReview(
             @AuthenticationPrincipal CustomUserDetails userDetails,
