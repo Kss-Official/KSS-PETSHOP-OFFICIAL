@@ -88,6 +88,11 @@ public class VetReviewService {
     }
 
     @Transactional(readOnly = true)
+    public List<VetReviewDto> getReviewsForCustomer(Long customerId) {
+        return getReviewsByCustomer(customerId);
+    }
+
+    @Transactional(readOnly = true)
     public VetReviewDto getReviewForAppointment(Long appointmentId) {
         return vetReviewRepository.findByAppointmentId(appointmentId)
                 .map(this::mapToDto)
