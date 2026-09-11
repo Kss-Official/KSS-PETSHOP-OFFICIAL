@@ -24,7 +24,6 @@ public class HealthTipDto {
     private String content;
 
     @Size(max = 512, message = "Image URL must not exceed 512 characters")
-    @Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
     private String imageUrl;
 
     private String petType;

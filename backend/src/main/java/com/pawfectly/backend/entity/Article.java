@@ -31,7 +31,6 @@ public class Article {
     private String content;
 
     @jakarta.validation.constraints.Size(max = 512, message = "Image URL must not exceed 512 characters")
-    @jakarta.validation.constraints.Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
     @Column(name = "image_url", length = 512)
     private String imageUrl;
 

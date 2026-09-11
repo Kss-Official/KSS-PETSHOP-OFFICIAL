@@ -62,44 +62,51 @@ const ARTICLE_IMAGE_MAP: Record<string, string> = {
   'Essential Vaccinations for Dogs and Cats': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896780/Vet_examining_a_cat_with_stethoscope.png',
   'The Right Nutrition for a Healthier, Happier Pet': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png',
   'How to Keep Your Indoor Cat Active and Engaged': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896779/Playful_cat_with_colorful_ball.png',
-  'service_03_grooming_puppy_tub': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896776/Golden_retriever_getting_a_bath_with_bubbles_and_rubber_duck.png',
-  'service_04_pharmacy_cat_med': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896775/Sick_dog_with_ice_pack_on_head.png',
-  'service_01_vet_care': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896780/Vet_examining_a_cat_with_stethoscope.png',
-  'service_02_pet_food_rabbit_bowl': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png',
-  'service_05_toys_kittens_play': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896779/Playful_cat_with_colorful_ball.png',
+  'service_01_vet_care': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png',
+  'service_02_pet_food_rabbit_bowl': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png',
+  'service_03_grooming_puppy_tub': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png',
+  'service_04_pharmacy_cat_med': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png',
+  'service_05_toys_kittens_play': 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png',
 };
 
-export function getServiceImageUrl(serviceName: string = '', iconUrl?: string): string {
-  if (iconUrl && (iconUrl.startsWith('http://') || iconUrl.startsWith('https://'))) {
-    return iconUrl;
+export function getServiceImageUrl(name: string = '', imageUrl?: string, id: number = 1): string {
+  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+    return imageUrl;
   }
-  const name = (serviceName || '').toLowerCase();
-  const icon = (iconUrl || '').toLowerCase();
-  if (name.includes('vet') || name.includes('doctor') || icon.includes('vet')) {
+  const lower = (name || '').toLowerCase();
+  const icon = (imageUrl || '').toLowerCase();
+  if (lower.includes('vet') || lower.includes('care') || lower.includes('health') || lower.includes('doctor') || icon.includes('vet')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png';
   }
-  if (name.includes('food') || name.includes('nutrition') || icon.includes('food')) {
+  if (lower.includes('food') || lower.includes('nutri') || lower.includes('diet') || icon.includes('food')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png';
   }
-  if (name.includes('grooming') || icon.includes('grooming')) {
+  if (lower.includes('groom') || lower.includes('bath') || lower.includes('spa') || icon.includes('groom')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png';
   }
-  if (name.includes('pharmacy') || name.includes('med') || icon.includes('pharmacy')) {
+  if (lower.includes('pharm') || lower.includes('med') || lower.includes('drug') || icon.includes('pharm')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png';
   }
-  if (name.includes('toy') || name.includes('enrichment') || icon.includes('toy')) {
+  if (lower.includes('toy') || lower.includes('play') || lower.includes('enrich') || icon.includes('toy')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png';
   }
-  if (name.includes('boarding') || name.includes('daycare') || icon.includes('boarding')) {
+  if (lower.includes('board') || lower.includes('daycare') || lower.includes('stay') || icon.includes('board')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png';
   }
-  if (name.includes('training') || name.includes('behaviour') || name.includes('behavior') || icon.includes('training')) {
+  if (lower.includes('train') || lower.includes('behav') || icon.includes('train')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896174/c1b76666-8097-4311-911e-8b51d62c4739_1.png';
   }
-  if (name.includes('transport') || name.includes('ambulance') || icon.includes('transport')) {
+  if (lower.includes('trans') || lower.includes('ambul') || icon.includes('trans')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png';
   }
-  return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png';
+  const fallbacks = [
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png',
+    'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png',
+  ];
+  return fallbacks[(Math.max(1, id) - 1) % fallbacks.length];
 }
 
 export function getArticleImageUrl(title?: string, imageUrl?: string): string {

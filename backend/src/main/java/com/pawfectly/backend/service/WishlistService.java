@@ -65,9 +65,13 @@ public class WishlistService {
         List<WishlistItemResponseDto> responseList = new ArrayList<>();
 
         for (WishlistItem item : items) {
-            WishlistItemResponseDto dto = hydrateWishlistItem(item);
-            if (dto != null && Boolean.TRUE.equals(dto.getIsActive())) {
-                responseList.add(dto);
+            try {
+                WishlistItemResponseDto dto = hydrateWishlistItem(item);
+                if (dto != null && !Boolean.FALSE.equals(dto.getIsActive())) {
+                    responseList.add(dto);
+                }
+            } catch (Exception e) {
+                // skip corrupted/deleted item
             }
         }
 

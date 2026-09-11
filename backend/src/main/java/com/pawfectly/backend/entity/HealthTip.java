@@ -38,7 +38,6 @@ public class HealthTip {
     private String content;
 
     @Size(max = 512, message = "Image URL must not exceed 512 characters")
-    @Pattern(regexp = "^(https?://.*)?$", message = "Image URL must start with http:// or https://")
     @Column(name = "image_url", length = 512)
     private String imageUrl;
 

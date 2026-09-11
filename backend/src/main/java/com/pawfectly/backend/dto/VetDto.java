@@ -27,7 +27,6 @@ public class VetDto {
     private Double consultationFee;
 
     @jakarta.validation.constraints.Size(max = 512, message = "Photo URL must not exceed 512 characters")
-    @jakarta.validation.constraints.Pattern(regexp = "^(https?://.*)?$", message = "Photo URL must start with http:// or https://")
     private String photoUrl;
     private Double rating;
     private String address;

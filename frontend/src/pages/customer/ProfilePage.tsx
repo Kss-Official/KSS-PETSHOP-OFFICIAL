@@ -5,7 +5,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
 import { useAuth } from '../../features/auth/AuthContext';
-import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getVetImageUrl, getProductImageUrl, formatCurrency, type WishlistItem } from '../../lib/utils';
+import { getCloudinaryImageUrl, getArticleImageUrl, getPetSpeciesImage, getVetImageUrl, getProductImageUrl, getServiceImageUrl, formatCurrency, type WishlistItem } from '../../lib/utils';
 import apiClient from '../../lib/axios';
 import { HeartToggle } from '../../components/common/HeartToggle';
 import {
@@ -668,10 +668,9 @@ export const ProfilePage: React.FC = () => {
     setWishlistError(null);
     try {
       const res = await apiClient.get<WishlistItem[]>('/customer/wishlist');
-      setWishlistItems(res.data || []);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load saved items.';
-      setWishlistError(msg);
+      setWishlistItems(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setWishlistItems([]);
     } finally {
       setWishlistLoading(false);
     }
@@ -2538,7 +2537,7 @@ export const ProfilePage: React.FC = () => {
                       } else if (item.itemType === 'VET') {
                         imageSrc = getVetImageUrl(item.name, item.imageUrl);
                       } else if (item.itemType === 'SERVICE') {
-                        imageSrc = getArticleImageUrl(item.name, item.imageUrl);
+                        imageSrc = getServiceImageUrl(item.name, item.imageUrl, item.itemId);
                       } else if (item.imageUrl) {
                         imageSrc = getCloudinaryImageUrl(item.imageUrl);
                       }
