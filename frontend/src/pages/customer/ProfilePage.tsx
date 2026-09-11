@@ -1511,7 +1511,7 @@ export const ProfilePage: React.FC = () => {
                             <Loader2 className="w-4 h-4 animate-spin" /> Processing Order...
                           </>
                         ) : (
-                          'Proceed to Checkout →'
+                          'Proceed to Checkout'
                         )}
                       </button>
                     </div>
@@ -2469,7 +2469,7 @@ export const ProfilePage: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">Saved Items</h1>
-                  <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                  <p className="text-xs sm:text-sm text-[#67796B] font-normal mt-1">
                     Your favorite pharmacy products, supplements, and bookmarked care services.
                   </p>
                 </div>
@@ -2498,15 +2498,15 @@ export const ProfilePage: React.FC = () => {
                             )}
                           </div>
                           <div>
-                            <h3 className="text-sm font-black text-[#16241B]">{item.name}</h3>
-                            <p className="text-xs font-bold text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
-                            {item.category && <p className="text-[11px] text-[#88998C] font-semibold">{item.category}</p>}
+                            <h3 className="text-sm font-normal text-[#16241B]">{item.name}</h3>
+                            <p className="text-xs font-normal text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
+                            {item.category && <p className="text-[11px] text-[#88998C] font-normal">{item.category}</p>}
                           </div>
                         </div>
 
                         <button
                           onClick={() => navigate('/pharmacy')}
-                          className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-bold hover:bg-[#008757] transition-colors cursor-pointer shrink-0"
+                          className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-semibold hover:bg-[#008757] transition-colors cursor-pointer shrink-0"
                         >
                           View Item
                         </button>
@@ -2524,7 +2524,7 @@ export const ProfilePage: React.FC = () => {
                   <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">
                     Settings & Profile
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                  <p className="text-xs sm:text-sm text-[#67796B] font-normal mt-1">
                     Manage your personal details, security credentials, and communication preferences.
                   </p>
                 </div>
