@@ -1396,14 +1396,14 @@ export const ProfilePage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">My Shopping Cart</h1>
-                    <p className="text-xs sm:text-sm text-[#67796B] font-medium mt-1">
+                    <p className="text-xs sm:text-sm text-[#67796B] font-normal mt-1">
                       Review selected pharmacy items and proceed to instant checkout.
                     </p>
                   </div>
                   {cartItems.length > 0 && (
                     <button
                       onClick={handleClearCart}
-                      className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                      className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors cursor-pointer"
                     >
                       Clear Cart
                     </button>
@@ -1447,7 +1447,7 @@ export const ProfilePage: React.FC = () => {
                           >
                             <div className="flex items-center gap-3">
                               <div>
-                                <h3 className="text-sm font-medium text-[#16241B]">{item.productName}</h3>
+                                <h3 className="text-sm font-normal text-[#16241B]">{item.productName}</h3>
                                 <p className="text-xs font-normal text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
                               </div>
                             </div>
@@ -1460,7 +1460,7 @@ export const ProfilePage: React.FC = () => {
                                 >
                                   <Minus className="w-3 h-3" />
                                 </button>
-                                <span className="text-xs font-medium text-[#16241B] px-1">{item.quantity}</span>
+                                <span className="text-xs font-normal text-[#16241B] px-1">{item.quantity}</span>
                                 <button
                                   onClick={() => handleUpdateCartQuantity(item.id, item.quantity + 1)}
                                   className="w-6 h-6 rounded-full bg-[#F8F6F0] hover:bg-[#E6F9EC] text-[#16241B] flex items-center justify-center cursor-pointer transition-colors"
@@ -1469,7 +1469,7 @@ export const ProfilePage: React.FC = () => {
                                 </button>
                               </div>
 
-                              <span className="text-sm font-semibold text-[#16241B] min-w-[70px] text-right">
+                              <span className="text-sm font-normal text-[#16241B] min-w-[70px] text-right">
                                 ₹{itemTotal.toLocaleString('en-IN')}
                               </span>
 
@@ -1488,15 +1488,15 @@ export const ProfilePage: React.FC = () => {
 
                     {/* Cart Summary Card */}
                     <div className="bg-[#FAF8F3] rounded-2xl p-5 border border-[#E8E4D8] space-y-3">
-                      <div className="flex items-center justify-between text-xs font-semibold text-[#556658]">
+                      <div className="flex items-center justify-between text-xs font-normal text-[#556658]">
                         <span>Items ({cartItems.reduce((acc, i) => acc + i.quantity, 0)}):</span>
-                        <span className="font-bold text-[#16241B]">
+                        <span className="font-normal text-[#16241B]">
                           ₹{cartItems.reduce((acc, i) => acc + (i.price || 0) * i.quantity, 0).toLocaleString('en-IN')}
                         </span>
                       </div>
-                      <div className="pt-2 border-t border-[#E8E4D8] flex items-center justify-between text-base font-black text-[#16241B]">
+                      <div className="pt-2 border-t border-[#E8E4D8] flex items-center justify-between text-base font-medium text-[#16241B]">
                         <span>Total Amount:</span>
-                        <span className="text-lg text-[#009E66]">
+                        <span className="text-lg font-medium text-[#009E66]">
                           ₹{cartItems.reduce((acc, i) => acc + (i.price || 0) * i.quantity, 0).toLocaleString('en-IN')}
                         </span>
                       </div>
@@ -1504,7 +1504,7 @@ export const ProfilePage: React.FC = () => {
                       <button
                         onClick={handleCheckoutCart}
                         disabled={checkoutLoading}
-                        className="w-full mt-2 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
+                        className="w-full mt-2 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-semibold rounded-full shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
                       >
                         {checkoutLoading ? (
                           <>
