@@ -65,11 +65,9 @@ const ARTICLE_IMAGE_MAP: Record<string, string> = {
 };
 
 export function getServiceImageUrl(name: string = '', imageUrl?: string, id: number = 1): string {
-  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
-    return imageUrl;
-  }
   const lower = (name || '').toLowerCase();
   const icon = (imageUrl || '').toLowerCase();
+
   if (lower.includes('vet') || lower.includes('care') || lower.includes('health') || lower.includes('doctor') || icon.includes('vet')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788797640/service_01_vet_care.jpg';
   }
@@ -93,6 +91,9 @@ export function getServiceImageUrl(name: string = '', imageUrl?: string, id: num
   }
   if (lower.includes('trans') || lower.includes('ambul') || icon.includes('trans')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png';
+  }
+  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+    return imageUrl;
   }
   const fallbacks = [
     'https://res.cloudinary.com/vphylrop/image/upload/v1788797640/service_01_vet_care.jpg',
