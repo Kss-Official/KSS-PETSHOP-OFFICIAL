@@ -49,16 +49,29 @@ function AnimatedRoutes() {
       location.pathname !== displayLocation.pathname ||
       location.search !== displayLocation.search
     ) {
+      // Only invoke view transitions for page route changes (not in-page query params)
+      const isRoutePathChange = location.pathname !== displayLocation.pathname;
+
       if (
+        isRoutePathChange &&
         typeof document !== 'undefined' &&
         'startViewTransition' in document &&
         !window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ) {
-        document.startViewTransition(() => {
-          flushSync(() => {
-            setDisplayLocation(location);
+        try {
+          const transition = (document as unknown as { startViewTransition: (cb: () => void) => { ready?: Promise<void>; finished?: Promise<void>; updateCallbackDone?: Promise<void> } }).startViewTransition(() => {
+            flushSync(() => {
+              setDisplayLocation(location);
+            });
           });
-        });
+
+          // Safely catch any transition aborts triggered by viewport resize, devtools emulation, or DOM interruption
+          transition?.ready?.catch(() => {});
+          transition?.finished?.catch(() => {});
+          transition?.updateCallbackDone?.catch(() => {});
+        } catch {
+          setDisplayLocation(location);
+        }
       } else {
         setDisplayLocation(location);
       }
