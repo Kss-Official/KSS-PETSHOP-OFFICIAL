@@ -120,55 +120,59 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
 
   const markAsRead = async (id: string) => {
     const item = notifications.find((n) => n.id === id);
-    if (item && item.numericId) {
-      try {
-        await apiClient.patch(`/customer/notifications/${item.numericId}/read`);
-      } catch {
-        // ignore
-      }
-    }
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
+    if (item && item.numericId) {
+      try {
+        await apiClient.patch(`/customer/notifications/${item.numericId}/read`);
+      } catch (err) {
+        console.error('Failed to mark notification read', err);
+      }
+    }
     window.dispatchEvent(new Event('notifications-updated'));
   };
 
   const markAllAsRead = async () => {
-    const unread = notifications.filter((n) => !n.isRead);
-    await Promise.all(
-      unread.map((n) =>
-        n.numericId
-          ? apiClient.patch(`/customer/notifications/${n.numericId}/read`).catch(() => {})
-          : Promise.resolve()
-      )
-    );
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await apiClient.patch('/customer/notifications/read-all');
+    } catch {
+      const unread = notifications.filter((n) => !n.isRead && n.numericId);
+      await Promise.all(
+        unread.map((n) =>
+          apiClient.patch(`/customer/notifications/${n.numericId}/read`).catch(() => {})
+        )
+      );
+    }
     window.dispatchEvent(new Event('notifications-updated'));
   };
 
   const clearAllNotifications = async () => {
-    await Promise.all(
-      notifications.map((n) =>
-        n.numericId
-          ? apiClient.delete(`/customer/notifications/${n.numericId}`).catch(() => {})
-          : Promise.resolve()
-      )
-    );
     setNotifications([]);
+    try {
+      await apiClient.delete('/customer/notifications');
+    } catch {
+      await Promise.all(
+        notifications.filter((n) => n.numericId).map((n) =>
+          apiClient.delete(`/customer/notifications/${n.numericId}`).catch(() => {})
+        )
+      );
+    }
     window.dispatchEvent(new Event('notifications-updated'));
   };
 
   const deleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const item = notifications.find((n) => n.id === id);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
     if (item && item.numericId) {
       try {
         await apiClient.delete(`/customer/notifications/${item.numericId}`);
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error('Failed to delete notification', err);
       }
     }
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
     window.dispatchEvent(new Event('notifications-updated'));
   };
 

@@ -48,6 +48,14 @@ public class NotificationService {
     }
 
     @Transactional
+    public void markAllAsRead(Long customerId) {
+        List<Notification> notifications = notificationRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
+        notifications.forEach(n -> n.setIsRead(true));
+        notificationRepository.saveAll(notifications);
+        log.info("Marked all notifications as read for customer #{}", customerId);
+    }
+
+    @Transactional
     public void deleteNotification(Long customerId, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
@@ -59,6 +67,12 @@ public class NotificationService {
 
         notificationRepository.delete(notification);
         log.info("Deleted notification #{} for user #{}", notificationId, customerId);
+    }
+
+    @Transactional
+    public void deleteAllCustomerNotifications(Long customerId) {
+        notificationRepository.deleteByCustomerId(customerId);
+        log.info("Deleted all notifications for customer #{}", customerId);
     }
 
     @Transactional

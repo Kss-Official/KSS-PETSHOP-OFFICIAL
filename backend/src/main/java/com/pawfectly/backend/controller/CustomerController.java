@@ -159,12 +159,26 @@ public class CustomerController {
         return ResponseEntity.ok(notificationService.markAsRead(userDetails.getId(), id));
     }
 
+    @PatchMapping("/notifications/read-all")
+    public ResponseEntity<Map<String, Object>> markAllNotificationsAsRead(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        notificationService.markAllAsRead(userDetails.getId());
+        return ResponseEntity.ok(Map.of("message", "All notifications marked as read."));
+    }
+
     @DeleteMapping("/notifications/{id}")
     public ResponseEntity<Map<String, Object>> deleteNotification(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         notificationService.deleteNotification(userDetails.getId(), id);
         return ResponseEntity.ok(Map.of("message", "Notification deleted successfully.", "id", id));
+    }
+
+    @DeleteMapping("/notifications")
+    public ResponseEntity<Map<String, Object>> deleteAllNotifications(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        notificationService.deleteAllCustomerNotifications(userDetails.getId());
+        return ResponseEntity.ok(Map.of("message", "All notifications cleared."));
     }
 
     // --- Reviews ---
