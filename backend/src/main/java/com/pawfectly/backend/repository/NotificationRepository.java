@@ -17,4 +17,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     boolean existsByCustomerIdAndTypeAndRelatedEntityId(Long customerId, String type, Long relatedEntityId);
 
     boolean existsByCustomerIdAndRelatedEntityId(Long customerId, Long relatedEntityId);
+
+    void deleteByCustomerId(Long customerId);
 }

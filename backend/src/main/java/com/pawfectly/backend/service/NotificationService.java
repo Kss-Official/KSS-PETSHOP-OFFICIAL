@@ -1,22 +1,13 @@
 package com.pawfectly.backend.service;
 
 import com.pawfectly.backend.dto.NotificationDto;
-import com.pawfectly.backend.entity.Appointment;
-import com.pawfectly.backend.entity.AppointmentStatus;
 import com.pawfectly.backend.entity.Notification;
-import com.pawfectly.backend.entity.NotificationPreference;
-import com.pawfectly.backend.entity.Order;
-import com.pawfectly.backend.entity.Pet;
 import com.pawfectly.backend.entity.Role;
 import com.pawfectly.backend.entity.User;
 import com.pawfectly.backend.entity.Vet;
 import org.springframework.security.access.AccessDeniedException;
 import com.pawfectly.backend.exception.ResourceNotFoundException;
-import com.pawfectly.backend.repository.AppointmentRepository;
-import com.pawfectly.backend.repository.NotificationPreferenceRepository;
 import com.pawfectly.backend.repository.NotificationRepository;
-import com.pawfectly.backend.repository.OrderRepository;
-import com.pawfectly.backend.repository.PetRepository;
 import com.pawfectly.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,92 +24,12 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final OrderRepository orderRepository;
-    private final PetRepository petRepository;
-    private final AppointmentRepository appointmentRepository;
-    private final NotificationPreferenceRepository notificationPreferenceRepository;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<NotificationDto> getCustomerNotifications(Long customerId) {
-        syncMissingOrderNotifications(customerId);
-        syncMissingAppointmentNotifications(customerId);
         return notificationRepository.findByCustomerIdOrderByCreatedAtDesc(customerId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
-    }
-
-    private void syncMissingOrderNotifications(Long customerId) {
-        try {
-            User customer = userRepository.findById(customerId).orElse(null);
-            if (customer == null) return;
-
-            NotificationPreference pref = notificationPreferenceRepository.findByUserId(customerId).orElse(null);
-            boolean orderUpdatesEnabled = pref == null || Boolean.TRUE.equals(pref.getOrderUpdates());
-            if (!orderUpdatesEnabled) return;
-
-            List<Order> customerOrders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
-            for (Order order : customerOrders) {
-                boolean exists = notificationRepository.existsByCustomerIdAndRelatedEntityId(customerId, order.getId());
-                if (!exists) {
-                    String orderRef = String.format("ORD-%04d", order.getId());
-                    String statusFormatted = order.getOrderStatus().name().replace("_", " ");
-                    String title = "Order " + statusFormatted;
-                    String message = "Your order " + orderRef + " is currently " + statusFormatted + ".";
-
-                    Notification notification = Notification.builder()
-                            .customer(customer)
-                            .type("ORDER_STATUS_UPDATE")
-                            .title(title)
-                            .message(message)
-                            .relatedEntityId(order.getId())
-                            .isRead(false)
-                            .build();
-                    notificationRepository.save(notification);
-                    log.info("Synced missing notification for order #{} (customer #{})", order.getId(), customerId);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Error syncing order notifications for customer #{}: {}", customerId, e.getMessage());
-        }
-    }
-
-    private void syncMissingAppointmentNotifications(Long customerId) {
-        try {
-            User customer = userRepository.findById(customerId).orElse(null);
-            if (customer == null) return;
-
-            NotificationPreference pref = notificationPreferenceRepository.findByUserId(customerId).orElse(null);
-            boolean apptRemindersEnabled = pref == null || Boolean.TRUE.equals(pref.getAppointmentReminders());
-            if (!apptRemindersEnabled) return;
-
-            List<Pet> pets = petRepository.findByOwnerId(customerId);
-            for (Pet pet : pets) {
-                List<Appointment> appts = appointmentRepository.findByPetId(pet.getId());
-                for (Appointment appt : appts) {
-                    boolean exists = notificationRepository.existsByCustomerIdAndRelatedEntityId(customerId, appt.getId());
-                    if (!exists) {
-                        String vetName = appt.getVet() != null ? appt.getVet().getName() : "Veterinarian";
-                        String petName = pet.getName();
-                        String statusFormatted = appt.getStatus().name();
-                        String title = appt.getStatus() == AppointmentStatus.CONFIRMED ? "Appointment Confirmed!" : ("Appointment " + statusFormatted);
-                        String message = "Your appointment for " + petName + " with " + vetName + " is " + statusFormatted.toLowerCase() + ".";
-
-                        Notification notification = Notification.builder()
-                                .customer(customer)
-                                .type(appt.getStatus() == AppointmentStatus.CONFIRMED ? "APPOINTMENT_CONFIRMED" : "APPOINTMENT_UPDATE")
-                                .title(title)
-                                .message(message)
-                                .relatedEntityId(appt.getId())
-                                .isRead(false)
-                                .build();
-                        notificationRepository.save(notification);
-                        log.info("Synced missing notification for appointment #{} (customer #{})", appt.getId(), customerId);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Error syncing appointment notifications for customer #{}: {}", customerId, e.getMessage());
-        }
     }
 
     @Transactional
