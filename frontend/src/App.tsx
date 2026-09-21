@@ -24,9 +24,27 @@ import { AdminNewsletterPage } from './pages/admin/AdminNewsletterPage';
 import { AdminInsuranceQuotesPage } from './pages/admin/AdminInsuranceQuotesPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AuthProvider } from './features/auth/AuthContext';
+import { CartProvider, useCart } from './hooks/useCart';
+import { CompareProvider } from './hooks/useCompare';
+import { FlyToCartPortal } from './components/common/FlyToCartPortal';
+import { Confetti } from './components/ui/Confetti';
+import { CompareBar } from './components/products/CompareBar';
+import { CompareSheet } from './components/products/CompareSheet';
 import { AdminToastProvider } from './components/admin/AdminLayout';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { ErrorBoundary } from './components/feedback/ErrorBoundary';
+
+function AppCartOverlay() {
+  const { flyingClones, confettiParticles } = useCart();
+  return (
+    <>
+      <FlyToCartPortal clones={flyingClones} />
+      <Confetti particles={confettiParticles} />
+      <CompareBar />
+      <CompareSheet />
+    </>
+  );
+}
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -216,12 +234,17 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AdminToastProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <AnimatedRoutes />
-          </BrowserRouter>
-        </AdminToastProvider>
+        <CartProvider>
+          <CompareProvider>
+            <AdminToastProvider>
+              <BrowserRouter>
+                <ScrollToTop />
+                <AnimatedRoutes />
+                <AppCartOverlay />
+              </BrowserRouter>
+            </AdminToastProvider>
+          </CompareProvider>
+        </CartProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

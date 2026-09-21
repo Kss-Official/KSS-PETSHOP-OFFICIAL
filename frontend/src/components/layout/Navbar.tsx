@@ -57,6 +57,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 30);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
@@ -193,8 +200,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#FAF6EE]/75 backdrop-blur-xl backdrop-saturate-150 border-b border-white/60 shadow-[0_4px_30px_rgba(0,0,0,0.03)] transition-all">
-      <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between relative">
+    <header
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'bg-[#FAF6EE]/85 backdrop-blur-2xl backdrop-saturate-180 border-b border-[#16241B]/10 shadow-[0_8px_30px_rgba(22,36,27,0.06)] h-16 sm:h-18'
+          : 'bg-[#FAF6EE]/95 backdrop-blur-lg border-b border-[#16241B]/6 h-20'
+      }`}
+    >
+      <div className="w-full px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between relative">
         {/* Leftmost: Logo & Wordmark */}
         <a
           href="/"

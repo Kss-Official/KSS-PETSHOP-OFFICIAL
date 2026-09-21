@@ -826,7 +826,7 @@ export const ProfilePage: React.FC = () => {
     setCartError(null);
     try {
       const res = await apiClient.get<CartItemData[]>('/customer/cart');
-      setCartItems(res.data || []);
+      setCartItems(Array.isArray(res.data) ? res.data : []);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to load cart.';
       setCartError(msg);
@@ -836,10 +836,18 @@ export const ProfilePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (currentTab === 'cart') {
+    if (currentTab === 'cart' || currentTab === 'overview') {
       fetchCartItems();
     }
   }, [currentTab, fetchCartItems]);
+
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      fetchCartItems();
+    };
+    window.addEventListener('cart-updated', handleCartUpdate);
+    return () => window.removeEventListener('cart-updated', handleCartUpdate);
+  }, [fetchCartItems]);
 
   const handleUpdateCartQuantity = async (itemId: number, newQty: number) => {
     if (newQty <= 0) {
@@ -883,9 +891,10 @@ export const ProfilePage: React.FC = () => {
     try {
       await apiClient.post('/customer/orders/checkout');
       setCartItems([]);
-      showToast('Order placed successfully!');
+      showToast('Order placed successfully! 🎉');
       window.dispatchEvent(new Event('cart-updated'));
       window.dispatchEvent(new Event('admin-notifications-updated'));
+      fetchOrders();
       setSearchParams({ tab: 'orders' });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Checkout failed. Please try again.';
@@ -1461,46 +1470,72 @@ export const ProfilePage: React.FC = () => {
 
                 {!cartLoading && !cartError && cartItems.length > 0 && (
                   <div className="space-y-6">
-                    <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                    <div className="space-y-3.5 max-h-[480px] overflow-y-auto pr-1">
                       {cartItems.map((item) => {
                         const itemTotal = (item.price || 0) * (item.quantity || 1);
+                        const thumbUrl = getProductImageUrl(item.productName, item.imageUrl, item.productId);
                         return (
                           <div
                             key={item.id}
-                            className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                            className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-[#D5CCBA]"
                           >
-                            <div className="flex items-center gap-3">
-                              <div>
-                                <h3 className="text-sm font-normal text-[#16241B]">{item.productName}</h3>
-                                <p className="text-xs font-normal text-[#009E66]">₹{item.price ? item.price.toLocaleString('en-IN') : '0'}</p>
+                            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                              <img
+                                src={thumbUrl}
+                                alt={item.productName}
+                                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white object-contain p-2 border border-[#EAE3D4] shadow-2xs shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <h3 className="text-sm sm:text-base font-bold text-[#16241B] line-clamp-1">
+                                  {item.productName}
+                                </h3>
+                                <p className="text-xs font-semibold text-[#009E66] mt-0.5">
+                                  ₹{item.price ? item.price.toLocaleString('en-IN') : '0'}{' '}
+                                  <span className="text-[11px] text-[#88998C] font-normal">/ unit</span>
+                                </p>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#3FA65C] bg-[#E6F9EC] px-2 py-0.5 rounded-md mt-1.5">
+                                  Free In-Store Pickup
+                                </span>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-                              <div className="flex items-center gap-2 bg-white border border-[#EAE3D4] rounded-full px-2 py-1">
+                            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-[#EAE3D4]/60">
+                              <div className="flex items-center gap-1.5 bg-white border border-[#EAE3D4] rounded-xl p-1 shadow-2xs">
                                 <button
+                                  type="button"
                                   onClick={() => handleUpdateCartQuantity(item.id, item.quantity - 1)}
-                                  className="w-6 h-6 rounded-full bg-[#F8F6F0] hover:bg-[#E6F9EC] text-[#16241B] flex items-center justify-center cursor-pointer transition-colors"
+                                  aria-label="Decrease quantity"
+                                  className="w-7 h-7 rounded-lg bg-[#F8F6F0] hover:bg-[#E6F9EC] text-[#16241B] hover:text-[#009E66] flex items-center justify-center cursor-pointer transition-colors active:scale-90"
                                 >
-                                  <Minus className="w-3 h-3" />
+                                  {item.quantity <= 1 ? (
+                                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                  ) : (
+                                    <Minus className="w-3.5 h-3.5" />
+                                  )}
                                 </button>
-                                <span className="text-xs font-normal text-[#16241B] px-1">{item.quantity}</span>
+                                <span className="text-xs font-black text-[#16241B] px-2 min-w-[20px] text-center select-none">
+                                  {item.quantity}
+                                </span>
                                 <button
+                                  type="button"
+                                  disabled={item.stockQuantity ? item.quantity >= item.stockQuantity : false}
                                   onClick={() => handleUpdateCartQuantity(item.id, item.quantity + 1)}
-                                  className="w-6 h-6 rounded-full bg-[#F8F6F0] hover:bg-[#E6F9EC] text-[#16241B] flex items-center justify-center cursor-pointer transition-colors"
+                                  aria-label="Increase quantity"
+                                  className="w-7 h-7 rounded-lg bg-[#F8F6F0] hover:bg-[#E6F9EC] disabled:opacity-40 text-[#16241B] hover:text-[#009E66] flex items-center justify-center cursor-pointer transition-colors active:scale-90"
                                 >
-                                  <Plus className="w-3 h-3" />
+                                  <Plus className="w-3.5 h-3.5" />
                                 </button>
                               </div>
 
-                              <span className="text-sm font-normal text-[#16241B] min-w-[70px] text-right">
+                              <span className="text-sm sm:text-base font-black text-[#16241B] min-w-[75px] text-right">
                                 ₹{itemTotal.toLocaleString('en-IN')}
                               </span>
 
                               <button
+                                type="button"
                                 onClick={() => handleRemoveCartItem(item.id)}
                                 aria-label="Remove item"
-                                className="p-1.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1511,33 +1546,46 @@ export const ProfilePage: React.FC = () => {
                     </div>
 
                     {/* Cart Summary Card */}
-                    <div className="bg-[#FAF8F3] rounded-2xl p-5 border border-[#E8E4D8] space-y-3">
-                      <div className="flex items-center justify-between text-xs font-normal text-[#556658]">
+                    <div className="bg-[#FAF8F3] rounded-3xl p-6 border border-[#E8E4D8] space-y-4 shadow-sm">
+                      <div className="flex items-center justify-between text-xs font-medium text-[#556658]">
                         <span>Items ({cartItems.reduce((acc, i) => acc + i.quantity, 0)}):</span>
-                        <span className="font-normal text-[#16241B]">
+                        <span className="font-bold text-[#16241B]">
                           ₹{cartItems.reduce((acc, i) => acc + (i.price || 0) * i.quantity, 0).toLocaleString('en-IN')}
                         </span>
                       </div>
-                      <div className="pt-2 border-t border-[#E8E4D8] flex items-center justify-between text-base font-medium text-[#16241B]">
+                      <div className="flex items-center justify-between text-xs font-medium text-[#556658]">
+                        <span>Pickup Method:</span>
+                        <span className="font-bold text-[#009E66]">Free In-Store Pickup</span>
+                      </div>
+                      <div className="pt-3 border-t border-[#E8E4D8] flex items-center justify-between text-base font-bold text-[#16241B]">
                         <span>Total Amount:</span>
-                        <span className="text-lg font-medium text-[#009E66]">
+                        <span className="text-xl font-black text-[#009E66]">
                           ₹{cartItems.reduce((acc, i) => acc + (i.price || 0) * i.quantity, 0).toLocaleString('en-IN')}
                         </span>
                       </div>
 
-                      <button
-                        onClick={handleCheckoutCart}
-                        disabled={checkoutLoading}
-                        className="w-full mt-2 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-semibold rounded-full shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
-                      >
-                        {checkoutLoading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Processing Order...
-                          </>
-                        ) : (
-                          'Proceed to Checkout'
-                        )}
-                      </button>
+                      <div className="pt-2 space-y-2">
+                        <button
+                          onClick={handleCheckoutCart}
+                          disabled={checkoutLoading}
+                          className="w-full py-4 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-2xl shadow-lg shadow-[#009E66]/20 transition-all cursor-pointer flex items-center justify-center gap-2 text-sm active:scale-98"
+                        >
+                          {checkoutLoading ? (
+                            <>
+                              <Loader2 className="w-4.5 h-4.5 animate-spin" /> Placing Your Order...
+                            </>
+                          ) : (
+                            'Proceed to Checkout'
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate('/pharmacy')}
+                          className="w-full py-2.5 text-xs font-bold text-[#556658] hover:text-[#009E66] transition-colors text-center cursor-pointer"
+                        >
+                          ← Continue Shopping in Pharmacy
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

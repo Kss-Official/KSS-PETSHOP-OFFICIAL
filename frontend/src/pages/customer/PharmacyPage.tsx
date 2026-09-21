@@ -1,192 +1,92 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { StickyCartBar } from '../../components/layout/StickyCartBar';
-import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl, getProductImageUrl, formatCurrency } from '../../lib/utils';
+import { getCloudinaryImageUrl, formatCurrency } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
-import { useAuth } from '../../features/auth/AuthContext';
 import { useWishlistIds } from '../../hooks/useWishlistIds';
-import { HeartToggle } from '../../components/common/HeartToggle';
+import { useCart } from '../../hooks/useCart';
+import { ProductCard, type ProductItemData } from '../../components/products/ProductCard';
+import { QuickViewModal } from '../../components/products/QuickViewModal';
+import { SearchBar } from '../../components/products/SearchBar';
+import { RecommendationCarousel } from '../../components/products/RecommendationCarousel';
+import { Odometer } from '../../components/ui/Odometer';
+import { springs, staggerContainer, fadeUp } from '../../lib/motion';
 import {
   Star,
-  Heart,
   Pill,
-  ShoppingBag,
   Utensils,
   Scissors,
   Shield,
   ShieldCheck,
   HeartPulse,
-  Minus,
-  Plus,
+  SlidersHorizontal,
+  X,
+  Sparkles,
+  Zap,
 } from 'lucide-react';
 
-interface ProductItem {
-  id: number;
-  name: string;
-  category: string;
-  description: string;
-  price: number;
-  stockQuantity: number;
-  rating: number;
-  reviewsCount: number;
-  imageUrl?: string;
-  prescriptionRequired?: boolean;
-}
-
-interface CartItemMapValue {
-  id: number;
-  quantity: number;
-}
-
 export const PharmacyPage: React.FC = () => {
-  const [cartItems, setCartItems] = useState<Record<number, CartItemMapValue>>({});
-  const [updatingCart, setUpdatingCart] = useState<Record<number, boolean>>({});
-  const { isSaved } = useWishlistIds();
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('All');
-  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [products, setProducts] = useState<ProductItemData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+
+  // Filters State synced to URL Query Params
+  const categoryParam = searchParams.get('category') || 'All';
+  const queryParam = searchParams.get('q') || '';
+  const maxPriceParam = Number(searchParams.get('maxPrice')) || 5000;
+  const rxParam = searchParams.get('rx') === 'true';
+
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>(categoryParam);
+  const [searchQuery, setSearchQuery] = useState<string>(queryParam);
+  const [maxPrice, setMaxPrice] = useState<number>(maxPriceParam);
+  const [prescriptionOnly, setPrescriptionOnly] = useState<boolean>(rxParam);
+  const [showFiltersPanel, setShowFiltersPanel] = useState<boolean>(false);
+
+  // Quick View Modal
+  const [quickViewProduct, setQuickViewProduct] = useState<ProductItemData | null>(null);
+
+  // Hooks
+  const { isSaved } = useWishlistIds();
+  const { addToCart, items: cartItems, isUpdating } = useCart();
+
+  // Sync state with URL params
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (activeCategoryFilter !== 'All') params.category = activeCategoryFilter;
+    if (searchQuery) params.q = searchQuery;
+    if (maxPrice < 5000) params.maxPrice = maxPrice.toString();
+    if (prescriptionOnly) params.rx = 'true';
+    setSearchParams(params, { replace: true });
+  }, [activeCategoryFilter, searchQuery, maxPrice, prescriptionOnly, setSearchParams]);
 
   const fetchProducts = () => {
     setLoading(true);
     setError(null);
     apiClient
-      .get('/products')
+      .get<ProductItemData[]>('/products')
       .then((res) => {
         setProducts(res.data || []);
       })
       .catch(() => {
-        setError('Failed to load products. Please check your connection.');
+        setError('Failed to load pharmacy products. Please check your connection.');
       })
       .finally(() => {
         setLoading(false);
       });
   };
 
-  const fetchCart = () => {
-    if (isAuthenticated) {
-      apiClient
-        .get('/customer/cart')
-        .then((res) => {
-          const items: { id: number; productId: number; quantity: number }[] = res.data || [];
-          const map: Record<number, CartItemMapValue> = {};
-          items.forEach((item) => {
-            map[item.productId] = { id: item.id, quantity: item.quantity };
-          });
-          setCartItems(map);
-        })
-        .catch(() => {
-          setCartItems({});
-        });
-    } else {
-      setCartItems({});
-    }
-  };
-
   useEffect(() => {
     fetchProducts();
-    fetchCart();
-    const handleCartUpdate = () => fetchCart();
-    window.addEventListener('cart-updated', handleCartUpdate);
-    return () => {
-      window.removeEventListener('cart-updated', handleCartUpdate);
-    };
-  }, [isAuthenticated]);
-
-  const handleAddToCart = async (product: ProductItem) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
-    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
-    try {
-      const res = await apiClient.post('/customer/cart', {
-        productId: product.id,
-        quantity: 1,
-      });
-      if (res.data) {
-        setCartItems((prev) => ({
-          ...prev,
-          [product.id]: { id: res.data.id, quantity: res.data.quantity || 1 },
-        }));
-      }
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch {
-      // Error handled safely
-    } finally {
-      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
-    }
-  };
-
-  const handleIncreaseQuantity = async (product: ProductItem, cartItem: CartItemMapValue) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    if (cartItem.quantity >= product.stockQuantity) return;
-
-    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
-    try {
-      const newQty = cartItem.quantity + 1;
-      const res = await apiClient.put(`/customer/cart/${cartItem.id}?quantity=${newQty}`);
-      if (res.data) {
-        setCartItems((prev) => ({
-          ...prev,
-          [product.id]: { ...cartItem, quantity: newQty },
-        }));
-      }
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch {
-      // Error handled safely
-    } finally {
-      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
-    }
-  };
-
-  const handleDecreaseQuantity = async (product: ProductItem, cartItem: CartItemMapValue) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
-    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
-    try {
-      const newQty = cartItem.quantity - 1;
-      if (newQty <= 0) {
-        await apiClient.delete(`/customer/cart/${cartItem.id}`);
-        setCartItems((prev) => {
-          const next = { ...prev };
-          delete next[product.id];
-          return next;
-        });
-      } else {
-        await apiClient.put(`/customer/cart/${cartItem.id}?quantity=${newQty}`);
-        setCartItems((prev) => ({
-          ...prev,
-          [product.id]: { ...cartItem, quantity: newQty },
-        }));
-      }
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch {
-      // Error handled safely
-    } finally {
-      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
-    }
-  };
-
-  const resolveProductImageUrl = (product: ProductItem) => {
-    return getProductImageUrl(product.name, product.imageUrl, product.id);
-  };
+  }, []);
 
   const pharmacyCategoryTabs = [
+    { name: 'All', icon: Sparkles, bg: 'bg-[#FAF6EE]', text: 'text-[#16241B]' },
     { name: 'Medications', icon: Pill, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
     { name: 'Food & Nutrition', icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
     { name: 'Grooming & Hygiene', icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
@@ -211,141 +111,343 @@ export const PharmacyPage: React.FC = () => {
       subtitle: 'For stronger immunity',
     },
     {
-      icon: Heart,
+      icon: Zap,
       title: 'Senior Pet Care',
       subtitle: 'Special care for golden years',
     },
   ];
 
-  const filteredProducts = products.filter((p) => {
-    if (activeCategoryFilter === 'All') return true;
-    return (
-      p.category.toLowerCase().includes(activeCategoryFilter.toLowerCase()) ||
-      p.name.toLowerCase().includes(activeCategoryFilter.toLowerCase())
-    );
-  });
+  // Filtered Products Memo
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      // Category check
+      if (activeCategoryFilter !== 'All') {
+        const cat = activeCategoryFilter.toLowerCase();
+        const matchesCategory =
+          p.category.toLowerCase().includes(cat) ||
+          (cat.includes('food') && p.category.toLowerCase().includes('food')) ||
+          (cat.includes('grooming') && p.category.toLowerCase().includes('grooming')) ||
+          (cat.includes('supplements') && p.category.toLowerCase().includes('supplement')) ||
+          (cat.includes('flea') && (p.category.toLowerCase().includes('flea') || p.name.toLowerCase().includes('flea')));
+
+        if (!matchesCategory) return false;
+      }
+
+      // Search query check
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesQuery =
+          p.name.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q);
+        if (!matchesQuery) return false;
+      }
+
+      // Price limit
+      if (p.price > maxPrice) return false;
+
+      // Prescription filter
+      if (prescriptionOnly && !p.prescriptionRequired) return false;
+
+      return true;
+    });
+  }, [products, activeCategoryFilter, searchQuery, maxPrice, prescriptionOnly]);
+
+  const activeFiltersCount =
+    (activeCategoryFilter !== 'All' ? 1 : 0) +
+    (searchQuery ? 1 : 0) +
+    (maxPrice < 5000 ? 1 : 0) +
+    (prescriptionOnly ? 1 : 0);
+
+  const resetFilters = () => {
+    setActiveCategoryFilter('All');
+    setSearchQuery('');
+    setMaxPrice(5000);
+    setPrescriptionOnly(false);
+  };
 
   return (
-    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col">
+    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col selection:bg-[#009E66]/20">
       {/* 1. Navbar */}
       <Navbar activePage="pharmacy" />
 
-      <main className="flex-grow space-y-16 lg:space-y-24 pb-20">
+      <main className="flex-grow space-y-14 lg:space-y-20 pb-20">
         {/* 2. Hero Section */}
-        <section id="pharmacy-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4">
+        <section id="pharmacy-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-2">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
             {/* Left Column (5 cols) */}
-            <div className="lg:col-span-5 space-y-6 text-left z-20">
+            <motion.div
+              initial={{ opacity: 0, x: -24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={springs.soft}
+              className="lg:col-span-5 space-y-6 text-left z-20"
+            >
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#287A41]" />
-                <span>Trusted Pet Pharmacy</span>
+                <span>Verified Veterinary Care</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.12]">
                 Healthy Pets,{' '}
                 <span className="text-[#009E66]">Happier Lives.</span>
               </h1>
 
               <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
-                Quality medicines, supplements and wellness products for your
-                furry friends. Because their health matters — today and always.
+                Quality medicines, nutrient-dense nutrition, and wellness essentials curated for your furry companions.
               </p>
 
-              {/* Buttons */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+              {/* Action & Search */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 <a
                   href="#popular-products"
-                  className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                  className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-lg shadow-[#009E66]/25 transition-all active:scale-95 flex items-center gap-2 text-sm sm:text-base cursor-pointer"
                 >
-                  Shop Now
+                  Explore Pharmacy
                 </a>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Right Column: Large cutout image (7 cols) */}
-            <div className="lg:col-span-7 relative flex justify-center items-center lg:-translate-x-6 xl:-translate-x-10">
+            {/* Right Column: Hero Image with Soft Parallax */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:col-span-7 relative flex justify-center items-center lg:-translate-x-6 xl:-translate-x-10"
+            >
               <div className="relative w-full max-w-[700px] lg:max-w-[900px] xl:max-w-[1050px] overflow-visible py-4 sm:py-6">
                 <img
                   src={getCloudinaryImageUrl('pharmacy_hero')}
                   alt="Pet Pharmacy Essentials"
-                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none transition-transform duration-300 hover:scale-[1.02]"
+                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none transition-transform duration-500 hover:scale-[1.02]"
                 />
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* 3. Popular Products Grid */}
+        {/* 3. Products Catalog Section */}
         <section id="popular-products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+          {/* Section Header with Live Search & Filter Toggle */}
+          <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 pb-2 border-b border-[#16241B]/8">
             <div className="space-y-1">
               <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#EF7C3C] uppercase tracking-wider">
                 <Star className="w-3.5 h-3.5 fill-[#EF7C3C]" />
-                <span>ALL PHARMACY PRODUCTS</span>
+                <span>PHARMACY & WELLNESS SHOP</span>
               </span>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
-                Loved by <span className="text-[#EF7C3C]">Pets,</span> Recommended by Vets<span className="text-[#EF7C3C]">.</span>
-              </h2>
+              <div className="flex items-baseline gap-3">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
+                  Loved by <span className="text-[#009E66]">Pets,</span> Trusted by Vets<span className="text-[#EF7C3C]">.</span>
+                </h2>
+                <span className="text-xs font-bold text-[#16241B]/50">
+                  (<Odometer value={filteredProducts.length} /> products)
+                </span>
+              </div>
             </div>
 
-            <button
-              onClick={() => setActiveCategoryFilter('All')}
-              className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
-            >
-              <span>View all products</span>
-            </button>
+            {/* Controls: Search + Filter Toggle */}
+            <div className="flex items-center gap-2.5 w-full md:w-auto">
+              <SearchBar
+                products={products}
+                onSelectProduct={(product) => setQuickViewProduct(product)}
+                onSearchSubmit={(q) => setSearchQuery(q)}
+                className="w-full md:w-auto"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowFiltersPanel((prev) => !prev)}
+                className={`p-2.5 sm:px-4 sm:py-2.5 rounded-2xl border font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+                  showFiltersPanel || activeFiltersCount > 0
+                    ? 'bg-[#009E66] text-white border-[#009E66] shadow-md'
+                    : 'bg-white/90 border-[#16241B]/10 text-[#16241B] hover:border-[#009E66]'
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                <span className="hidden sm:inline">Filters</span>
+                {activeFiltersCount > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-white text-[#009E66] text-xs font-black flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Category Filter Pills (Matching Image 2 Style) */}
-          <div className="flex items-center gap-2.5 sm:gap-3 lg:gap-3.5 w-full py-1 overflow-x-auto no-scrollbar scroll-smooth">
+          {/* Sliding Category Tabs with Shared layoutId Pill */}
+          <div className="relative flex items-center gap-2 w-full py-1.5 overflow-x-auto no-scrollbar scroll-smooth">
             {pharmacyCategoryTabs.map((tab) => {
               const TabIcon = tab.icon;
-              const isSelected =
-                activeCategoryFilter !== 'All' &&
-                tab.name.toLowerCase().includes(activeCategoryFilter.toLowerCase());
+              const isSelected = activeCategoryFilter === tab.name;
 
               return (
                 <button
                   key={tab.name}
-                  onClick={() => {
-                    if (tab.name.includes('Food')) {
-                      setActiveCategoryFilter('Food');
-                    } else if (tab.name.includes('Grooming')) {
-                      setActiveCategoryFilter('Grooming');
-                    } else if (tab.name.includes('Supplements')) {
-                      setActiveCategoryFilter('Supplements');
-                    } else if (tab.name.includes('Flea')) {
-                      setActiveCategoryFilter('Flea');
-                    } else {
-                      setActiveCategoryFilter(tab.name);
-                    }
-                  }}
-                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${isSelected
-                    ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41] shadow-xs ring-2 ring-[#3FA65C]/20'
-                    : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B] shadow-2xs'
-                    }`}
+                  onClick={() => setActiveCategoryFilter(tab.name)}
+                  className={`relative inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 ${
+                    isSelected ? 'text-white' : 'text-[#16241B]/70 hover:text-[#16241B]'
+                  }`}
                 >
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-[#3FA65C] text-white' : `${tab.bg} ${tab.text}`
-                      }`}
-                  >
-                    <TabIcon className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="whitespace-nowrap">{tab.name}</span>
+                  {/* Sliding layoutId Pill Indicator */}
+                  {isSelected && (
+                    <motion.div
+                      layoutId="pharmacyCategoryPill"
+                      className="absolute inset-0 bg-[#009E66] rounded-full shadow-md z-[-1]"
+                      transition={springs.snappy}
+                    />
+                  )}
+
+                  {!isSelected && (
+                    <div className="absolute inset-0 bg-white/80 border border-[#16241B]/8 rounded-full z-[-1] hover:border-[#009E66]/30 shadow-2xs" />
+                  )}
+
+                  <TabIcon className="w-3.5 h-3.5" />
+                  <span>{tab.name}</span>
                 </button>
               );
             })}
           </div>
 
+          {/* Expandable Secondary Filter Drawer */}
+          <AnimatePresence>
+            {showFiltersPanel && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={springs.soft}
+                className="overflow-hidden"
+              >
+                <div className="glass-surface rounded-2xl p-5 border border-[#16241B]/10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                  {/* Price Slider with Follower Tooltip */}
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-bold mb-2">
+                      <span className="text-[#16241B]/70">Max Price:</span>
+                      <span className="text-[#009E66] font-black">{formatCurrency(maxPrice)}</span>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type="range"
+                        min="100"
+                        max="5000"
+                        step="50"
+                        value={maxPrice}
+                        onChange={(e) => setMaxPrice(Number(e.target.value))}
+                        className="w-full h-2 bg-[#16241B]/10 rounded-lg appearance-none cursor-pointer accent-[#009E66]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Prescription Toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPrescriptionOnly((p) => !p)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        prescriptionOnly
+                          ? 'bg-[#EF7C3C] text-white border-[#EF7C3C] shadow-sm'
+                          : 'bg-white text-[#16241B]/80 border-[#16241B]/10 hover:border-[#EF7C3C]'
+                      }`}
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Prescription Only (Rx)</span>
+                    </button>
+                  </div>
+
+                  {/* Reset All Filters */}
+                  <div className="flex justify-start md:justify-end">
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Clear All Filters</span>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Active Filter Chips */}
+          <AnimatePresence>
+            {activeFiltersCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="flex flex-wrap items-center gap-2 pt-1"
+              >
+                <span className="text-xs font-semibold text-[#16241B]/50 mr-1">Active:</span>
+
+                {activeCategoryFilter !== 'All' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#009E66]/30 text-[#009E66] shadow-2xs">
+                    Category: {activeCategoryFilter}
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategoryFilter('All')}
+                      className="hover:text-red-500 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {searchQuery && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#009E66]/30 text-[#009E66] shadow-2xs">
+                    Search: "{searchQuery}"
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="hover:text-red-500 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {maxPrice < 5000 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#009E66]/30 text-[#009E66] shadow-2xs">
+                    Up to {formatCurrency(maxPrice)}
+                    <button
+                      type="button"
+                      onClick={() => setMaxPrice(5000)}
+                      className="hover:text-red-500 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {prescriptionOnly && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#EF7C3C]/30 text-[#EF7C3C] shadow-2xs">
+                    Rx Required
+                    <button
+                      type="button"
+                      onClick={() => setPrescriptionOnly(false)}
+                      className="hover:text-red-500 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Product Grid with Layout Animations & Skeletons */}
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] space-y-3">
-                  <Skeleton className="w-full aspect-square rounded-[16px]" />
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-8 w-full rounded-full" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-[22px] p-4 border border-[#16241B]/8 space-y-3.5 shadow-sm"
+                >
+                  <div className="w-full aspect-square skeleton-shimmer rounded-2xl" />
+                  <div className="h-4 w-1/3 skeleton-shimmer rounded-md" />
+                  <div className="h-5 w-3/4 skeleton-shimmer rounded-md" />
+                  <div className="h-4 w-1/2 skeleton-shimmer rounded-md" />
+                  <div className="h-9 w-full skeleton-shimmer rounded-xl" />
                 </div>
               ))}
             </div>
@@ -353,101 +455,63 @@ export const PharmacyPage: React.FC = () => {
             <ErrorState message={error} onRetry={fetchProducts} />
           ) : filteredProducts.length === 0 ? (
             <EmptyState
-              title="No products available"
-              description="We could not find any products in this category."
-              actionLabel="View All Products"
-              onAction={() => setActiveCategoryFilter('All')}
+              title="No products match your filters"
+              description="Try clearing your search keyword or expanding your price range."
+              actionLabel="Reset All Filters"
+              onAction={resetFilters}
             />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-              {filteredProducts.map((product) => {
-                return (
-                  <div
-                    key={product.id}
-                    className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
-                  >
-                    <div className="relative w-full aspect-square rounded-[16px] overflow-hidden bg-white mb-3 p-2 border border-[#F0EAE1]">
-                      <img
-                        src={resolveProductImageUrl(product)}
-                        alt={product.name}
-                        className="w-full h-full object-contain rounded-[12px]"
+            <motion.div
+              layout
+              variants={staggerContainer(0.05)}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredProducts.map((product) => {
+                  const cartItem = cartItems.find((i) => i.productId === product.id);
+
+                  return (
+                    <motion.div
+                      layout
+                      key={product.id}
+                      variants={fadeUp}
+                      initial="hidden"
+                      animate="visible"
+                      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                      className="h-full flex flex-col"
+                    >
+                      <ProductCard
+                        product={product}
+                        isSaved={isSaved('PRODUCT', product.id)}
+                        onQuickView={(p) => setQuickViewProduct(p)}
+                        onAddToCart={(p, e) => addToCart(p, e)}
+                        isAddingToCart={isUpdating[product.id]}
+                        quantityInCart={cartItem?.quantity || 0}
                       />
-                      <HeartToggle
-                        itemType="PRODUCT"
-                        itemId={product.id}
-                        isInitiallySaved={isSaved('PRODUCT', product.id)}
-                        className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-xs shadow-xs hover:scale-110"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5 flex-grow">
-                      <span className="text-[10px] font-black text-[#88998C] uppercase tracking-wider">
-                        {product.category}
-                      </span>
-                      <h3 className="text-xs sm:text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 leading-snug">
-                        {product.name}
-                      </h3>
-                    </div>
-
-                    <div className="pt-3 mt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-semibold text-[#88998C] block -mb-0.5">
-                          Price
-                        </span>
-                        <span className="text-sm font-black text-[#16241B]">
-                          {formatCurrency(product.price)}
-                        </span>
-                      </div>
-
-                      {cartItems[product.id] ? (
-                        <div className="inline-flex items-center bg-[#E6F9EC] border border-[#3FA65C] rounded-full p-0.5 shadow-2xs">
-                          <button
-                            type="button"
-                            onClick={() => handleDecreaseQuantity(product, cartItems[product.id])}
-                            disabled={updatingCart[product.id]}
-                            aria-label="Decrease quantity"
-                            className="w-7 h-7 rounded-full bg-white text-[#287A41] hover:bg-[#3FA65C] hover:text-white flex items-center justify-center font-bold text-sm shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-                          >
-                            <Minus className="w-3.5 h-3.5" />
-                          </button>
-                          <span className="min-w-[28px] text-center text-xs font-black text-[#16241B] px-1">
-                            {cartItems[product.id].quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleIncreaseQuantity(product, cartItems[product.id])}
-                            disabled={
-                              updatingCart[product.id] ||
-                              cartItems[product.id].quantity >= product.stockQuantity
-                            }
-                            aria-label="Increase quantity"
-                            className="w-7 h-7 rounded-full bg-[#009E66] text-white hover:bg-[#008757] flex items-center justify-center font-bold text-sm shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={updatingCart[product.id] || product.stockQuantity <= 0}
-                          className="px-3.5 py-2 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-full shadow-xs transition-all flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-50"
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>Add to Cart</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
           )}
         </section>
 
-        {/* 5. Special Care Section (Without Image) */}
+        {/* 4. Smart Recommendations Section */}
+        {products.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <RecommendationCarousel
+              products={products.slice(0, 8)}
+              onQuickView={(p) => setQuickViewProduct(p)}
+              onAddToCart={(p, e) => addToCart(p, e)}
+            />
+          </div>
+        )}
+
+        {/* 5. Special Care Section */}
         <section id="special-care" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-10 lg:p-12 border border-[#E2EEDB] shadow-xs">
+          <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-10 lg:p-12 border border-[#E2EEDB] shadow-sm">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               {/* Left Column: Heading & Info */}
               <div className="lg:col-span-5 space-y-4 text-center lg:text-left">
@@ -457,7 +521,8 @@ export const PharmacyPage: React.FC = () => {
                 </span>
 
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight leading-tight">
-                  Special Care for<br className="hidden sm:inline" /> Their <span className="text-[#3FA65C]">Special Needs</span><span className="text-[#16241B]">.</span>
+                  Special Care for<br className="hidden sm:inline" /> Their{' '}
+                  <span className="text-[#009E66]">Special Needs</span>.
                 </h2>
 
                 <p className="text-sm sm:text-base text-[#556658] font-medium leading-relaxed max-w-md">
@@ -470,9 +535,11 @@ export const PharmacyPage: React.FC = () => {
                 {specialCareItems.map((item, idx) => {
                   const ItemIcon = item.icon;
                   return (
-                    <div
+                    <motion.div
                       key={idx}
-                      className="bg-white rounded-2xl p-5 border border-[#EDE7D9] shadow-xs flex items-center gap-4 hover:shadow-md transition-all hover:-translate-y-0.5"
+                      whileHover={{ y: -4 }}
+                      transition={springs.snappy}
+                      className="bg-white rounded-2xl p-5 border border-[#EDE7D9] shadow-xs flex items-center gap-4 hover:shadow-md transition-all cursor-default"
                     >
                       <div className="w-12 h-12 rounded-2xl bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0 shadow-2xs">
                         <ItemIcon className="w-6 h-6" />
@@ -485,7 +552,7 @@ export const PharmacyPage: React.FC = () => {
                           {item.subtitle}
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -495,7 +562,7 @@ export const PharmacyPage: React.FC = () => {
 
         {/* 6. CTA Banner */}
         <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="bg-[#FFCA28] rounded-[36px] px-6 sm:px-10 lg:px-12 py-6 sm:py-8 lg:py-8 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
+          <div className="bg-[#FFCA28] rounded-[36px] px-6 sm:px-10 lg:px-12 py-6 sm:py-8 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 text-[#16241B] text-xs font-black uppercase tracking-wider shadow-2xs">
@@ -510,7 +577,7 @@ export const PharmacyPage: React.FC = () => {
                   >
                     Best Care
                   </span>
-                  <span className="text-[#16241B]">.</span>
+                  .
                 </h2>
 
                 <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
@@ -520,7 +587,7 @@ export const PharmacyPage: React.FC = () => {
                 <div className="pt-2">
                   <a
                     href="#popular-products"
-                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all text-sm sm:text-base cursor-pointer"
+                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all text-sm sm:text-base cursor-pointer active:scale-95"
                   >
                     Shop Now
                   </a>
@@ -541,9 +608,19 @@ export const PharmacyPage: React.FC = () => {
         </section>
       </main>
 
+      {/* Quick View Shared-Element Modal */}
+      {quickViewProduct && (
+        <QuickViewModal
+          product={quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+          isSaved={isSaved('PRODUCT', quickViewProduct.id)}
+        />
+      )}
+
       <Footer />
       <StickyCartBar />
-
     </div>
   );
 };
+
+export default PharmacyPage;
