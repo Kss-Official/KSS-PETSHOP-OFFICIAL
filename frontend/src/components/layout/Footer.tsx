@@ -1,69 +1,258 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Mail, CheckCircle2, AlertCircle } from 'lucide-react';
 import { getCloudinaryImageUrl } from '../../lib/utils';
+import { apiClient } from '../../lib/axios';
 
 export const Footer: React.FC = () => {
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [subscribeMsg, setSubscribeMsg] = useState<string | null>(null);
+  const [isError, setIsError] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = email.trim();
+    if (!cleanEmail) return;
+
+    setSubscribing(true);
+    setSubscribeMsg(null);
+    setIsError(false);
+
+    try {
+      await apiClient.post('/newsletter/subscribe', {
+        email: cleanEmail,
+      });
+      setSubscribed(true);
+      setSubscribeMsg('Thank you for subscribing! Expert tips and updates are on their way.');
+      setEmail('');
+      window.dispatchEvent(new Event('admin-notifications-updated'));
+    } catch (err: any) {
+      setIsError(true);
+      setSubscribeMsg(err.message || 'Could not subscribe. Please check your email and try again.');
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   return (
-    <footer id="site-footer" className="bg-[#16241B] text-white py-4 sm:py-5 border-t border-[#23382A]">
-      <div className="w-full px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Leftmost: Brand */}
-        <a
-          href="/"
-          onClick={(e) => {
-            e.preventDefault();
-            window.location.href = '/';
-          }}
-          className="flex items-center gap-2.5 hover:opacity-90 transition-opacity cursor-pointer"
-        >
-          <img
-            src={logoUrl}
-            alt="Pawfectly Logo"
-            className="w-7 h-7 rounded-full object-cover"
-          />
-          <span className="text-lg font-extrabold tracking-tight">
-            Pawfectly<span className="text-[#EF7C3C]">.</span>
-          </span>
-        </a>
-
-        {/* Center: Copyright */}
-        <p className="text-xs text-[#A3B3A6] text-center">
-          © 2024 Pawfectly Inc. Dedicated to happier, healthier pets everywhere.
-        </p>
-
-        {/* Rightmost: Legal links & Social icons */}
-        <div className="flex items-center gap-5 text-xs font-medium text-[#A3B3A6]">
-          <a href="mailto:privacy@pawfectly.com?subject=Privacy%20Policy%20Inquiry" className="hover:text-white transition-colors">
-            Privacy
-          </a>
-          <a href="mailto:terms@pawfectly.com?subject=Terms%20of%20Service%20Inquiry" className="hover:text-white transition-colors">
-            Terms
-          </a>
-          <a href="mailto:support@pawfectly.com?subject=Pawfectly%20Support%20Request" className="hover:text-white transition-colors">
-            Contact
-          </a>
-          <div className="flex items-center gap-3 border-l border-[#2B3E30] pl-4">
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Facebook"
-              className="text-[#A3B3A6] hover:text-white transition-colors inline-flex items-center"
+    <footer id="site-footer" className="bg-[#16241B] text-white pt-12 sm:pt-14 pb-8 border-t border-[#23382A]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main Columns Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-10 sm:pb-12">
+          {/* Column 1 — Brand */}
+          <div className="lg:col-span-4 space-y-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2.5 hover:opacity-90 transition-opacity"
             >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-              </svg>
+              <img
+                src={logoUrl}
+                alt="Pawfectly Logo"
+                className="w-8 h-8 rounded-full object-cover shadow-xs"
+              />
+              <span className="text-xl font-extrabold tracking-tight">
+                Pawfectly<span className="text-[#EF7C3C]">.</span>
+              </span>
+            </Link>
+
+            <p className="text-sm text-[#A3B3A6] leading-relaxed max-w-sm">
+              Your comprehensive pet wellness destination. Connecting loving owners with top-rated veterinary care, verified pharmacy supplies, tailored insurance, and expert guidance.
+            </p>
+
+            <div className="flex items-center gap-3 pt-2">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Facebook"
+                className="w-9 h-9 rounded-lg bg-[#1E3023] border border-[#2B3E30] text-[#A3B3A6] hover:text-white hover:border-[#009E66] hover:bg-[#23382A] transition-all flex items-center justify-center"
+              >
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                </svg>
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className="w-9 h-9 rounded-lg bg-[#1E3023] border border-[#2B3E30] text-[#A3B3A6] hover:text-white hover:border-[#009E66] hover:bg-[#23382A] transition-all flex items-center justify-center"
+              >
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Column 2 — Quick Links */}
+          <div className="lg:col-span-3 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+              Quick Links
+            </h3>
+            <ul className="space-y-2.5 text-sm font-medium text-[#A3B3A6]">
+              <li>
+                <Link
+                  to="/find-a-vet"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Find a Vet
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/services"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Pet Services
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/pharmacy"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Pharmacy & Shop
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/health-tips"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Health Tips & Advice
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/insurance"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Pet Insurance
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3 — Support & Legal */}
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+              Support & Legal
+            </h3>
+            <ul className="space-y-2.5 text-sm font-medium text-[#A3B3A6]">
+              <li>
+                <a
+                  href="mailto:support@pawfectly.com?subject=Pawfectly%20Support%20Request"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Contact Support
+                </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:privacy@pawfectly.com?subject=Privacy%20Policy%20Inquiry"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:terms@pawfectly.com?subject=Terms%20of%20Service%20Inquiry"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Terms of Service
+                </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:help@pawfectly.com?subject=Help%20Center%20Inquiry"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Help Center
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4 — Stay Updated (Newsletter) */}
+          <div className="lg:col-span-3 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+              Stay Updated
+            </h3>
+            <p className="text-sm text-[#A3B3A6] leading-relaxed">
+              Subscribe for wellness guides, preventative tips, and exclusive offers delivered to your inbox.
+            </p>
+
+            {subscribed ? (
+              <div className="p-3.5 bg-[#1C3323] border border-[#2B4E34] text-[#4ADE80] text-xs font-semibold rounded-xl flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-[#009E66] mt-0.5" />
+                <span>{subscribeMsg || 'Thank you for subscribing!'}</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="space-y-2.5">
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-[#7A8E7E] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-[#1E3023] border border-[#2B3E30] text-white text-xs placeholder-[#7A8E7E] focus:outline-hidden focus:border-[#009E66] focus:ring-1 focus:ring-[#009E66] transition-all"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={subscribing}
+                  className="w-full py-2.5 px-4 bg-[#009E66] hover:bg-[#008757] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {subscribing ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Subscribing...</span>
+                    </>
+                  ) : (
+                    'Subscribe'
+                  )}
+                </button>
+                {isError && subscribeMsg && (
+                  <div className="p-2.5 bg-[#3B1E1E] border border-[#5C2B2B] text-[#F87171] text-xs font-medium rounded-lg flex items-center gap-2">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{subscribeMsg}</span>
+                  </div>
+                )}
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="pt-6 sm:pt-8 border-t border-[#23382A] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#A3B3A6]">
+          <p className="text-center sm:text-left">
+            © 2024 Pawfectly Inc. Dedicated to happier, healthier pets everywhere.
+          </p>
+          <div className="flex items-center gap-5 font-medium">
+            <a
+              href="mailto:privacy@pawfectly.com?subject=Privacy%20Policy%20Inquiry"
+              className="hover:text-white transition-colors"
+            >
+              Privacy
             </a>
             <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Instagram"
-              className="text-[#A3B3A6] hover:text-white transition-colors inline-flex items-center"
+              href="mailto:terms@pawfectly.com?subject=Terms%20of%20Service%20Inquiry"
+              className="hover:text-white transition-colors"
             >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-              </svg>
+              Terms
+            </a>
+            <a
+              href="mailto:support@pawfectly.com?subject=Pawfectly%20Support%20Request"
+              className="hover:text-white transition-colors"
+            >
+              Contact
             </a>
           </div>
         </div>

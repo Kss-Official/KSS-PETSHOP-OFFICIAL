@@ -45,10 +45,11 @@ function formatRelativeTime(dateStr?: string): string {
 interface NavbarProps {
   activePage?:
     | 'home'
-    | 'find-a-vet'
     | 'services'
     | 'pharmacy'
+    | 'pet-essentials'
     | 'health-tips'
+    | 'find-a-vet'
     | 'insurance'
     | 'profile';
 }
@@ -57,6 +58,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 30);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
   const logoUrl = getCloudinaryImageUrl('pawfectly_logo');
@@ -185,16 +193,22 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   }, []);
 
   const navLinks = [
-    { label: 'Find a Vet', href: '/find-a-vet', id: 'find-a-vet' },
+    { label: 'Home', href: '/', id: 'home' },
     { label: 'Services', href: '/services', id: 'services' },
     { label: 'Pharmacy', href: '/pharmacy', id: 'pharmacy' },
+    { label: 'Pet Essentials', href: '/pet-essentials', id: 'pet-essentials' },
     { label: 'Health Tips', href: '/health-tips', id: 'health-tips' },
-    { label: 'Pet Insurance', href: '/insurance', id: 'insurance' },
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#FAF6EE]/75 backdrop-blur-xl backdrop-saturate-150 border-b border-white/60 shadow-[0_4px_30px_rgba(0,0,0,0.03)] transition-all">
-      <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between relative">
+    <header
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'bg-[#FAF6EE]/85 backdrop-blur-2xl backdrop-saturate-180 border-b border-[#16241B]/10 shadow-[0_8px_30px_rgba(22,36,27,0.06)] h-16 sm:h-18'
+          : 'bg-[#FAF6EE]/95 backdrop-blur-lg border-b border-[#16241B]/6 h-20'
+      }`}
+    >
+      <div className="w-full px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between relative">
         {/* Leftmost: Logo & Wordmark */}
         <a
           href="/"
@@ -219,18 +233,20 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
           <nav className="hidden lg:flex items-center gap-6 xl:gap-8 font-semibold text-sm absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => {
               const isActive = activePage === link.id;
+
               return (
-                <Link
-                  key={link.id}
-                  to={link.href}
-                  className={
-                    isActive
-                      ? 'text-[#3FA65C] font-bold transition-colors relative after:content-[\'\'] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-[#3FA65C]'
-                      : 'text-[#334437] hover:text-[#3FA65C] transition-colors'
-                  }
-                >
-                  {link.label}
-                </Link>
+                <div key={link.id} className="relative py-2">
+                  <Link
+                    to={link.href}
+                    className={`flex items-center gap-1 transition-colors relative ${
+                      isActive
+                        ? 'text-[#3FA65C] font-bold after:content-[\'\'] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-[#3FA65C]'
+                        : 'text-[#334437] hover:text-[#3FA65C]'
+                    }`}
+                  >
+                    <span>{link.label}</span>
+                  </Link>
+                </div>
               );
             })}
           </nav>

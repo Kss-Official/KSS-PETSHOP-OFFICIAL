@@ -8,6 +8,7 @@ import { ServicesPage } from './pages/customer/ServicesPage';
 import { HealthTipsPage } from './pages/customer/HealthTipsPage';
 import { ArticleDetailPage } from './pages/customer/ArticleDetailPage';
 import { PharmacyPage } from './pages/customer/PharmacyPage';
+import { PetEssentialsPage } from './pages/customer/PetEssentialsPage';
 import { InsurancePage } from './pages/customer/InsurancePage';
 import { ProfilePage } from './pages/customer/ProfilePage';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -24,9 +25,27 @@ import { AdminNewsletterPage } from './pages/admin/AdminNewsletterPage';
 import { AdminInsuranceQuotesPage } from './pages/admin/AdminInsuranceQuotesPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AuthProvider } from './features/auth/AuthContext';
+import { CartProvider, useCart } from './hooks/useCart';
+import { CompareProvider } from './hooks/useCompare';
+import { FlyToCartPortal } from './components/common/FlyToCartPortal';
+import { Confetti } from './components/ui/Confetti';
+import { CompareBar } from './components/products/CompareBar';
+import { CompareSheet } from './components/products/CompareSheet';
 import { AdminToastProvider } from './components/admin/AdminLayout';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { ErrorBoundary } from './components/feedback/ErrorBoundary';
+
+function AppCartOverlay() {
+  const { flyingClones, confettiParticles } = useCart();
+  return (
+    <>
+      <FlyToCartPortal clones={flyingClones} />
+      <Confetti particles={confettiParticles} />
+      <CompareBar />
+      <CompareSheet />
+    </>
+  );
+}
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -91,6 +110,8 @@ function AnimatedRoutes() {
         <Route path="/health-tips/:id" element={<ArticleDetailPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
         <Route path="/pharmacy" element={<PharmacyPage />} />
+        <Route path="/pet-essentials" element={<PetEssentialsPage />} />
+        <Route path="/essentials" element={<PetEssentialsPage />} />
         <Route path="/insurance" element={<InsurancePage />} />
         <Route path="/pet-insurance" element={<InsurancePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -216,12 +237,17 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AdminToastProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <AnimatedRoutes />
-          </BrowserRouter>
-        </AdminToastProvider>
+        <CartProvider>
+          <CompareProvider>
+            <AdminToastProvider>
+              <BrowserRouter>
+                <ScrollToTop />
+                <AnimatedRoutes />
+                <AppCartOverlay />
+              </BrowserRouter>
+            </AdminToastProvider>
+          </CompareProvider>
+        </CartProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

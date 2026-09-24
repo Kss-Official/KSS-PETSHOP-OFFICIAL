@@ -355,7 +355,6 @@ export const ServicesPage: React.FC = () => {
             })}
           </div>
         </section>
-
         {/* 5. CTA Banner */}
         <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
@@ -385,8 +384,8 @@ export const ServicesPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
-                <div className="relative w-full max-w-[230px] sm:max-w-[260px] h-[220px] sm:h-[260px] flex justify-center items-center overflow-visible">
+              <div className="lg:col-span-5 flex justify-center items-end relative z-20 overflow-visible">
+                <div className="relative w-full max-w-[280px] sm:max-w-[330px] lg:max-w-[370px] flex justify-center items-end overflow-visible -mt-20 sm:-mt-28 lg:-mt-36 -mb-6 sm:-mb-10 lg:-mb-12 translate-y-5 sm:translate-y-7 lg:translate-y-8 pointer-events-none">
                   <img
                     src={getCloudinaryImageUrl('services_cta')}
                     alt="Pet Services Care"

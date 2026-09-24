@@ -30,6 +30,17 @@ public class ProductDto {
     @NotBlank(message = "Category is required")
     private String category;
 
+    private String petType;
+    private String species;
+
+    @Builder.Default
+    private String productType = "ESSENTIAL";
+
+    private String subcategory;
+    private String brand;
+    private BigDecimal rating;
+    private Integer reviewsCount;
+
     @NotNull(message = "Stock quantity is required")
     @Min(value = 0, message = "Stock quantity cannot be negative")
     private Integer stockQuantity;

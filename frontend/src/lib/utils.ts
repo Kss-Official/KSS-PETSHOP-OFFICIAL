@@ -274,32 +274,47 @@ export function getConsultationFeeINR(experienceYears?: number | null): number {
   return 500;
 }
 
-export function getProductImageUrl(name: string = '', imageUrl?: string, id: number = 1): string {
-  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) && !imageUrl.includes('service_')) {
-    return imageUrl;
+export function getProductImageUrl(
+  firstParam?: string,
+  secondParam?: string,
+  id: number = 1
+): string {
+  // Check if either parameter is a valid absolute HTTP/HTTPS URL
+  if (firstParam && (firstParam.startsWith('http://') || firstParam.startsWith('https://')) && !firstParam.includes('service_')) {
+    return firstParam;
   }
-  const n = name.toLowerCase();
-  if (n.includes('hill') || n.includes('dog food')) {
+  if (secondParam && (secondParam.startsWith('http://') || secondParam.startsWith('https://')) && !secondParam.includes('service_')) {
+    return secondParam;
+  }
+
+  // Combine both parameters to search for known brand/product keywords
+  const combined = `${firstParam || ''} ${secondParam || ''}`.toLowerCase();
+
+  if (combined.includes('hill') || combined.includes('dog food')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png';
   }
-  if (n.includes('frontline')) {
+  if (combined.includes('frontline')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png';
   }
-  if (n.includes('royal canin') || n.includes('kitten')) {
+  if (combined.includes('royal canin') || combined.includes('kitten')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png';
   }
-  if (n.includes('vetplus') || n.includes('joint')) {
+  if (combined.includes('vetplus') || combined.includes('joint')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png';
   }
-  if (n.includes('virbac') || n.includes('epi-otic') || n.includes('ear cleaner')) {
+  if (combined.includes('virbac') || combined.includes('epi-otic') || combined.includes('ear cleaner')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png';
   }
-  if (n.includes('nexgard') || n.includes('chews')) {
+  if (combined.includes('nexgard') || combined.includes('chews')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png';
   }
-  if (imageUrl && imageUrl.trim() !== '' && !imageUrl.startsWith('service_')) {
-    return getCloudinaryImageUrl(imageUrl);
+
+  // If parameter is a clean Cloudinary public ID without spaces
+  const potentialPublicId = (firstParam && !firstParam.includes(' ') ? firstParam : secondParam) || '';
+  if (potentialPublicId && !potentialPublicId.startsWith('service_') && !potentialPublicId.includes(' ') && potentialPublicId.trim() !== '') {
+    return getCloudinaryImageUrl(potentialPublicId);
   }
+
   const fallbacks = [
     'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png',
     'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png',

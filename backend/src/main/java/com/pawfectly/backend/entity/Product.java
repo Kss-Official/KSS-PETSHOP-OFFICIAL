@@ -41,6 +41,30 @@ public class Product {
     @Column(nullable = false)
     private String category;
 
+    @Column(name = "pet_type", length = 50)
+    private String petType;
+
+    @Column(name = "species", length = 50)
+    private String species;
+
+    @Builder.Default
+    @Column(name = "product_type", length = 50, nullable = false)
+    private String productType = "ESSENTIAL";
+
+    @Column(name = "subcategory", length = 100)
+    private String subcategory;
+
+    @Column(name = "brand", length = 100)
+    private String brand;
+
+    @Builder.Default
+    @Column(name = "rating", precision = 2, scale = 1)
+    private BigDecimal rating = BigDecimal.valueOf(4.8);
+
+    @Builder.Default
+    @Column(name = "reviews_count")
+    private Integer reviewsCount = 18;
+
     @NotNull
     @Min(0)
     @Builder.Default
