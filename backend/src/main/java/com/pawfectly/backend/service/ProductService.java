@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,9 +25,9 @@ public class ProductService {
     public List<ProductDto> getActiveProducts(String category, String search) {
         List<Product> products;
         if (category != null && !category.isBlank() && !category.equalsIgnoreCase("All")) {
-            products = productRepository.findByCategoryAndIsActiveTrue(category);
+            products = productRepository.findByProductTypeAndCategoryAndIsActiveTrue("PHARMACY", category);
         } else {
-            products = productRepository.findByIsActiveTrue();
+            products = productRepository.findByProductTypeAndIsActiveTrue("PHARMACY");
         }
 
         if (search != null && !search.isBlank()) {
@@ -37,6 +39,88 @@ public class ProductService {
         }
 
         return products.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductDto> getPetEssentialsProducts(
+            String petType,
+            String species,
+            String category,
+            String subcategory,
+            String brand,
+            String search,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String sort) {
+
+        String normPetType = (petType != null && !petType.isBlank() && !petType.equalsIgnoreCase("All"))
+                ? petType.trim().toUpperCase() : null;
+        String normSpecies = (species != null && !species.isBlank() && !species.equalsIgnoreCase("All"))
+                ? species.trim().toUpperCase() : null;
+        String normCategory = (category != null && !category.isBlank() && !category.equalsIgnoreCase("All"))
+                ? category.trim() : null;
+        String normSubcategory = (subcategory != null && !subcategory.isBlank() && !subcategory.equalsIgnoreCase("All"))
+                ? subcategory.trim() : null;
+        String normBrand = (brand != null && !brand.isBlank() && !brand.equalsIgnoreCase("All"))
+                ? brand.trim() : null;
+
+        List<Product> products = productRepository.findEssentials(
+                "ESSENTIAL", normPetType, normSpecies, normCategory, normSubcategory, normBrand);
+
+        if (search != null && !search.isBlank()) {
+            String lower = search.toLowerCase().trim();
+            products = products.stream()
+                    .filter(p -> p.getName().toLowerCase().contains(lower) ||
+                            (p.getDescription() != null && p.getDescription().toLowerCase().contains(lower)) ||
+                            (p.getBrand() != null && p.getBrand().toLowerCase().contains(lower)) ||
+                            (p.getSubcategory() != null && p.getSubcategory().toLowerCase().contains(lower)))
+                    .collect(Collectors.toList());
+        }
+
+        if (minPrice != null) {
+            products = products.stream()
+                    .filter(p -> p.getPrice() != null && p.getPrice().compareTo(minPrice) >= 0)
+                    .collect(Collectors.toList());
+        }
+
+        if (maxPrice != null) {
+            products = products.stream()
+                    .filter(p -> p.getPrice() != null && p.getPrice().compareTo(maxPrice) <= 0)
+                    .collect(Collectors.toList());
+        }
+
+        if (sort != null && !sort.isBlank()) {
+            switch (sort.toLowerCase().trim()) {
+                case "price_asc":
+                case "price-low-to-high":
+                    products.sort(Comparator.comparing(Product::getPrice));
+                    break;
+                case "price_desc":
+                case "price-high-to-low":
+                    products.sort(Comparator.comparing(Product::getPrice).reversed());
+                    break;
+                case "rating":
+                    products.sort(Comparator.comparing(p -> p.getRating() != null ? p.getRating() : BigDecimal.ZERO, Comparator.reverseOrder()));
+                    break;
+                case "newest":
+                    products.sort(Comparator.comparing(Product::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+                    break;
+                default:
+                    // default order
+                    break;
+            }
+        }
+
+        return products.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getBrandsByPetType(String petType) {
+        String normPet = (petType != null && !petType.isBlank() && !petType.equalsIgnoreCase("All"))
+                ? petType.trim().toUpperCase() : null;
+        return productRepository.findDistinctBrandsByPetType(normPet).stream()
+                .filter(b -> b != null && !b.isBlank())
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +155,13 @@ public class ProductService {
                 .description(dto.getDescription())
                 .price(dto.getPrice())
                 .category(dto.getCategory())
+                .petType(dto.getPetType())
+                .species(dto.getSpecies())
+                .productType(dto.getProductType() != null ? dto.getProductType() : "ESSENTIAL")
+                .subcategory(dto.getSubcategory())
+                .brand(dto.getBrand())
+                .rating(dto.getRating() != null ? dto.getRating() : BigDecimal.valueOf(4.8))
+                .reviewsCount(dto.getReviewsCount() != null ? dto.getReviewsCount() : 18)
                 .stockQuantity(dto.getStockQuantity() != null ? dto.getStockQuantity() : 0)
                 .imageUrl(dto.getImageUrl())
                 .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
@@ -90,6 +181,13 @@ public class ProductService {
         product.setDescription(dto.getDescription());
         product.setPrice(dto.getPrice());
         product.setCategory(dto.getCategory());
+        if (dto.getPetType() != null) product.setPetType(dto.getPetType());
+        if (dto.getSpecies() != null) product.setSpecies(dto.getSpecies());
+        if (dto.getProductType() != null) product.setProductType(dto.getProductType());
+        if (dto.getSubcategory() != null) product.setSubcategory(dto.getSubcategory());
+        if (dto.getBrand() != null) product.setBrand(dto.getBrand());
+        if (dto.getRating() != null) product.setRating(dto.getRating());
+        if (dto.getReviewsCount() != null) product.setReviewsCount(dto.getReviewsCount());
         if (dto.getStockQuantity() != null) {
             product.setStockQuantity(dto.getStockQuantity());
         }
@@ -121,6 +219,13 @@ public class ProductService {
                 .description(product.getDescription())
                 .price(product.getPrice())
                 .category(product.getCategory())
+                .petType(product.getPetType())
+                .species(product.getSpecies())
+                .productType(product.getProductType())
+                .subcategory(product.getSubcategory())
+                .brand(product.getBrand())
+                .rating(product.getRating())
+                .reviewsCount(product.getReviewsCount())
                 .stockQuantity(product.getStockQuantity())
                 .imageUrl(product.getImageUrl())
                 .isActive(product.getIsActive())

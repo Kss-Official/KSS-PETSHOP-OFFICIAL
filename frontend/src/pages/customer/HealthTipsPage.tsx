@@ -22,8 +22,6 @@ import {
   Droplets,
   Moon,
   Sparkles,
-  Mail,
-  CheckCircle2,
 } from 'lucide-react';
 
 interface ArticleDto {
@@ -67,10 +65,6 @@ export const HealthTipsPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('All Tips');
   const [searchQuery, setSearchQuery] = useState('');
-  const [emailInput, setEmailInput] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-  const [subscribing, setSubscribing] = useState(false);
-  const [subscribeMsg, setSubscribeMsg] = useState<string | null>(null);
 
   const [articles, setArticles] = useState<ArticleDto[]>([]);
   const [selectedPetType, setSelectedPetType] = useState<string | null>(null);
@@ -302,28 +296,6 @@ export const HealthTipsPage: React.FC = () => {
       text: 'Give them a clean, dry, and comfortable sleep space.',
     },
   ];
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailInput.trim()) return;
-
-    setSubscribing(true);
-    setSubscribeMsg(null);
-
-    try {
-      await apiClient.post('/newsletter/subscribe', {
-        email: emailInput.trim(),
-      });
-      setSubscribed(true);
-      setSubscribeMsg('Thank you for subscribing! Expert tips are on their way.');
-      setEmailInput('');
-      window.dispatchEvent(new Event('admin-notifications-updated'));
-    } catch {
-      setSubscribeMsg('Could not subscribe. Please check your email and try again.');
-    } finally {
-      setSubscribing(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col">
@@ -717,70 +689,6 @@ export const HealthTipsPage: React.FC = () => {
                   })}
                 </div>
               )}
-            </div>
-          </div>
-        </section>
-
-        {/* 8. Newsletter CTA Banner */}
-        <section id="newsletter-cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
-                  A Healthier Tomorrow Starts with What{' '}
-                  <span
-                    className="text-[#EF7C3C]"
-                    style={{ WebkitTextStroke: '0.75px #16241B' }}
-                  >
-                    You Know Today
-                  </span>
-                  <span className="text-[#16241B]">.</span>
-                </h2>
-                <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
-                  Get the latest pet health tips, expert advice, and care reminders straight to your inbox.
-                </p>
-
-                {subscribed ? (
-                  <div className="bg-white/95 border border-white p-4 rounded-2xl text-center lg:text-left text-sm font-bold text-[#287A41] flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>{subscribeMsg || 'Thank you for subscribing! Health tips are on their way.'}</span>
-                  </div>
-                ) : (
-                  <form
-                    onSubmit={handleSubscribe}
-                    className="flex flex-col sm:flex-row items-center gap-3 max-w-lg"
-                  >
-                    <div className="relative w-full">
-                      <Mail className="w-5 h-5 text-[#88998C] absolute left-4 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        required
-                        value={emailInput}
-                        onChange={(e) => setEmailInput(e.target.value)}
-                        placeholder="Enter your email address"
-                        className="w-full pl-12 pr-4 py-3.5 rounded-full bg-white text-[#16241B] placeholder-[#88998C] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#16241B] shadow-xs font-semibold"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={subscribing}
-                      className="w-full sm:w-auto px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all text-sm shrink-0 cursor-pointer disabled:opacity-50"
-                    >
-                      {subscribing ? 'Subscribing...' : 'Subscribe'}
-                    </button>
-                  </form>
-                )}
-              </div>
-
-              <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
-                <div className="relative w-full max-w-[320px] sm:max-w-[390px] lg:max-w-[440px] h-[240px] sm:h-[290px] lg:h-[330px] flex justify-center items-center overflow-visible translate-x-6 sm:translate-x-10 lg:translate-x-16.5 -translate-y-10 sm:-translate-y-14 lg:-translate-y-15">
-                  <img
-                    src={getCloudinaryImageUrl('health_tips_cta')}
-                    alt="Pet Health Care"
-                    className="relative z-10 translate-y-[3px] w-[100%] sm:w-[115%] lg:w-[70%] max-w-[500px] sm:max-w-[460px] lg:max-w-[480px] h-auto object-contain scale-[1.15] sm:scale-[1.3] lg:scale-[1.35] pointer-events-none drop-shadow-xl"
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </section>

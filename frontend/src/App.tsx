@@ -8,6 +8,7 @@ import { ServicesPage } from './pages/customer/ServicesPage';
 import { HealthTipsPage } from './pages/customer/HealthTipsPage';
 import { ArticleDetailPage } from './pages/customer/ArticleDetailPage';
 import { PharmacyPage } from './pages/customer/PharmacyPage';
+import { PetEssentialsPage } from './pages/customer/PetEssentialsPage';
 import { InsurancePage } from './pages/customer/InsurancePage';
 import { ProfilePage } from './pages/customer/ProfilePage';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -109,6 +110,8 @@ function AnimatedRoutes() {
         <Route path="/health-tips/:id" element={<ArticleDetailPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
         <Route path="/pharmacy" element={<PharmacyPage />} />
+        <Route path="/pet-essentials" element={<PetEssentialsPage />} />
+        <Route path="/essentials" element={<PetEssentialsPage />} />
         <Route path="/insurance" element={<InsurancePage />} />
         <Route path="/pet-insurance" element={<InsurancePage />} />
         <Route path="/login" element={<LoginPage />} />

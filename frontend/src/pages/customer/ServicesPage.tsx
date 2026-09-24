@@ -355,48 +355,6 @@ export const ServicesPage: React.FC = () => {
             })}
           </div>
         </section>
-
-        {/* 5. CTA Banner */}
-        <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
-                  Pamper Your Pet With The{' '}
-                  <span
-                    className="text-[#EF7C3C]"
-                    style={{ WebkitTextStroke: '0.75px #16241B' }}
-                  >
-                    Best Care
-                  </span>{' '}
-                  They Deserve!
-                </h2>
-                <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
-                  From health to happiness, we're here for every step of your pet's journey.
-                </p>
-
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                  <button
-                    onClick={() => navigate('/vets')}
-                    className="px-7 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-full shadow-md transition-all flex items-center gap-2 text-sm sm:text-base cursor-pointer"
-                  >
-                    Talk to Vet
-                  </button>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
-                <div className="relative w-full max-w-[230px] sm:max-w-[260px] h-[220px] sm:h-[260px] flex justify-center items-center overflow-visible">
-                  <img
-                    src={getCloudinaryImageUrl('services_cta')}
-                    alt="Pet Services Care"
-                    className="relative z-10 max-w-[220px] sm:max-w-[350px] max-h-[350px] sm:max-h-[500px] w-auto h-auto object-contain -mt-8 sm:-mt-12 pointer-events-none drop-shadow-md"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* 7. Footer */}

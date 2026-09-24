@@ -45,10 +45,11 @@ function formatRelativeTime(dateStr?: string): string {
 interface NavbarProps {
   activePage?:
     | 'home'
-    | 'find-a-vet'
     | 'services'
     | 'pharmacy'
+    | 'pet-essentials'
     | 'health-tips'
+    | 'find-a-vet'
     | 'insurance'
     | 'profile';
 }
@@ -192,11 +193,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   }, []);
 
   const navLinks = [
-    { label: 'Find a Vet', href: '/find-a-vet', id: 'find-a-vet' },
+    { label: 'Home', href: '/', id: 'home' },
     { label: 'Services', href: '/services', id: 'services' },
     { label: 'Pharmacy', href: '/pharmacy', id: 'pharmacy' },
+    { label: 'Pet Essentials', href: '/pet-essentials', id: 'pet-essentials' },
     { label: 'Health Tips', href: '/health-tips', id: 'health-tips' },
-    { label: 'Pet Insurance', href: '/insurance', id: 'insurance' },
   ];
 
   return (
@@ -232,18 +233,20 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
           <nav className="hidden lg:flex items-center gap-6 xl:gap-8 font-semibold text-sm absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => {
               const isActive = activePage === link.id;
+
               return (
-                <Link
-                  key={link.id}
-                  to={link.href}
-                  className={
-                    isActive
-                      ? 'text-[#3FA65C] font-bold transition-colors relative after:content-[\'\'] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-[#3FA65C]'
-                      : 'text-[#334437] hover:text-[#3FA65C] transition-colors'
-                  }
-                >
-                  {link.label}
-                </Link>
+                <div key={link.id} className="relative py-2">
+                  <Link
+                    to={link.href}
+                    className={`flex items-center gap-1 transition-colors relative ${
+                      isActive
+                        ? 'text-[#3FA65C] font-bold after:content-[\'\'] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-[#3FA65C]'
+                        : 'text-[#334437] hover:text-[#3FA65C]'
+                    }`}
+                  >
+                    <span>{link.label}</span>
+                  </Link>
+                </div>
               );
             })}
           </nav>
