@@ -3,7 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { CtaBanner } from '../../components/layout/CtaBanner';
-import { getCloudinaryImageUrl, getVetImageUrl, getServiceImageUrl, formatCurrency } from '../../lib/utils';
+import { Testimonials } from '../../components/home/Testimonials';
+import { StatsStrip } from '../../components/home/StatsStrip';
+import { ServicesShowcase } from '../../components/home/ServicesShowcase';
+import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
@@ -11,26 +14,12 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { apiClient } from '../../lib/axios';
 import {
   ChevronRight,
-  Stethoscope,
-  Utensils,
-  Scissors,
-  Pill,
-  Gamepad2,
   Calendar,
   ShieldCheck,
-  Truck,
   ShoppingBag,
   Sparkles,
   Headphones,
 } from 'lucide-react';
-
-interface ServiceItem {
-  id: number;
-  name: string;
-  description?: string;
-  iconUrl?: string;
-  isActive?: boolean;
-}
 
 interface VetItem {
   id: number;
@@ -48,9 +37,7 @@ interface VetItem {
 
 export const HomePage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('All');
-  const [services, setServices] = useState<ServiceItem[]>([]);
   const [vets, setVets] = useState<VetItem[]>([]);
-  const [loadingServices, setLoadingServices] = useState(true);
   const [loadingVets, setLoadingVets] = useState(true);
   const navigate = useNavigate();
 
@@ -66,18 +53,7 @@ export const HomePage: React.FC = () => {
   const categories = ['All', 'Dogs', 'Cats', 'Birds', 'Rabbits', 'Exotic Pets'];
 
   const fetchHomeData = () => {
-    setLoadingServices(true);
     setLoadingVets(true);
-
-    apiClient
-      .get('/services')
-      .then((res) => {
-        setServices(Array.isArray(res.data) ? res.data : []);
-      })
-      .catch(() => {
-        setServices([]);
-      })
-      .finally(() => setLoadingServices(false));
 
     apiClient
       .get('/vets')
@@ -115,41 +91,6 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  const getServiceVisuals = (name: string, iconUrl?: string) => {
-    const lower = (name || '').toLowerCase();
-    let icon = <Sparkles className="w-5 h-5" />;
-    let badgeBg = 'bg-[#D6F842] text-[#163824]';
-
-    if (lower.includes('vet') || lower.includes('care') || lower.includes('health') || lower.includes('doctor')) {
-      icon = <Stethoscope className="w-5 h-5" />;
-      badgeBg = 'bg-[#D6F842] text-[#163824]';
-    } else if (lower.includes('food') || lower.includes('nutri') || lower.includes('diet')) {
-      icon = <Utensils className="w-5 h-5" />;
-      badgeBg = 'bg-[#FEE440] text-[#634700]';
-    } else if (lower.includes('groom') || lower.includes('bath') || lower.includes('spa')) {
-      icon = <Scissors className="w-5 h-5" />;
-      badgeBg = 'bg-[#FFD6E8] text-[#9E1B58]';
-    } else if (lower.includes('pharm') || lower.includes('med') || lower.includes('drug')) {
-      icon = <Pill className="w-5 h-5" />;
-      badgeBg = 'bg-[#BAE6FD] text-[#0369A1]';
-    } else if (lower.includes('toy') || lower.includes('play') || lower.includes('enrich')) {
-      icon = <Gamepad2 className="w-5 h-5" />;
-      badgeBg = 'bg-[#E9D5FF] text-[#6B21A8]';
-    } else if (lower.includes('board') || lower.includes('daycare') || lower.includes('stay')) {
-      icon = <ShieldCheck className="w-5 h-5" />;
-      badgeBg = 'bg-[#FED7AA] text-[#9A3412]';
-    } else if (lower.includes('train') || lower.includes('behav') || lower.includes('class')) {
-      icon = <Sparkles className="w-5 h-5" />;
-      badgeBg = 'bg-[#C7D2FE] text-[#3730A3]';
-    } else if (lower.includes('trans') || lower.includes('ambul') || lower.includes('ride')) {
-      icon = <Truck className="w-5 h-5" />;
-      badgeBg = 'bg-[#FBCFE8] text-[#9D174D]';
-    }
-
-    const img = getServiceImageUrl(name, iconUrl);
-    return { icon, badgeBg, img };
-  };
-
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C]">
       {/* 1. Navbar */}
@@ -178,7 +119,7 @@ export const HomePage: React.FC = () => {
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
                 <Link to="/find-a-vet">
-                  <Button variant="primary" size="lg">
+                  <Button variant="primary" size="lg" showPaw>
                     Find a Vet
                   </Button>
                 </Link>
@@ -293,79 +234,11 @@ export const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* 4. Services Section */}
-        <section id="services" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="space-y-3.5">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-black tracking-wider uppercase bg-[#FCE8DB] text-[#223328] shadow-xs">
-                WE'VE GOT EVERYTHING ❤️
-              </span>
-              <h2 className="text-3xl sm:text-5xl lg:text-[46px] font-black text-[#14261C] tracking-tight leading-[1.08]">
-                Basically, <span className="text-[#EF7C3C]">Everything</span> Your<br className="hidden sm:inline" /> Pet Could Ask For.
-              </h2>
-            </div>
-            <Link to="/services">
-              <Button variant="primary" size="md" className="shrink-0 self-start sm:self-auto">
-                Explore All Services
-              </Button>
-            </Link>
-          </div>
+        {/* 3.5. Stats Strip */}
+        <StatsStrip />
 
-          {/* Dynamic Services Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-5 pt-2">
-            {loadingServices ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-[28px] p-3.5 border border-[#ECE5D8] space-y-3">
-                  <Skeleton className="w-full aspect-[3/4.2] rounded-[22px]" />
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-5 w-2/3" />
-                  <Skeleton className="h-3 w-full" />
-                </div>
-              ))
-            ) : services.length > 0 ? (
-              services.slice(0, 5).map((service, index) => {
-                const { icon, badgeBg, img } = getServiceVisuals(service.name, service.iconUrl);
-
-                return (
-                  <div
-                    key={service.id}
-                    className="bg-white rounded-[28px] p-3 sm:p-3.5 border border-[#ECE5D8] shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] relative flex flex-col group transition-all duration-300"
-                  >
-                    <div className={`absolute -top-2.5 -left-2.5 sm:-top-3 sm:-left-3 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border-2 border-white flex items-center justify-center shadow-md z-20 ${badgeBg}`}>
-                      {icon}
-                    </div>
-
-                    <div className="relative w-full aspect-[3/4.2] rounded-[22px] overflow-hidden bg-[#F4EFE6] mb-2.5">
-                      <img
-                        src={img}
-                        alt={service.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-
-                    <div className="px-1 pt-0.5 pb-0.5 flex-1 flex flex-col justify-between">
-                      <div>
-                        <span className="text-xs font-black text-[#EF7C3C] tracking-wide block leading-none mb-1">
-                          0{index + 1}
-                        </span>
-                        <h3 className="text-base font-black text-[#14261C] tracking-tight leading-tight group-hover:text-[#EF7C3C] transition-colors">
-                          {service.name}
-                        </h3>
-                        <p className="text-[11px] text-[#5D6F63] font-medium leading-snug line-clamp-2 mt-1">
-                          {service.description || 'Comprehensive, loving care designed for your pet.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="col-span-full py-8 text-center text-[#5D6F63] text-sm font-semibold">
-                No services available at the moment.
-              </div>
-            )}
-          </div>
-        </section>
+        {/* 4. Services Showcase Section */}
+        <ServicesShowcase />
 
         {/* 5. Category Filter Tabs */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
@@ -532,7 +405,10 @@ export const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* 7. Shared CTA Banner */}
+        {/* 7. Testimonials Section */}
+        <Testimonials />
+
+        {/* 8. Shared CTA Banner */}
         <CtaBanner />
 
         {/* 8. Feature Strip */}

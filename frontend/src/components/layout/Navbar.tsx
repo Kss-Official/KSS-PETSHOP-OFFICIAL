@@ -567,10 +567,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
               <Button
                 variant="primary"
                 size="sm"
+                showPaw
                 onClick={() => navigate(isAuthenticated ? '/profile?tab=appointments' : '/login')}
-                className="h-10 px-5 text-sm font-bold cursor-pointer"
+                className="h-10 text-sm font-bold cursor-pointer"
               >
-                Book a Vet
+                Appointment
               </Button>
             </>
           )}
@@ -635,13 +636,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
             <Button
               variant="primary"
               size="sm"
+              showPaw
               onClick={() => {
                 setMobileMenuOpen(false);
                 navigate(isAuthenticated ? '/profile?tab=appointments' : '/login');
               }}
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer justify-between px-5"
             >
-              Book a Vet
+              Appointment
             </Button>
           </div>
         </div>
