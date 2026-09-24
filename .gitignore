@@ -39,3 +39,6 @@ logs/
 *.njsproj
 *.sln
 *.sw?
+GEMINI.md
+gemini.md
+.gemini/

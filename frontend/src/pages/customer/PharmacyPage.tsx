@@ -559,7 +559,6 @@ export const PharmacyPage: React.FC = () => {
             </div>
           </div>
         </section>
-
         {/* 6. CTA Banner */}
         <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <div className="bg-[#FFCA28] rounded-[36px] px-6 sm:px-10 lg:px-12 py-6 sm:py-8 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
