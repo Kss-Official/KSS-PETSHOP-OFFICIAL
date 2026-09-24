@@ -60,26 +60,26 @@ export const CtaBanner: React.FC<CtaBannerProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
           {/* Left CTA image — hidden when hideImage=true */}
           {!hideImage && (
-          <div className="lg:col-span-5 flex justify-center items-end relative overflow-visible z-20">
-            <div className="relative -mt-24 sm:-mt-32 lg:-mt-40 -mb-6 sm:-mb-10 lg:-mb-14 w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[460px] flex justify-center items-end pointer-events-none">
-              <div
-                className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-10 bg-[#EF7C3C]/35 rounded-full blur-xl -z-10"
-              />
-              <img
-                src={ctaImageUrl}
-                alt="CTA illustration"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = 'https://res.cloudinary.com/vphylrop/image/upload/v1788886319/ChatGPT_Image_Sep_8_2026_10_21_30_PM.png';
-                }}
-                className={
-                  image3D
-                    ? 'w-full h-auto object-contain cta-img-3d'
-                    : 'w-full h-auto object-contain [filter:drop-shadow(0_12px_24px_rgba(239,124,60,0.35))_drop-shadow(0_28px_40px_rgba(255,180,50,0.35))]'
-                }
-              />
+            <div className="lg:col-span-5 flex justify-center items-end relative overflow-visible z-20">
+              <div className="relative -mt-24 sm:-mt-32 lg:-mt-40 -mb-6 sm:-mb-10 lg:-mb-14 w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[460px] flex justify-center items-end pointer-events-none">
+                <div
+                  className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-10 bg-[#EF7C3C]/35 rounded-full blur-xl -z-10"
+                />
+                <img
+                  src={ctaImageUrl}
+                  alt="CTA illustration"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'https://res.cloudinary.com/vphylrop/image/upload/v1788886319/ChatGPT_Image_Sep_8_2026_10_21_30_PM.png';
+                  }}
+                  className={
+                    image3D
+                      ? 'w-full h-auto object-contain cta-img-3d'
+                      : 'w-full h-auto object-contain [filter:drop-shadow(0_12px_24px_rgba(239,124,60,0.35))_drop-shadow(0_28px_40px_rgba(255,180,50,0.35))]'
+                  }
+                />
+              </div>
             </div>
-          </div>
           )}
 
           {/* Right Content */}
