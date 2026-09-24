@@ -187,12 +187,43 @@ input[type="submit"]:active:not(:disabled),
   }
 }
 
+@keyframes float-updown {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
 .animate-float-slow {
   animation: float-slow 4s ease-in-out infinite;
 }
 
 .animate-float-delayed {
   animation: float-delayed 4.5s ease-in-out infinite 1s;
+}
+
+.animate-float-updown {
+  animation: float-updown 4s ease-in-out infinite;
+}
+
+.animate-float-updown-delayed {
+  animation: float-updown 4s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3.5s linear infinite;
 }
 
 /* Page Transition - Native Smooth Crossfade & Slight Elevation via View Transitions API */
