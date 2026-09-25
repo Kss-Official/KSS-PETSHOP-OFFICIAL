@@ -367,7 +367,7 @@ export const InsurancePage: React.FC = () => {
                 <img
                   src={getCloudinaryImageUrl('insurance_hero')}
                   alt="Pet Insurance Protection"
-                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none transition-transform duration-300 hover:scale-[1.02] scale-105 sm:scale-110"
+                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none scale-105 sm:scale-110"
                 />
               </div>
             </div>

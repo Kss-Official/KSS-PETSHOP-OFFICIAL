@@ -75,7 +75,7 @@ export const ServicesShowcase: React.FC = () => {
     <section
       id="services"
       ref={sectionRef}
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 py-4"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10 py-2"
     >
       {/* Section Header */}
       <div className="text-center space-y-3.5 max-w-3xl mx-auto">

@@ -59,11 +59,11 @@ public class Product {
 
     @Builder.Default
     @Column(name = "rating", precision = 2, scale = 1)
-    private BigDecimal rating = BigDecimal.valueOf(4.8);
+    private BigDecimal rating = null;
 
     @Builder.Default
     @Column(name = "reviews_count")
-    private Integer reviewsCount = 18;
+    private Integer reviewsCount = 0;
 
     @NotNull
     @Min(0)

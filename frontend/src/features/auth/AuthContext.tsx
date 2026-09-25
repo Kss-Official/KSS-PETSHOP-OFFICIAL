@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => window.removeEventListener('auth-unauthorized', handleUnauthorized);
   }, []);
 
-  const login = (authData: AuthResponse) => {
+  const login = React.useCallback((authData: AuthResponse) => {
     const userData: User = {
       id: authData.id,
       name: authData.name,
@@ -71,35 +71,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(userData);
     localStorage.setItem('pawfectly_token', authData.token);
     localStorage.setItem('pawfectly_user', JSON.stringify(userData));
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = React.useCallback(() => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('pawfectly_token');
     localStorage.removeItem('pawfectly_user');
-  };
+  }, []);
 
-  const updateUser = (updatedFields: Partial<User>) => {
-    if (user) {
-      const updated = { ...user, ...updatedFields };
-      setUser(updated);
+  const updateUser = React.useCallback((updatedFields: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updatedFields };
       localStorage.setItem('pawfectly_user', JSON.stringify(updated));
-    }
-  };
+      return updated;
+    });
+  }, []);
+
+  const authValue = React.useMemo(
+    () => ({
+      user,
+      token,
+      isAuthenticated: !!token && !!user,
+      isLoading,
+      login,
+      logout,
+      updateUser,
+    }),
+    [user, token, isLoading, login, logout, updateUser]
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isAuthenticated: !!token && !!user,
-        isLoading,
-        login,
-        logout,
-        updateUser,
-      }}
-    >
+    <AuthContext.Provider value={authValue}>
       {children}
     </AuthContext.Provider>
   );

@@ -96,7 +96,7 @@ export const HomePage: React.FC = () => {
       {/* 1. Navbar */}
       <Navbar activePage="home" />
 
-      <main className="flex-1 space-y-16 md:space-y-24 py-8 md:py-12">
+      <main className="flex-1 space-y-10 sm:space-y-14 py-6 sm:py-8">
         {/* 2. Hero Section */}
         <section id="home" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
@@ -112,15 +112,15 @@ export const HomePage: React.FC = () => {
               </h1>
 
               <p className="text-base sm:text-lg text-[#445548] max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                Expert vets, ridiculously good food, toys, treats and everything
+                Pet care, premium nutrition, toys, treats and everything
                 your furry roommate needs — all in one happy place.
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                <Link to="/find-a-vet">
+                <Link to="/services">
                   <Button variant="primary" size="lg" showPaw>
-                    Find a Vet
+                    Explore Services
                   </Button>
                 </Link>
                 <Link to="/pharmacy">
@@ -276,11 +276,9 @@ export const HomePage: React.FC = () => {
                 Verified vets. Happy pets. Less worry for you.
               </p>
 
-              {/* Spacer + P.S. Badge */}
-              <div className="pt-2 space-y-3.5 relative">
-                <div className="h-12" aria-hidden="true" />
-
-                <div className="relative inline-flex items-center ml-10 sm:ml-20 lg:ml-28">
+              {/* P.S. Badge */}
+              <div className="pt-2 relative">
+                <div className="relative inline-flex items-center ml-4 sm:ml-12 lg:ml-16">
                   <div className="inline-flex items-center bg-white border border-[#E8E2D4] px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-xs">
                     <span className="text-xs sm:text-sm font-bold text-[#16241B] flex items-center gap-1.5">
                       P.S. They'll get extra treats
@@ -333,7 +331,7 @@ export const HomePage: React.FC = () => {
                           <img
                             src={photo}
                             alt={vet.name}
-                            className="w-full h-full object-cover object-[center_20%] rounded-2xl group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover object-[center_20%] rounded-2xl"
                           />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center bg-[#F4EFE6] text-[#16241B]">

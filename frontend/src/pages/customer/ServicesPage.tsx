@@ -154,9 +154,9 @@ export const ServicesPage: React.FC = () => {
       {/* 1. Navbar */}
       <Navbar activePage="services" />
 
-      <main className="flex-grow space-y-16 lg:space-y-24 pb-20">
+      <main className="flex-grow space-y-10 sm:space-y-14 pb-14">
         {/* 2. Hero Section */}
-        <section id="services-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4">
+        <section id="services-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-2">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
             {/* Left Column: Heading & Paragraph (5 cols) */}
             <div className="lg:col-span-5 space-y-6 text-left z-20">
@@ -211,7 +211,7 @@ export const ServicesPage: React.FC = () => {
                 <img
                   src={getCloudinaryImageUrl('services_hero_cutout')}
                   alt="Pet Care Services"
-                  className="w-full h-auto object-contain drop-shadow-xl pointer-events-none relative z-10 transition-transform duration-300 hover:scale-[1.02]"
+                  className="w-full h-auto object-contain drop-shadow-xl pointer-events-none relative z-10"
                 />
               </div>
             </div>
@@ -230,12 +230,6 @@ export const ServicesPage: React.FC = () => {
                   Our Pet Care Services
                 </h2>
               </div>
-
-              <Link to="/find-a-vet">
-                <button className="bg-[#009E66] hover:bg-[#008757] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-xs transition-all flex items-center gap-1 cursor-pointer">
-                  Find a Clinic
-                </button>
-              </Link>
             </div>
 
             {loading ? (
@@ -311,7 +305,7 @@ export const ServicesPage: React.FC = () => {
 
         {/* 4. How It Works Flow */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3 mb-12">
+          <div className="text-center space-y-2.5 mb-6 sm:mb-8">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-xs font-black uppercase tracking-wider">
               HOW IT WORKS
             </span>
@@ -356,8 +350,8 @@ export const ServicesPage: React.FC = () => {
           </div>
         </section>
         {/* 5. CTA Banner */}
-        <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
+        <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2">
+          <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-8 lg:p-10 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">

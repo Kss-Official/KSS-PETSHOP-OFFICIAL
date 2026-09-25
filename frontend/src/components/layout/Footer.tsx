@@ -41,9 +41,9 @@ export const Footer: React.FC = () => {
     <footer id="site-footer" className="bg-[#16241B] text-white pt-12 sm:pt-14 pb-8 border-t border-[#23382A]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Columns Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-10 sm:pb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_1fr_1fr_1.3fr] gap-8 lg:gap-10 items-start pb-10 sm:pb-12">
           {/* Column 1 — Brand */}
-          <div className="lg:col-span-4 space-y-4">
+          <div className="space-y-4">
             <Link
               to="/"
               className="inline-flex items-center gap-2.5 hover:opacity-90 transition-opacity"
@@ -59,7 +59,7 @@ export const Footer: React.FC = () => {
             </Link>
 
             <p className="text-sm text-[#A3B3A6] leading-relaxed max-w-sm">
-              Your comprehensive pet wellness destination. Connecting loving owners with top-rated veterinary care, verified pharmacy supplies, tailored insurance, and expert guidance.
+              Your comprehensive pet wellness destination. Connecting loving owners with verified pharmacy supplies, quality essentials, and expert health guidance.
             </p>
 
             <div className="flex items-center gap-3 pt-2">
@@ -89,19 +89,11 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Column 2 — Quick Links */}
-          <div className="lg:col-span-3 space-y-4">
+          <div className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Quick Links
             </h3>
             <ul className="space-y-2.5 text-sm font-medium text-[#A3B3A6]">
-              <li>
-                <Link
-                  to="/find-a-vet"
-                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
-                >
-                  Find a Vet
-                </Link>
-              </li>
               <li>
                 <Link
                   to="/services"
@@ -115,7 +107,15 @@ export const Footer: React.FC = () => {
                   to="/pharmacy"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
-                  Pharmacy & Shop
+                  Pharmacy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/pet-essentials"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Paw Store
                 </Link>
               </li>
               <li>
@@ -123,63 +123,55 @@ export const Footer: React.FC = () => {
                   to="/health-tips"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
-                  Health Tips & Advice
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/insurance"
-                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
-                >
-                  Pet Insurance
+                  Fur & Facts
                 </Link>
               </li>
             </ul>
           </div>
 
           {/* Column 3 — Support & Legal */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Support & Legal
             </h3>
             <ul className="space-y-2.5 text-sm font-medium text-[#A3B3A6]">
               <li>
-                <a
-                  href="mailto:support@pawfectly.com?subject=Pawfectly%20Support%20Request"
+                <Link
+                  to="/contact-support"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
                   Contact Support
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="mailto:privacy@pawfectly.com?subject=Privacy%20Policy%20Inquiry"
+                <Link
+                  to="/privacy-policy"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="mailto:terms@pawfectly.com?subject=Terms%20of%20Service%20Inquiry"
+                <Link
+                  to="/terms-of-service"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="mailto:help@pawfectly.com?subject=Help%20Center%20Inquiry"
+                <Link
+                  to="/help-center"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
                   Help Center
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
 
           {/* Column 4 — Stay Updated (Newsletter) */}
-          <div className="lg:col-span-3 space-y-4">
+          <div className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Stay Updated
             </h3>
@@ -235,25 +227,13 @@ export const Footer: React.FC = () => {
           <p className="text-center sm:text-left">
             © 2024 Pawfectly Inc. Dedicated to happier, healthier pets everywhere.
           </p>
-          <div className="flex items-center gap-5 font-medium">
-            <a
-              href="mailto:privacy@pawfectly.com?subject=Privacy%20Policy%20Inquiry"
-              className="hover:text-white transition-colors"
-            >
-              Privacy
-            </a>
-            <a
-              href="mailto:terms@pawfectly.com?subject=Terms%20of%20Service%20Inquiry"
-              className="hover:text-white transition-colors"
-            >
-              Terms
-            </a>
-            <a
-              href="mailto:support@pawfectly.com?subject=Pawfectly%20Support%20Request"
-              className="hover:text-white transition-colors"
-            >
-              Contact
-            </a>
+
+          <div className="flex items-center gap-4 text-xs text-[#7A8E7E]">
+            <span className="inline-flex items-center gap-1.5 text-[#A3B3A6]">
+              <span>Made with</span>
+              <span className="text-[#EF7C3C]" aria-hidden="true">🐾</span>
+              <span>for pets & parents</span>
+            </span>
           </div>
         </div>
       </div>
