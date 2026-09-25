@@ -93,7 +93,7 @@ export const VetProfilePage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6EE] flex flex-col font-sans">
-        <Navbar activePage="find-a-vet" />
+        <Navbar activePage="services" />
         <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-6">
           <Skeleton className="h-8 w-40 rounded-full" />
           <div className="bg-white rounded-3xl p-8 border border-[#EDE7D9] space-y-6">
@@ -115,7 +115,7 @@ export const VetProfilePage: React.FC = () => {
   if (error || !vet) {
     return (
       <div className="min-h-screen bg-[#FAF6EE] flex flex-col font-sans">
-        <Navbar activePage="find-a-vet" />
+        <Navbar activePage="services" />
         <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-16 flex items-center justify-center">
           <ErrorState
             title="Veterinarian Profile Not Found"
@@ -133,19 +133,19 @@ export const VetProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#1B2B1E] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C]">
-      <Navbar activePage="find-a-vet" />
+      <Navbar activePage="services" />
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Back Link */}
         <button
-          onClick={() => navigate('/find-a-vet')}
+          onClick={() => navigate(-1)}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-[#287A41] hover:text-[#1B2B1E] bg-white border border-[#D5EAD9] px-4 py-2 rounded-full shadow-2xs transition-all cursor-pointer"
         >
-          <ChevronLeft className="w-4 h-4" /> Back to Veterinarians
+          <ChevronLeft className="w-4 h-4" /> Back
         </button>
 
         {/* Vet Card Header */}
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-[#EDE7D9] shadow-sm relative overflow-hidden space-y-8">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE7D9] shadow-sm relative overflow-hidden space-y-6">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Vet Image */}
             <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl overflow-hidden bg-[#F4EFE6] border border-[#E5DFCE] shrink-0 shadow-xs">

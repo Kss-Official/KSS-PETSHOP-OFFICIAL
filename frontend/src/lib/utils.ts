@@ -279,49 +279,126 @@ export function getProductImageUrl(
   secondParam?: string,
   id: number = 1
 ): string {
-  // Check if either parameter is a valid absolute HTTP/HTTPS URL
-  if (firstParam && (firstParam.startsWith('http://') || firstParam.startsWith('https://')) && !firstParam.includes('service_')) {
+  // 1. Check if either parameter is a valid absolute HTTP/HTTPS URL that is NOT the generic rabbit bowl placeholder
+  const isGenericPlaceholder = (url?: string) =>
+    !url ||
+    url.includes('service_02_pet_food_rabbit_bowl.jpg') ||
+    url.includes('service_01_vet_care.jpg') ||
+    url.includes('service_03_grooming_puppy_tub.jpg') ||
+    url.includes('service_04_pharmacy_cat_med.jpg');
+
+  if (firstParam && (firstParam.startsWith('http://') || firstParam.startsWith('https://')) && !isGenericPlaceholder(firstParam)) {
     return firstParam;
   }
-  if (secondParam && (secondParam.startsWith('http://') || secondParam.startsWith('https://')) && !secondParam.includes('service_')) {
+  if (secondParam && (secondParam.startsWith('http://') || secondParam.startsWith('https://')) && !isGenericPlaceholder(secondParam)) {
     return secondParam;
   }
 
-  // Combine both parameters to search for known brand/product keywords
+  // 2. Comprehensive keyword matcher for specific products, brands, and subcategories
   const combined = `${firstParam || ''} ${secondParam || ''}`.toLowerCase();
 
-  if (combined.includes('hill') || combined.includes('dog food')) {
+  // Wet Food & Gravy
+  if (combined.includes('sheba') || combined.includes('tuna') || combined.includes('salmon') || combined.includes('fillet') || combined.includes('gravy') || combined.includes('wet food')) {
+    return 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&auto=format&fit=crop&q=80';
+  }
+  // Dry Dog & Puppy Food
+  if (combined.includes('royal canin') || combined.includes('maxi adult') || combined.includes('farmina') || combined.includes('orijen') || combined.includes('dry dog food') || combined.includes('puppy food') || combined.includes('dog food')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png';
   }
-  if (combined.includes('frontline')) {
-    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png';
-  }
-  if (combined.includes('royal canin') || combined.includes('kitten')) {
+  // Dry Cat & Kitten Food
+  if (combined.includes('whiskas') || combined.includes('purina') || combined.includes('applaws') || combined.includes('kitten food') || combined.includes('dry cat food') || combined.includes('cat food')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png';
   }
-  if (combined.includes('vetplus') || combined.includes('joint')) {
+  // Dog & Cat Treats
+  if (combined.includes('dentastix') || combined.includes('dental chew') || combined.includes('dental')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png';
   }
-  if (combined.includes('virbac') || combined.includes('epi-otic') || combined.includes('ear cleaner')) {
+  if (combined.includes('treat') || combined.includes('temptation') || combined.includes('sausage') || combined.includes('jerky') || combined.includes('bites') || combined.includes('creamy')) {
+    return 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=600&auto=format&fit=crop&q=80';
+  }
+  // Toys & Enrichment
+  if (combined.includes('kong') || combined.includes('rubber chew') || combined.includes('chew toy')) {
+    return 'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=600&auto=format&fit=crop&q=80';
+  }
+  if (combined.includes('ball') || combined.includes('chuckit') || combined.includes('fetch')) {
+    return 'https://images.unsplash.com/photo-1541599540903-216a46ca1dc0?w=600&auto=format&fit=crop&q=80';
+  }
+  if (combined.includes('puzzle') || combined.includes('brick') || combined.includes('laser') || combined.includes('wand') || combined.includes('toy') || combined.includes('rope')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png';
+  }
+  // Cat Litter & Trays
+  if (combined.includes('litter') || combined.includes('tofu') || combined.includes('bentonite') || combined.includes('clumping') || combined.includes('tray')) {
+    return 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&auto=format&fit=crop&q=80';
+  }
+  // Cat Trees & Scratchers
+  if (combined.includes('scratch') || combined.includes('tree') || combined.includes('tower') || combined.includes('sisal') || combined.includes('post')) {
+    return 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=600&auto=format&fit=crop&q=80';
+  }
+  // Grooming & Shampoos
+  if (combined.includes('furminator') || combined.includes('deshedding') || combined.includes('brush') || combined.includes('comb') || combined.includes('glove')) {
+    return 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=600&auto=format&fit=crop&q=80';
+  }
+  if (combined.includes('shampoo') || combined.includes('oatmeal') || combined.includes('soap') || combined.includes('wash')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png';
   }
-  if (combined.includes('nexgard') || combined.includes('chews')) {
+  // Walk & Travel / Harnesses / Leashes / Collars
+  if (combined.includes('harness') || combined.includes('leash') || combined.includes('collar') || combined.includes('car seat') || combined.includes('booster')) {
+    return 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=600&auto=format&fit=crop&q=80';
+  }
+  // Bowls & Feeders / Fountains
+  if (combined.includes('fountain') || combined.includes('water fountain') || combined.includes('feeder') || combined.includes('bowl') || combined.includes('diner')) {
+    return 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=600&auto=format&fit=crop&q=80';
+  }
+  // Beds, Housing & Mats
+  if (combined.includes('bed') || combined.includes('lounge') || combined.includes('mat') || combined.includes('cooling') || combined.includes('cave') || combined.includes('donut')) {
+    return 'https://images.unsplash.com/photo-1541599540903-216a46ca1dc0?w=600&auto=format&fit=crop&q=80';
+  }
+  // Small Pets - Hay & Feed
+  if (combined.includes('hay') || combined.includes('timothy') || combined.includes('nuggets') || combined.includes('pellet') || combined.includes('grass')) {
+    return 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=600&auto=format&fit=crop&q=80';
+  }
+  // Small Pets - Birds
+  if (combined.includes('bird') || combined.includes('seed') || combined.includes('fruit blend') || combined.includes('cage') || combined.includes('perch')) {
+    return 'https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=600&auto=format&fit=crop&q=80';
+  }
+  // Small Pets - Fish & Aquarium
+  if (combined.includes('fish') || combined.includes('aquarium') || combined.includes('flake') || combined.includes('conditioner') || combined.includes('filter')) {
+    return 'https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?w=600&auto=format&fit=crop&q=80';
+  }
+  // Small Pets - Reptiles & Terrarium
+  if (combined.includes('reptile') || combined.includes('cricket') || combined.includes('calcium') || combined.includes('terrarium') || combined.includes('uvb')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/3553855e-62e9-4565-9f5a-a5d484ecd080_1.png';
+  }
+  // Small Pets - Hamster
+  if (combined.includes('hamster') || combined.includes('wheel') || combined.includes('tunnel') || combined.includes('playpen')) {
+    return 'https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=600&auto=format&fit=crop&q=80';
+  }
+
+  // General Pharmacy fallback matches
+  if (combined.includes('nexgard') || combined.includes('spectra')) {
     return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png';
   }
-
-  // If parameter is a clean Cloudinary public ID without spaces
-  const potentialPublicId = (firstParam && !firstParam.includes(' ') ? firstParam : secondParam) || '';
-  if (potentialPublicId && !potentialPublicId.startsWith('service_') && !potentialPublicId.includes(' ') && potentialPublicId.trim() !== '') {
-    return getCloudinaryImageUrl(potentialPublicId);
+  if (combined.includes('frontline') || combined.includes('flea') || combined.includes('tick')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png';
+  }
+  if (combined.includes('vetplus') || combined.includes('joint') || combined.includes('synoquin')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png';
+  }
+  if (combined.includes('virbac') || combined.includes('epi-otic') || combined.includes('ear cleaner') || combined.includes('drop')) {
+    return 'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png';
   }
 
+  // Diversified Fallbacks per item ID so adjacent products look unique
   const fallbacks = [
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788895703/7e3d7c1c-875e-4c8b-aec1-305c49fc646b_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788895698/00b4a02b-168d-4be6-a4b4-29daad1e6881_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788895662/e17e6de5-60ad-4ad5-be39-9be97c37f09e_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788895661/2448c43e-adb1-4b95-8e66-6667e0f7c993_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788895659/68817e23-cd56-4e36-b8db-9acbdfa5545d_1.png',
-    'https://res.cloudinary.com/vphylrop/image/upload/v1788896036/Screenshot_2026-09-09_010242.png',
+    'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1541599540903-216a46ca1dc0?w=600&auto=format&fit=crop&q=80',
   ];
   return fallbacks[(Math.max(1, id) - 1) % fallbacks.length];
 }

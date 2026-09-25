@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart } from 'lucide-react';
 import { useAuth } from '../../features/auth/AuthContext';
@@ -42,14 +43,16 @@ export const WishlistHeart: React.FC<WishlistHeartProps> = ({
   itemId,
   isInitiallySaved = false,
   className = '',
-  iconClassName = 'w-5 h-5',
+  iconClassName = 'w-3.5 h-3.5 sm:w-4 sm:h-4',
   onToggle,
   showToast,
 }) => {
   const [isSaved, setIsSaved] = useState<boolean>(isInitiallySaved);
   const [loading, setLoading] = useState<boolean>(false);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsSaved(isInitiallySaved);
@@ -59,8 +62,8 @@ export const WishlistHeart: React.FC<WishlistHeartProps> = ({
     const newParticles: Particle[] = Array.from({ length: 8 }).map((_, i) => ({
       id: Date.now() + i,
       angle: (i * 45 + Math.random() * 20 - 10) * (Math.PI / 180),
-      distance: 24 + Math.random() * 18,
-      size: 10 + Math.random() * 6,
+      distance: 24 + Math.random() * 16,
+      size: 9 + Math.random() * 5,
       isPaw: i % 2 === 0,
     }));
     setParticles(newParticles);
@@ -74,9 +77,8 @@ export const WishlistHeart: React.FC<WishlistHeartProps> = ({
     if (!user) {
       if (showToast) {
         showToast('Please log in to save items to your wishlist.', 'error');
-      } else {
-        alert('Please log in to save items to your wishlist.');
       }
+      navigate('/login');
       return;
     }
 
@@ -118,27 +120,28 @@ export const WishlistHeart: React.FC<WishlistHeartProps> = ({
   return (
     <div className="relative inline-flex items-center justify-center">
       <motion.button
+        ref={buttonRef}
         type="button"
         onClick={handleClick}
         disabled={loading}
-        whileTap={{ scale: 0.82 }}
+        whileTap={{ scale: 0.85 }}
         animate={
           isSaved
             ? {
-                scale: [1, 1.34, 0.94, 1.06, 1],
+                scale: [1, 1.32, 0.92, 1.08, 1],
                 transition: { duration: 0.45, ease: 'easeOut' },
               }
             : { scale: 1 }
         }
         aria-label={isSaved ? 'Remove from saved items' : 'Save to wishlist'}
-        className={`relative z-10 p-2.5 rounded-full glass-surface transition-colors duration-200 cursor-pointer ${
-          isSaved ? 'text-[#EC4899]' : 'text-gray-400 hover:text-[#EC4899]'
+        className={`relative z-10 w-7.5 h-7.5 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-white/95 backdrop-blur-xs border border-[#EDE7D9] shadow-2xs hover:bg-white hover:shadow-xs transition-all duration-200 cursor-pointer ${
+          isSaved ? 'text-[#EC4899]' : 'text-[#88998C] hover:text-[#EC4899]'
         } ${className}`}
       >
         <Heart
           className={`${iconClassName} transition-all duration-300 ${
             isSaved
-              ? 'fill-[#EC4899] text-[#EC4899] drop-shadow-[0_2px_8px_rgba(236,72,153,0.4)]'
+              ? 'fill-[#EC4899] text-[#EC4899] drop-shadow-[0_2px_6px_rgba(236,72,153,0.45)]'
               : 'text-[#16241B]/60 hover:text-[#EC4899]'
           }`}
         />

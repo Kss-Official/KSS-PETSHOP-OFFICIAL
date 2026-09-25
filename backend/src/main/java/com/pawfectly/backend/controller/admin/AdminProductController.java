@@ -23,7 +23,10 @@ public class AdminProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<Product>> getAllProducts(@RequestParam(required = false) String type) {
+        if (type != null && !type.trim().isEmpty()) {
+            return ResponseEntity.ok(productRepository.findByProductType(type.trim().toUpperCase()));
+        }
         return ResponseEntity.ok(productRepository.findAll());
     }
 
@@ -38,6 +41,11 @@ public class AdminProductController {
     public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) {
         product.setId(null);
         if (product.getIsActive() == null) product.setIsActive(true);
+        if (product.getProductType() == null || product.getProductType().trim().isEmpty()) {
+            product.setProductType("PHARMACY");
+        } else {
+            product.setProductType(product.getProductType().trim().toUpperCase());
+        }
         if (product.getImageUrl() != null) {
             String trimmed = product.getImageUrl().trim();
             product.setImageUrl(trimmed.isEmpty() ? null : trimmed);
@@ -55,6 +63,21 @@ public class AdminProductController {
                     product.setPrice(productDetails.getPrice());
                     product.setCategory(productDetails.getCategory());
                     product.setStockQuantity(productDetails.getStockQuantity());
+                    if (productDetails.getProductType() != null) {
+                        product.setProductType(productDetails.getProductType().trim().toUpperCase());
+                    }
+                    if (productDetails.getPetType() != null) {
+                        product.setPetType(productDetails.getPetType());
+                    }
+                    if (productDetails.getSpecies() != null) {
+                        product.setSpecies(productDetails.getSpecies());
+                    }
+                    if (productDetails.getSubcategory() != null) {
+                        product.setSubcategory(productDetails.getSubcategory());
+                    }
+                    if (productDetails.getBrand() != null) {
+                        product.setBrand(productDetails.getBrand());
+                    }
                     if (productDetails.getImageUrl() != null) {
                         String trimmed = productDetails.getImageUrl().trim();
                         product.setImageUrl(trimmed.isEmpty() ? null : trimmed);
