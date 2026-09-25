@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, ArrowUp } from 'lucide-react';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 
@@ -95,12 +95,19 @@ export const Footer: React.FC = () => {
             </h3>
             <ul className="space-y-2.5 text-sm font-medium text-[#A3B3A6]">
               <li>
-                <Link
-                  to="/find-a-vet"
-                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                <a
+                  href="/#vets"
+                  onClick={(e) => {
+                    const el = document.getElementById('vets');
+                    if (el) {
+                      e.preventDefault();
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block cursor-pointer"
                 >
                   Find a Vet
-                </Link>
+                </a>
               </li>
               <li>
                 <Link
@@ -254,6 +261,17 @@ export const Footer: React.FC = () => {
             >
               Contact
             </a>
+
+            {/* Back to Top Button */}
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              aria-label="Back to top"
+              title="Back to top"
+              className="w-8 h-8 rounded-full bg-[#1E3023] border border-[#2B3E30] text-[#A3B3A6] hover:text-white hover:border-[#009E66] hover:bg-[#23382A] flex items-center justify-center transition-all cursor-pointer group shadow-2xs ml-2"
+            >
+              <ArrowUp className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 text-white" />
+            </button>
           </div>
         </div>
       </div>

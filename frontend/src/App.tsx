@@ -5,6 +5,7 @@ import HomePage from './pages/customer/HomePage';
 import { FindVetPage } from './pages/customer/FindVetPage';
 import { VetProfilePage } from './pages/customer/VetProfilePage';
 import { ServicesPage } from './pages/customer/ServicesPage';
+import { ServiceDetailPage } from './pages/customer/ServiceDetailPage';
 import { HealthTipsPage } from './pages/customer/HealthTipsPage';
 import { ArticleDetailPage } from './pages/customer/ArticleDetailPage';
 import { PharmacyPage } from './pages/customer/PharmacyPage';
@@ -31,18 +32,26 @@ import { FlyToCartPortal } from './components/common/FlyToCartPortal';
 import { Confetti } from './components/ui/Confetti';
 import { CompareBar } from './components/products/CompareBar';
 import { CompareSheet } from './components/products/CompareSheet';
+import { FloatingSupport } from './components/support/FloatingSupport';
 import { AdminToastProvider } from './components/admin/AdminLayout';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { ErrorBoundary } from './components/feedback/ErrorBoundary';
+import { ScrollProgress } from './components/motion/ScrollProgress';
+import { CustomCursor } from './components/motion/CustomCursor';
+import { Preloader } from './components/motion/Preloader';
 
 function AppCartOverlay() {
   const { flyingClones, confettiParticles } = useCart();
   return (
     <>
+      <ScrollProgress />
+      <Preloader />
+      <CustomCursor showTrail={true} />
       <FlyToCartPortal clones={flyingClones} />
       <Confetti particles={confettiParticles} />
       <CompareBar />
       <CompareSheet />
+      <FloatingSupport />
     </>
   );
 }
@@ -53,6 +62,13 @@ function ScrollToTop() {
   useEffect(() => {
     if (!hash) {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    } else {
+      setTimeout(() => {
+        const element = document.getElementById(hash.replace('#', ''));
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   }, [pathname, hash]);
 
@@ -106,6 +122,7 @@ function AnimatedRoutes() {
         <Route path="/vets" element={<FindVetPage />} />
         <Route path="/vets/:id" element={<VetProfilePage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/services/:id" element={<ServiceDetailPage />} />
         <Route path="/health-tips" element={<HealthTipsPage />} />
         <Route path="/health-tips/:id" element={<ArticleDetailPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />

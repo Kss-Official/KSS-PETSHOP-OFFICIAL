@@ -1,4 +1,5 @@
 const ASSET_VERSIONS: Record<string, string> = {
+  hero_home_lake_pets: 'v1790246493',
   cta_cat_sunglasses_flawless_seamless: 'v1788852915',
   health_tips_hero: 'v1789130830',
   profile_dog_cat_watermark: 'v1788887750',
@@ -16,6 +17,11 @@ const ASSET_VERSIONS: Record<string, string> = {
 };
 
 const ASSET_ALIASES: Record<string, string> = {
+  hero_background: 'hero_home_lake_pets',
+  hero_bg: 'hero_home_lake_pets',
+  services_hero_bg: 'hero_home_lake_pets',
+  services_hero_lake_pets: 'hero_home_lake_pets',
+  services_hero: 'hero_home_lake_pets',
   bunny_cts: 'ChatGPT_Image_Sep_8_2026_10_21_30_PM',
   bunny_cta: 'ChatGPT_Image_Sep_8_2026_10_21_30_PM',
   find_vet_cta_bunny: 'ChatGPT_Image_Sep_8_2026_10_21_30_PM',
@@ -30,6 +36,7 @@ const ASSET_ALIASES: Record<string, string> = {
   health_tips_hero: 'ChatGPT_Image_Sep_11_2026_06_16_49_PM',
   insurance_cta: 'ChatGPT_Image_Sep_11_2026_12_54_54_PM',
   insurance_cts: 'ChatGPT_Image_Sep_11_2026_12_54_54_PM',
+  grooming_excellence_collage: '/images/grooming_excellence_collage.png',
 };
 
 /**
@@ -40,7 +47,12 @@ export function getCloudinaryImageUrl(
   options: string = 'f_auto,q_auto'
 ): string {
   if (!publicId) return '';
-  if (publicId.startsWith('http://') || publicId.startsWith('https://')) {
+  if (
+    publicId.startsWith('http://') ||
+    publicId.startsWith('https://') ||
+    publicId.startsWith('/') ||
+    publicId.startsWith('./')
+  ) {
     return publicId;
   }
   const targetId = ASSET_ALIASES[publicId] || publicId;

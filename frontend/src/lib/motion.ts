@@ -1,163 +1,158 @@
-import type { Transition, Variants } from 'framer-motion';
+import type { Variants, Transition } from 'framer-motion';
 
 /**
- * Spring physics tokens tailored for delightful pet-brand interactions
+ * ============================================================================
+ * PAWFECTLY GLOBAL MOTION SYSTEM & DESIGN TOKENS
+ * ============================================================================
+ * 
+ * HOW TO CHANGE ANIMATION SPEEDS GLOBALLY:
+ * - Adjust DURATIONS below:
+ *     - fast: micro-interactions, buttons, icons (default 0.25s)
+ *     - base: card reveals, modals, page elements (default 0.5s)
+ *     - slow: hero entrances, complex staggered groups (default 0.8s)
+ * - Adjust EASE cubic-bezier curve for snappier or softer easing across all variants.
+ * ============================================================================
  */
+
+export const EASE = [0.22, 1, 0.36, 1] as const;
+
+export const DURATIONS = {
+  fast: 0.25,
+  base: 0.5,
+  slow: 0.8,
+} as const;
+
+export const defaultTransition: Transition = {
+  duration: DURATIONS.base,
+  ease: EASE,
+};
+
+export const springTransition = {
+  type: 'spring',
+  stiffness: 300,
+  damping: 24,
+} as const;
+
+export const softSpringTransition = {
+  type: 'spring',
+  stiffness: 180,
+  damping: 20,
+} as const;
+
 export const springs = {
-  soft: {
-    type: 'spring',
-    stiffness: 260,
-    damping: 24,
-  } as Transition,
-  snappy: {
-    type: 'spring',
-    stiffness: 400,
-    damping: 30,
-  } as Transition,
+  snappy: springTransition,
+  soft: softSpringTransition,
   bouncy: {
     type: 'spring',
-    stiffness: 500,
-    damping: 15,
-  } as Transition,
+    stiffness: 400,
+    damping: 25,
+  },
   gentle: {
     type: 'spring',
-    stiffness: 180,
-    damping: 20,
-  } as Transition,
-};
+    stiffness: 120,
+    damping: 14,
+  },
+} as const;
 
 /**
- * Easing curves and duration standards
+ * Standard Fade-Up reveal variant
  */
-export const easings = {
-  easeOutExpo: [0.22, 1, 0.36, 1] as [number, number, number, number],
-  easeInOutExpo: [0.87, 0, 0.13, 1] as [number, number, number, number],
-  easeOutQuart: [0.25, 1, 0.5, 1] as [number, number, number, number],
-};
-
-export const durations = {
-  microFast: 0.2,
-  micro: 0.28,
-  microSlow: 0.35,
-  entrance: 0.5,
-  macro: 0.65,
-};
-
-/**
- * Reusable animation variants with 60fps GPU acceleration (transform + opacity only)
- */
-export const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
+export const fadeUpVariant: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 28,
+  },
+  visible: (delay: number = 0) => ({
     opacity: 1,
     y: 0,
     transition: {
-      duration: durations.microSlow,
-      ease: easings.easeOutExpo,
+      duration: DURATIONS.base,
+      ease: EASE,
+      delay,
     },
-  },
-  exit: {
-    opacity: 0,
-    y: -12,
-    transition: {
-      duration: durations.microFast,
-      ease: 'easeIn',
-    },
-  },
+  }),
 };
 
-export const scaleIn: Variants = {
-  hidden: { opacity: 0, scale: 0.94 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: springs.snappy,
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.95,
-    transition: {
-      duration: durations.microFast,
-    },
-  },
-};
-
-export const slideInRight: Variants = {
-  hidden: { opacity: 0, x: 28 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: springs.snappy,
-  },
-  exit: {
-    opacity: 0,
-    x: 28,
-    transition: {
-      duration: durations.microFast,
-      ease: 'easeIn',
-    },
-  },
-};
-
-export const slideInBottom: Variants = {
-  hidden: { opacity: 0, y: 32 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: springs.soft,
-  },
-  exit: {
-    opacity: 0,
-    y: 32,
-    transition: {
-      duration: durations.microFast,
-      ease: 'easeIn',
-    },
-  },
-};
-
-export const reducedMotionFade: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { duration: durations.micro },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: durations.microFast },
-  },
-};
+// Aliases for compatibility
+export const fadeUp = fadeUpVariant;
 
 /**
- * Creates a staggered container configuration
- * @param staggerChildren Stagger interval in seconds (default 0.06s)
- * @param delayChildren Initial delay before starting children animations
+ * Fade In (opacity only, ideal for reduced motion fallback)
  */
-export const staggerContainer = (
-  staggerChildren: number = 0.06,
-  delayChildren: number = 0
+export const fadeInVariant: Variants = {
+  hidden: {
+    opacity: 0,
+  },
+  visible: (delay: number = 0) => ({
+    opacity: 1,
+    transition: {
+      duration: DURATIONS.base,
+      ease: EASE,
+      delay,
+    },
+  }),
+};
+
+export const fadeIn = fadeInVariant;
+
+/**
+ * Stagger Container variant for wrapping lists and card grids
+ */
+export const staggerContainerVariant: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+export interface StaggerContainerFn {
+  (staggerDelay?: number, delayChildren?: number): Variants;
+  hidden: Record<string, unknown>;
+  visible: Record<string, unknown>;
+}
+
+const createStaggerContainer = ((
+  staggerDelay: number = 0.1,
+  delayChildren: number = 0.05
 ): Variants => ({
-  hidden: { opacity: 0 },
+  hidden: {},
   visible: {
-    opacity: 1,
     transition: {
-      staggerChildren,
+      staggerChildren: staggerDelay,
       delayChildren,
     },
   },
-  exit: {
-    opacity: 0,
-    transition: {
-      staggerChildren: 0.03,
-      staggerDirection: -1,
-    },
+})) as StaggerContainerFn;
+
+createStaggerContainer.hidden = {};
+createStaggerContainer.visible = {
+  transition: {
+    staggerChildren: 0.1,
+    delayChildren: 0.05,
   },
-});
+};
+
+export const staggerContainer = createStaggerContainer;
 
 /**
- * Check if the user prefers reduced motion
+ * Card Hover & Tap transition settings
  */
-export const shouldReduceMotion = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const cardHoverVariant: Variants = {
+  rest: {
+    y: 0,
+    boxShadow: '0 2px 8px -1px rgba(22, 36, 27, 0.05), 0 1px 3px 0 rgba(22, 36, 27, 0.04)',
+    transition: springTransition,
+  },
+  hover: {
+    y: -8,
+    boxShadow: '0 20px 35px -8px rgba(22, 36, 27, 0.12), 0 8px 16px -4px rgba(22, 36, 27, 0.06)',
+    transition: springTransition,
+  },
+  tap: {
+    scale: 0.98,
+    transition: { duration: 0.1 },
+  },
 };
