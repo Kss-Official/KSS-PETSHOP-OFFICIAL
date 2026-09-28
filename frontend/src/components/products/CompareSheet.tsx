@@ -14,7 +14,7 @@ export const CompareSheet: React.FC = () => {
 
   // Best Value Calculations
   const minPrice = Math.min(...compareList.map((p) => p.price));
-  const maxRating = Math.max(...compareList.map((p) => p.rating || 4.5));
+  const maxRating = Math.max(...compareList.map((p) => p.rating || 0));
 
   return (
     <AnimatePresence>
@@ -67,8 +67,9 @@ export const CompareSheet: React.FC = () => {
             <div className="grid grid-flow-col auto-cols-[240px] sm:auto-cols-[280px] gap-4 sm:gap-6 min-w-full">
               {compareList.map((product, idx) => {
                 const isLowestPrice = product.price === minPrice && compareList.length > 1;
-                const isHighestRating = (product.rating || 4.5) === maxRating && compareList.length > 1;
-                const rating = product.rating || 4.8;
+                const hasReviews = (product.reviewsCount || 0) > 0 && Boolean(product.rating);
+                const isHighestRating = hasReviews && product.rating === maxRating && maxRating > 0 && compareList.length > 1;
+                const rating = product.rating ? Number(product.rating) : null;
                 const isOutOfStock = product.stockQuantity <= 0;
 
                 return (
@@ -122,7 +123,7 @@ export const CompareSheet: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Rating Metric with animated fill bar */}
+                    {/* Rating Metric */}
                     <div
                       className={`p-3 rounded-xl mb-3 ${
                         isHighestRating
@@ -132,16 +133,18 @@ export const CompareSheet: React.FC = () => {
                     >
                       <div className="flex items-center justify-between text-xs font-semibold text-[#16241B]/70 mb-1.5">
                         <span className="flex items-center gap-1">
-                          <Star className="w-3.5 h-3.5 fill-[#FFD84D] text-[#FFD84D]" />
+                          <Star className={`w-3.5 h-3.5 ${hasReviews ? 'fill-[#FFD84D] text-[#FFD84D]' : 'text-gray-300'}`} />
                           Rating
                         </span>
-                        <span className="font-bold text-[#16241B]">{rating.toFixed(1)}/5.0</span>
+                        <span className="font-bold text-[#16241B]">
+                          {hasReviews && rating !== null ? `${rating.toFixed(1)}/5.0` : 'No reviews'}
+                        </span>
                       </div>
 
                       <div className="w-full h-1.5 rounded-full bg-[#16241B]/10 overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${(rating / 5) * 100}%` }}
+                          animate={{ width: hasReviews && rating !== null ? `${(rating / 5) * 100}%` : '0%' }}
                           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                           className="h-full bg-[#FFD84D] rounded-full"
                         />

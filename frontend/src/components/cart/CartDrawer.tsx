@@ -241,16 +241,28 @@ export const CartDrawer: React.FC = () => {
                   <p className="text-xs text-[#16241B]/60 max-w-xs mb-5">
                     Explore our veterinary pharmacy and curated pet goodies to pamper your pet!
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      closeCart();
-                      navigate('/pharmacy');
-                    }}
-                    className="py-2.5 px-6 rounded-full bg-[#009E66] hover:bg-[#008757] text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
-                  >
-                    Browse Pharmacy
-                  </button>
+                  <div className="flex items-center justify-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeCart();
+                        navigate('/pharmacy');
+                      }}
+                      className="py-2 px-4 rounded-full bg-[#16241B] hover:bg-[#253d2e] text-white border border-[#16241B] font-bold text-xs shadow-xs transition-all duration-300 active:scale-95 cursor-pointer"
+                    >
+                      Pharmacy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeCart();
+                        navigate('/pet-essentials');
+                      }}
+                      className="py-2 px-4 rounded-full bg-white hover:bg-[#16241B] text-[#16241B] hover:text-white border border-[#16241B]/20 hover:border-[#16241B] font-bold text-xs shadow-xs transition-all duration-300 active:scale-95 cursor-pointer"
+                    >
+                      Paw Store
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <AnimatePresence mode="popLayout">

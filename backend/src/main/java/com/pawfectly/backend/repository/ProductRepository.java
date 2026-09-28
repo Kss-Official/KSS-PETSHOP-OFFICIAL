@@ -14,6 +14,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByCategoryAndIsActiveTrue(String category);
 
     List<Product> findByProductTypeAndIsActiveTrue(String productType);
+    List<Product> findByProductType(String productType);
     List<Product> findByProductTypeAndCategoryAndIsActiveTrue(String productType, String category);
 
     @Query("SELECT p FROM Product p WHERE p.productType = :productType AND p.isActive = true " +

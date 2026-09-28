@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { DogFaceIcon, GroomingIcon, TrainingIcon } from '../icons/PetLineIcons';
-import { Reveal } from '../motion/Reveal';
 
 interface ServiceArchItem {
   id: number;
@@ -49,15 +48,37 @@ const servicesData: ServiceArchItem[] = [
 ];
 
 export const ServicesShowcase: React.FC = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   const [leftService, centerService, rightService] = servicesData;
 
   return (
     <section
       id="services"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 py-4"
+      ref={sectionRef}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10 py-2"
     >
       {/* Section Header */}
-      <Reveal delay={0.05} className="text-center space-y-3.5 max-w-3xl mx-auto">
+      <div className="text-center space-y-3.5 max-w-3xl mx-auto">
         <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black tracking-wider uppercase bg-[#FCE8DB] text-[#223328] shadow-xs">
           Our Service <span aria-hidden="true">🐾</span>
         </span>
@@ -67,12 +88,18 @@ export const ServicesShowcase: React.FC = () => {
         <p className="text-sm sm:text-base text-[#5D6F63] font-medium leading-relaxed">
           Compassionate veterinary care, soothing grooming, and certified training crafted for your pet's best life.
         </p>
-      </Reveal>
+      </div>
 
       {/* 3-Column Arch Showcase */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-start max-w-5xl mx-auto">
-        {/* LEFT COLUMN */}
-        <Reveal delay={0.1}>
+        {/* LEFT COLUMN: Outer scroll fade-in -> Floating wrapper -> Inner interactive cards */}
+        <div
+          className={`transition-all duration-700 ease-out ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
+          style={{ transitionDelay: '0ms' }}
+        >
+          {/* Pure Floating Container (No hover transforms) */}
           <div className="flex flex-col gap-5 sm:gap-6 animate-float-updown">
             {/* Top Text Card */}
             <Link
@@ -107,10 +134,15 @@ export const ServicesShowcase: React.FC = () => {
               </div>
             </Link>
           </div>
-        </Reveal>
+        </div>
 
-        {/* CENTER COLUMN */}
-        <Reveal delay={0.18}>
+        {/* CENTER COLUMN: Static (No Float), Image Card on Top, Text Card Below, CTA Button Centered */}
+        <div
+          className={`transition-all duration-700 ease-out ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
+          style={{ transitionDelay: '140ms' }}
+        >
           <div className="flex flex-col gap-5 sm:gap-6">
             {/* Top Image Card */}
             <Link
@@ -145,8 +177,8 @@ export const ServicesShowcase: React.FC = () => {
               </div>
             </Link>
 
-            {/* Centered CTA Button with breathing space */}
-            <div className="flex justify-center pt-6 sm:pt-8">
+            {/* Centered CTA Button beneath Center Column */}
+            <div className="flex justify-center pt-1">
               <Link to="/services">
                 <Button
                   variant="orange"
@@ -159,10 +191,16 @@ export const ServicesShowcase: React.FC = () => {
               </Link>
             </div>
           </div>
-        </Reveal>
+        </div>
 
-        {/* RIGHT COLUMN */}
-        <Reveal delay={0.26}>
+        {/* RIGHT COLUMN: Outer scroll fade-in -> Floating wrapper (delayed) -> Inner interactive cards */}
+        <div
+          className={`transition-all duration-700 ease-out ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
+          style={{ transitionDelay: '280ms' }}
+        >
+          {/* Pure Floating Container (No hover transforms) */}
           <div className="flex flex-col gap-5 sm:gap-6 animate-float-updown-delayed">
             {/* Top Text Card */}
             <Link
@@ -197,7 +235,7 @@ export const ServicesShowcase: React.FC = () => {
               </div>
             </Link>
           </div>
-        </Reveal>
+        </div>
       </div>
     </section>
   );
