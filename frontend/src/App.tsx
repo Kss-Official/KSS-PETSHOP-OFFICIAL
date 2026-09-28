@@ -35,9 +35,15 @@ import { CompareProvider } from './hooks/useCompare';
 import { Confetti } from './components/ui/Confetti';
 import { CompareBar } from './components/products/CompareBar';
 import { CompareSheet } from './components/products/CompareSheet';
+import { FloatingSupport } from './components/support/FloatingSupport';
 import { AdminToastProvider } from './components/admin/AdminLayout';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { ErrorBoundary } from './components/feedback/ErrorBoundary';
+import { ScrollProgress } from './components/motion/ScrollProgress';
+import { CustomCursor } from './components/motion/CustomCursor';
+import { Preloader } from './components/motion/Preloader';
+import { CartDrawer } from './components/cart/CartDrawer';
+import { BackToTop } from './components/motion/BackToTop';
 
 import { LoginPromptModal } from './components/common/LoginPromptModal';
 
@@ -46,6 +52,7 @@ function AppCartOverlay() {
   return (
     <>
       <Confetti particles={confettiParticles} />
+      <CartDrawer />
       <CompareBar />
       <CompareSheet />
       <LoginPromptModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
@@ -59,6 +66,13 @@ function ScrollToTop() {
   useEffect(() => {
     if (!hash) {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    } else {
+      setTimeout(() => {
+        const element = document.getElementById(hash.replace('#', ''));
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   }, [pathname, hash]);
 

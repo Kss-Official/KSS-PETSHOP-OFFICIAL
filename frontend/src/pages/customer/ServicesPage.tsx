@@ -1,48 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-import { Skeleton } from '../../components/ui/Skeleton';
-import { EmptyState } from '../../components/feedback/EmptyState';
-import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import { useAuth } from '../../features/auth/AuthContext';
-import {
-  Stethoscope,
-  Scissors,
-  Utensils,
-  Home,
-  PawPrint,
-  ShieldCheck,
-  Truck,
-  ArrowRight,
-  Sparkles,
-  CalendarCheck,
-  Heart,
-  Pill,
-} from 'lucide-react';
-
-interface ServiceDto {
-  id: number;
-  name: string;
-  category?: string;
-  tagline?: string;
-  description: string;
-  price?: number;
-  durationMinutes?: number;
-  available?: boolean;
-  isActive?: boolean;
-  imageUrl?: string;
-  iconUrl?: string;
-}
+import { GroomingExcellence } from '../../components/services/GroomingExcellence';
+import { ServicesGrid } from '../../components/services/ServicesGrid';
+import { ServicesFaq } from '../../components/services/ServicesFaq';
+import type { ServiceDto } from '../../components/services/services.data';
+import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 
 export const ServicesPage: React.FC = () => {
   const [services, setServices] = useState<ServiceDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [highlightedServiceId, setHighlightedServiceId] = useState<number | null>(null);
+
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const prefersReduced = usePrefersReducedMotion();
 
   const fetchServices = () => {
     setLoading(true);
@@ -64,94 +41,33 @@ export const ServicesPage: React.FC = () => {
     fetchServices();
   }, []);
 
-  const resolveServiceImageUrl = (service: ServiceDto) => {
-    const name = (service.name || '').toLowerCase();
-    if (name.includes('vet') || name.includes('health') || name.includes('doctor')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png';
+  const handleBookService = (_service?: ServiceDto) => {
+    if (isAuthenticated) {
+      navigate('/profile?tab=appointments');
+    } else {
+      navigate('/login');
     }
-    if (name.includes('food') || name.includes('nutrition') || name.includes('diet')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png';
-    }
-    if (name.includes('grooming') || name.includes('groom') || name.includes('spa')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png';
-    }
-    if (name.includes('pharmacy') || name.includes('med') || name.includes('drug')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png';
-    }
-    if (name.includes('toy') || name.includes('enrichment') || name.includes('play')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png';
-    }
-    if (name.includes('boarding') || name.includes('daycare') || name.includes('stay')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png';
-    }
-    if (name.includes('training') || name.includes('behaviour') || name.includes('behavior')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896174/c1b76666-8097-4311-911e-8b51d62c4739_1.png';
-    }
-    if (name.includes('transport') || name.includes('ambulance')) {
-      return 'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png';
-    }
-    const fallbacks = [
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896182/c52497e6-b462-42af-8257-69b80c7369c7_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896176/f2cf2664-43f8-4d4b-8189-53b787d9813f_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896181/f911c486-badb-4db4-9d87-471e79ad0437_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896180/56e92693-e2f2-4587-9e7c-83e25d7b523f_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896179/46d5d20e-fe06-4b2f-afd0-c5fb7d7e10a3_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896177/5041fe2b-47be-4fa0-b556-8d2c5926e54b_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896174/c1b76666-8097-4311-911e-8b51d62c4739_1.png',
-      'https://res.cloudinary.com/vphylrop/image/upload/v1788896169/8e9541cf-3bdc-4ed9-8979-e137acb9e77b_1.png',
-    ];
-    return fallbacks[((service.id || 1) - 1) % fallbacks.length];
   };
 
-  const serviceIconsMap: Record<string, { icon: React.ElementType; bg: string; text: string }> = {
-    'Veterinary Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
-    'Vet Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
-    'Pet Food & Nutrition': { icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
-    'Pet Food': { icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
-    'Professional Grooming': { icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
-    'Grooming': { icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
-    'Pet Pharmacy & Meds': { icon: Pill, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]' },
-    'Pharmacy': { icon: Pill, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]' },
-    'Toys & Enrichment': { icon: Sparkles, bg: 'bg-[#F3E8FF]', text: 'text-[#7E22CE]' },
-    'Boarding & Daycare': { icon: Home, bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
-    'Boarding': { icon: Home, bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
-    'Pet Training & Behaviour': { icon: PawPrint, bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]' },
-    'Training': { icon: PawPrint, bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]' },
-    'Pet Transport & Ambulance': { icon: Truck, bg: 'bg-[#FCE7F3]', text: 'text-[#BE185D]' },
-    'Pet Transport': { icon: Truck, bg: 'bg-[#FCE7F3]', text: 'text-[#BE185D]' },
-    'Pet Insurance': { icon: ShieldCheck, bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]' },
+  const handleJumpToService = (serviceId: number) => {
+    const cardEl = document.getElementById(`service-card-${serviceId}`);
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'center' });
+      setHighlightedServiceId(serviceId);
+      setTimeout(() => {
+        setHighlightedServiceId(null);
+      }, 2500);
+    } else {
+      const gridEl = document.getElementById('services-grid');
+      if (gridEl) {
+        gridEl.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth' });
+      }
+    }
   };
-
-  const howItWorksSteps = [
-    {
-      step: '01',
-      icon: Stethoscope,
-      title: 'Choose a Service',
-      description: 'Browse and select the service your pet needs.',
-    },
-    {
-      step: '02',
-      icon: CalendarCheck,
-      title: 'Book an Appointment',
-      description: 'Pick a convenient time and confirm your booking.',
-    },
-    {
-      step: '03',
-      icon: Heart,
-      title: 'We Care for Your Pet',
-      description: 'Our certified experts provide the best care and attention.',
-    },
-    {
-      step: '04',
-      icon: Home,
-      title: 'Happy Pet, Happy You',
-      description: 'Your pet stays happy, healthy, and loved.',
-    },
-  ];
 
   return (
-    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col">
-      {/* 1. Navbar */}
+    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C] overflow-x-clip relative">
+      {/* 1. Sticky Glass Navbar */}
       <Navbar activePage="services" />
 
       <main className="flex-grow space-y-10 sm:space-y-14 pb-14">
@@ -397,3 +313,5 @@ export const ServicesPage: React.FC = () => {
     </div>
   );
 };
+
+export default ServicesPage;

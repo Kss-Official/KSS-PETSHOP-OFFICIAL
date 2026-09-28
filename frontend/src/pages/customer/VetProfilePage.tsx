@@ -49,6 +49,38 @@ interface VetReview {
   createdAt?: string;
 }
 
+function formatPetSpecialist(petTypesStr?: string): string {
+  if (!petTypesStr) return 'Dog & Cat Specialist';
+  const types = petTypesStr
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (types.length === 0) return 'Dog & Cat Specialist';
+
+  const mapName: Record<string, string> = {
+    dogs: 'Dog',
+    dog: 'Dog',
+    cats: 'Cat',
+    cat: 'Cat',
+    birds: 'Avian',
+    bird: 'Avian',
+    rabbits: 'Rabbit',
+    rabbit: 'Rabbit',
+    exotic: 'Exotic Pet',
+    'exotic pets': 'Exotic Pet',
+  };
+
+  const formatted = types.map((t) => mapName[t] || (t.charAt(0).toUpperCase() + t.slice(1)));
+  if (formatted.length === 1) {
+    return `${formatted[0]} Specialist`;
+  }
+  if (formatted.length === 2) {
+    return `${formatted[0]} & ${formatted[1]} Specialist`;
+  }
+  return `${formatted.slice(0, -1).join(', ')} & ${formatted[formatted.length - 1]} Specialist`;
+}
+
 export const VetProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -204,7 +236,7 @@ export const VetProfilePage: React.FC = () => {
                 </span>
                 {vet.petTypes && (
                   <span className="inline-flex items-center gap-1 font-bold text-[#7E22CE] bg-[#F3E8FF] border border-[#E9D5FF] px-3 py-1 rounded-full">
-                    <Sparkles className="w-3.5 h-3.5" /> Treats: {vet.petTypes}
+                    <Sparkles className="w-3.5 h-3.5" /> {formatPetSpecialist(vet.petTypes)}
                   </span>
                 )}
                 {vet.secondarySpecialization && (

@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { getCloudinaryImageUrl } from '../../lib/utils';
+import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { MagneticButton } from '../motion/MagneticButton';
 
 interface CtaBannerProps {
   whatsappUrl?: string;
@@ -37,8 +40,22 @@ export const CtaBanner: React.FC<CtaBannerProps> = ({
   const avatar3Url = getCloudinaryImageUrl('avatar_user_3');
   const avatar4Url = getCloudinaryImageUrl('avatar_user_4');
 
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const prefersReduced = usePrefersReducedMotion();
+
+  const { scrollYProgress } = useScroll({
+    target: bannerRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const catParallax = useTransform(scrollYProgress, [0, 1], [30, -30]);
+
   return (
-    <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-16 overflow-visible">
+    <section
+      id="cta"
+      ref={bannerRef}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-16 overflow-visible"
+    >
       {image3D && (
         <style>{`
           .cta-img-3d {
@@ -58,32 +75,61 @@ export const CtaBanner: React.FC<CtaBannerProps> = ({
 
       <div className="bg-[#FFCA28] rounded-[36px] p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-          {/* Left CTA image — hidden when hideImage=true */}
+          {/* Left CTA image — peeking with parallax & gentle 6s float loop */}
           {!hideImage && (
             <div className="lg:col-span-5 flex justify-center items-end relative overflow-visible z-20">
-              <div className="relative -mt-24 sm:-mt-32 lg:-mt-40 -mb-6 sm:-mb-10 lg:-mb-14 w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[460px] flex justify-center items-end pointer-events-none">
-                <div
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-10 bg-[#EF7C3C]/35 rounded-full blur-xl -z-10"
-                />
-                <img
-                  src={ctaImageUrl}
-                  alt="CTA illustration"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = 'https://res.cloudinary.com/vphylrop/image/upload/v1788886319/ChatGPT_Image_Sep_8_2026_10_21_30_PM.png';
-                  }}
-                  className={
-                    image3D
-                      ? 'w-full h-auto object-contain cta-img-3d'
-                      : 'w-full h-auto object-contain [filter:drop-shadow(0_12px_24px_rgba(239,124,60,0.35))_drop-shadow(0_28px_40px_rgba(255,180,50,0.35))]'
+              <motion.div
+                initial={prefersReduced ? {} : { y: '35%', opacity: 0 }}
+                whileInView={prefersReduced ? {} : { y: 0, opacity: 1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ type: 'spring', stiffness: 220, damping: 22 }}
+                style={{
+                  y: prefersReduced ? 0 : catParallax,
+                }}
+                className="relative -mt-24 sm:-mt-32 lg:-mt-40 -mb-6 sm:-mb-10 lg:-mb-14 w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[460px] flex justify-center items-end pointer-events-none"
+              >
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-10 bg-[#EF7C3C]/35 rounded-full blur-xl -z-10" />
+                
+                <motion.div
+                  animate={
+                    prefersReduced
+                      ? {}
+                      : {
+                          y: [0, -8, 0],
+                        }
                   }
-                />
-              </div>
+                  transition={{
+                    repeat: Infinity,
+                    duration: 6,
+                    ease: 'easeInOut',
+                  }}
+                  className="w-full flex justify-center"
+                >
+                  <img
+                    src={ctaImageUrl}
+                    alt="CTA illustration"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src =
+                        'https://res.cloudinary.com/vphylrop/image/upload/v1788886319/ChatGPT_Image_Sep_8_2026_10_21_30_PM.png';
+                    }}
+                    className={
+                      image3D
+                        ? 'w-full h-auto object-contain cta-img-3d'
+                        : 'w-full h-auto object-contain [filter:drop-shadow(0_12px_24px_rgba(239,124,60,0.35))_drop-shadow(0_28px_40px_rgba(255,180,50,0.35))]'
+                    }
+                  />
+                </motion.div>
+              </motion.div>
             </div>
           )}
 
           {/* Right Content */}
-          <div className={`${hideImage ? 'lg:col-span-12' : 'lg:col-span-7'} space-y-6 text-center lg:text-left z-10`}>
+          <div
+            className={`${
+              hideImage ? 'lg:col-span-12' : 'lg:col-span-7'
+            } space-y-6 text-center lg:text-left z-10`}
+          >
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
               {title}
             </h2>
@@ -96,9 +142,17 @@ export const CtaBanner: React.FC<CtaBannerProps> = ({
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-[0_8px_20px_rgba(0,158,102,0.35)] transition-all flex items-center gap-2 text-base cursor-pointer inline-flex"
+                className="inline-block"
               >
-                Join the Pack
+                <MagneticButton
+                  variant="primary"
+                  size="lg"
+                  ripple
+                  magnetic
+                  className="!bg-[#009E66] hover:!bg-[#008757] !shadow-[0_8px_20px_rgba(0,158,102,0.35)] text-white px-8 py-3.5"
+                >
+                  Join the Pack
+                </MagneticButton>
               </a>
 
               <div className="bg-[#FFE58A]/95 backdrop-blur-xs px-4 py-2.5 rounded-full border border-white/50 shadow-xs flex items-center gap-3">

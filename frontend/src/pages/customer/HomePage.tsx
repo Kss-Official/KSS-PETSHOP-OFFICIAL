@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
@@ -9,8 +9,6 @@ import { ServicesShowcase } from '../../components/home/ServicesShowcase';
 import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { Card } from '../../components/ui/Card';
-import { Skeleton } from '../../components/ui/Skeleton';
 import { apiClient } from '../../lib/axios';
 import {
   ChevronRight,
@@ -48,22 +46,32 @@ export const HomePage: React.FC = () => {
   const avatar3Url = getCloudinaryImageUrl('avatar_user_3');
   const avatar4Url = getCloudinaryImageUrl('avatar_user_4');
 
-  const vetScrollRef = useRef<HTMLDivElement>(null);
-
-  const categories = ['All', 'Dogs', 'Cats', 'Birds', 'Rabbits', 'Exotic Pets'];
-
   const fetchHomeData = () => {
     setLoadingVets(true);
 
     apiClient
       .get('/vets')
       .then((res) => {
-        setVets(Array.isArray(res.data) ? res.data : []);
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          const mapped: VetData[] = res.data.map((v: any) => ({
+            id: v.id,
+            name: v.name,
+            specialty: v.specialization || v.specialty || 'General Veterinarian',
+            subSpecialty: v.secondarySpecialization || v.subSpecialty || '',
+            experienceYears: v.experienceYears || 0,
+            fee: v.consultationFee || 500,
+            image: getVetImageUrl(v.name, v.photoUrl, v.id),
+            petTypes: (v.petTypes ? v.petTypes.toLowerCase().split(/,\s*/) : ['dogs', 'cats']) as PetType[],
+            availability: 'available',
+            rating: typeof v.rating === 'number' && v.rating > 0 ? v.rating : undefined,
+            reviewsCount: typeof v.reviewsCount === 'number' && v.reviewsCount > 0 ? v.reviewsCount : undefined,
+          }));
+          setVets(mapped);
+        }
       })
       .catch(() => {
-        setVets([]);
-      })
-      .finally(() => setLoadingVets(false));
+        setVets(initialVetsData);
+      });
   };
 
   useEffect(() => {
@@ -92,7 +100,7 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C]">
+    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C] overflow-x-clip relative">
       {/* 1. Navbar */}
       <Navbar activePage="home" />
 
@@ -122,7 +130,7 @@ export const HomePage: React.FC = () => {
                   <Button variant="primary" size="lg" showPaw>
                     Explore Services
                   </Button>
-                </Link>
+                </a>
                 <Link to="/pharmacy">
                   <Button variant="secondary" size="lg">
                     Shop Essentials
@@ -202,9 +210,6 @@ export const HomePage: React.FC = () => {
                       Booked <span className="text-[#059669] font-bold">✓</span>
                     </span>
                   </div>
-                  <div className="w-8 h-8 rounded-xl bg-white/80 border border-[#E9D575] flex items-center justify-center text-[#16241B] shrink-0 shadow-xs">
-                    <Calendar className="w-4 h-4 text-[#854D0E]" />
-                  </div>
                 </div>
 
                 <div className="absolute -bottom-4 sm:-bottom-5 right-4 sm:right-8 lg:right-12 bg-[#FCE3E4] border border-[#F9C3C6] text-[#16241B] px-4 py-2.5 rounded-2xl shadow-xl flex flex-col animate-float-slow z-20">
@@ -216,23 +221,10 @@ export const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* 3. Trust Strip */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-2 sm:-mt-4 lg:-mt-6 relative z-20">
-          <div className="bg-white/95 backdrop-blur-sm border border-[#E8DFC8] rounded-full shadow-[0_20px_45px_-12px_rgba(22,36,27,0.12),0_4px_16px_rgba(22,36,27,0.04)] px-6 sm:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-[#EFE8DA] transition-all duration-300 hover:shadow-[0_24px_50px_-10px_rgba(22,36,27,0.16)]">
-            <div className="w-full md:w-1/4 text-center py-2 md:py-0 px-3 font-bold text-xs sm:text-sm text-[#16241B] flex items-center justify-center gap-2.5 transition-transform hover:scale-[1.02]">
-              <span>Good dogs welcome</span>
-            </div>
-            <div className="w-full md:w-1/4 text-center py-2 md:py-0 px-3 font-bold text-xs sm:text-sm text-[#16241B] flex items-center justify-center gap-2.5 transition-transform hover:scale-[1.02]">
-              <span>Cats are in charge</span>
-            </div>
-            <div className="w-full md:w-1/4 text-center py-2 md:py-0 px-3 font-bold text-xs sm:text-sm text-[#16241B] flex items-center justify-center gap-2.5 transition-transform hover:scale-[1.02]">
-              <span>Tiny paws, big personalities</span>
-            </div>
-            <div className="w-full md:w-1/4 text-center py-2 md:py-0 px-3 font-bold text-xs sm:text-sm text-[#16241B] flex items-center justify-center gap-2.5 transition-transform hover:scale-[1.02]">
-              <span>No judgment. Only treats.</span>
-            </div>
-          </div>
-        </section>
+        {/* 3.5. Stats Strip */}
+        <Reveal delay={0.08}>
+          <StatsStrip />
+        </Reveal>
 
         {/* 3.5. Stats Strip */}
         <StatsStrip />
@@ -409,58 +401,10 @@ export const HomePage: React.FC = () => {
         {/* 8. Shared CTA Banner */}
         <CtaBanner />
 
-        {/* 8. Feature Strip */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-6 border-y border-[#EDE6D8]">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-[#D8F3DC] flex items-center justify-center text-[#287A41] shrink-0">
-                <Headphones className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-extrabold text-[#16241B]">
-                  24/7 Vet Support
-                </h4>
-                <p className="text-xs text-[#556658]">We're always here</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-[#E0F2FE] flex items-center justify-center text-[#0369A1] shrink-0">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-extrabold text-[#16241B]">
-                  Verified Vets Only
-                </h4>
-                <p className="text-xs text-[#556658]">100% background checked</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center text-[#8C6D00] shrink-0">
-                <ShoppingBag className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-extrabold text-[#16241B]">
-                  In-Store Pickup Available
-                </h4>
-                <p className="text-xs text-[#556658]">Ready at your nearest clinic</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-[#FCE7F3] flex items-center justify-center text-[#9D174D] shrink-0">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-extrabold text-[#16241B]">
-                  Happiness Guarantee
-                </h4>
-                <p className="text-xs text-[#556658]">Or your money back</p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* 8. Shared CTA Banner */}
+        <Reveal delay={0.1}>
+          <CtaBanner />
+        </Reveal>
       </main>
 
       {/* 9. Footer */}
@@ -470,4 +414,3 @@ export const HomePage: React.FC = () => {
 };
 
 export default HomePage;
-
