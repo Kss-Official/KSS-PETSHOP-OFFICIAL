@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Award, ShieldCheck, HeartHandshake } from 'lucide-react';
 import { MagneticButton } from '../motion/MagneticButton';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { getCloudinaryImageUrl } from '../../lib/utils';
 
 interface GroomingExcellenceProps {
   onExploreGrooming?: () => void;
@@ -54,7 +55,7 @@ export const GroomingExcellence: React.FC<GroomingExcellenceProps> = ({ onExplor
               
               <div className="relative overflow-hidden rounded-3xl transition-transform duration-500 hover:scale-[1.01]">
                 <img
-                  src="/images/grooming_excellence_collage.png"
+                  src={getCloudinaryImageUrl('grooming_excellence_collage')}
                   alt="Pawfectly Grooming Excellence Collage - Happy pets receiving grooming and care"
                   className="w-full h-auto object-contain drop-shadow-sm transition-all duration-500"
                   loading="lazy"

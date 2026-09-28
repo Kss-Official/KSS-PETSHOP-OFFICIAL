@@ -14,6 +14,7 @@ const ASSET_VERSIONS: Record<string, string> = {
   ChatGPT_Image_Sep_9_2026_11_21_47_AM: 'v1788933125',
   ChatGPT_Image_Sep_9_2026_12_39_49_PM: 'v1788937905',
   ChatGPT_Image_Sep_9_2026_01_10_44_PM: 'v1788939755',
+  grooming_excellence_collage: 'v1790573778',
 };
 
 const ASSET_ALIASES: Record<string, string> = {
@@ -36,7 +37,6 @@ const ASSET_ALIASES: Record<string, string> = {
   health_tips_hero: 'ChatGPT_Image_Sep_11_2026_06_16_49_PM',
   insurance_cta: 'ChatGPT_Image_Sep_11_2026_12_54_54_PM',
   insurance_cts: 'ChatGPT_Image_Sep_11_2026_12_54_54_PM',
-  grooming_excellence_collage: '/images/grooming_excellence_collage.png',
 };
 
 /**
