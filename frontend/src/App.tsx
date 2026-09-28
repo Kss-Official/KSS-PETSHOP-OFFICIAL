@@ -40,7 +40,6 @@ import { ScrollProgress } from './components/motion/ScrollProgress';
 import { CustomCursor } from './components/motion/CustomCursor';
 import { Preloader } from './components/motion/Preloader';
 import { CartDrawer } from './components/cart/CartDrawer';
-import { BackToTop } from './components/motion/BackToTop';
 
 function AppCartOverlay() {
   const { flyingClones, confettiParticles } = useCart();
@@ -55,7 +54,6 @@ function AppCartOverlay() {
       <CompareBar />
       <CompareSheet />
       <FloatingSupport />
-      <BackToTop />
     </>
   );
 }
