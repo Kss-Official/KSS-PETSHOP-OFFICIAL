@@ -73,7 +73,7 @@ export const HealthTipsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const filterTabs = [
-    { name: 'All Tips', icon: Sparkles, bg: 'bg-[#F6F7F2]', text: 'text-[#1F4B43]', border: 'border-[#CBDAC6]' },
+    { name: 'All Tips', icon: Sparkles, bg: 'bg-[#F6F7F2]', text: 'text-[#009E66]', border: 'border-[#CBDAC6]' },
     { name: 'Nutrition', icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]', border: 'border-[#FDE047]' },
     { name: 'Vaccination', icon: Syringe, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]', border: 'border-[#BAE6FD]' },
     { name: 'Grooming', icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]', border: 'border-[#FECDD3]' },
@@ -202,7 +202,7 @@ export const HealthTipsPage: React.FC = () => {
     {
       icon: PawPrint,
       bg: 'bg-[#E6F9EC]',
-      color: 'text-[#287A41]',
+      color: 'text-[#009E66]',
       text: 'Ensure regular daily exercise and interactive playtime.',
     },
     {
@@ -230,7 +230,7 @@ export const HealthTipsPage: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
-                Fur Real <span className="text-[#E1694F]">Health Tips</span>.
+                Fur Real <span className="text-[#EF7C3C]">Health Tips</span>.
               </h2>
               <p className="text-xs sm:text-sm text-[#556658] font-medium">
                 Easy little tips for healthier paws and happier tails.
@@ -241,9 +241,9 @@ export const HealthTipsPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <button
                 onClick={() => navigate('/health-tips/by-pet-type')}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer shrink-0 shadow-2xs bg-white text-[#1F4B43] border-[#EDE7D9] hover:border-[#1F4B43] hover:bg-[#E6F9EC]"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer shrink-0 shadow-2xs bg-white text-[#009E66] border-[#EDE7D9] hover:border-[#009E66] hover:bg-[#E6F9EC]"
               >
-                <PawPrint className="w-3.5 h-3.5 text-[#E3A23A]" />
+                <PawPrint className="w-3.5 h-3.5 text-[#EF7C3C]" />
                 <span>Browse by Pet Type</span>
               </button>
 
@@ -254,7 +254,7 @@ export const HealthTipsPage: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Filter articles..."
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#EDE7D9] text-xs text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-1 focus:ring-[#1F4B43] shadow-2xs"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#EDE7D9] text-xs text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-1 focus:ring-[#009E66] shadow-2xs"
                 />
               </div>
             </div>
@@ -279,7 +279,7 @@ export const HealthTipsPage: React.FC = () => {
                 >
                   <div
                     className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                      isActive ? 'bg-[#E3A23A] text-[#16241B]' : `${tab.bg} ${tab.text}`
+                      isActive ? 'bg-[#EF7C3C] text-[#16241B]' : `${tab.bg} ${tab.text}`
                     }`}
                   >
                     <TabIcon className="w-3 h-3" />
@@ -359,8 +359,8 @@ export const HealthTipsPage: React.FC = () => {
                         alt={featuredArticle.title}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1F4B43] text-white text-xs font-black uppercase tracking-wider shadow-md">
-                        <Sparkles className="w-3.5 h-3.5 text-[#E3A23A]" />
+                      <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#009E66] text-white text-xs font-black uppercase tracking-wider shadow-md">
+                        <Sparkles className="w-3.5 h-3.5 text-[#EF7C3C]" />
                         <span>Featured Story</span>
                       </div>
                     </div>
@@ -374,20 +374,20 @@ export const HealthTipsPage: React.FC = () => {
                             className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
                               categoryColorMap[resolveCategory(featuredArticle.title, featuredArticle.category)]?.bg || 'bg-[#E6F9EC]'
                             } ${
-                              categoryColorMap[resolveCategory(featuredArticle.title, featuredArticle.category)]?.text || 'text-[#1F4B43]'
+                              categoryColorMap[resolveCategory(featuredArticle.title, featuredArticle.category)]?.text || 'text-[#009E66]'
                             } border border-black/5`}
                           >
                             {resolveCategory(featuredArticle.title, featuredArticle.category)}
                           </span>
 
                           <span className="flex items-center gap-1 text-xs text-[#556658] font-semibold bg-[#F6F7F2] px-2.5 py-1 rounded-full border border-[#EDE7D9]">
-                            <Clock className="w-3.5 h-3.5 text-[#E3A23A]" />
+                            <Clock className="w-3.5 h-3.5 text-[#EF7C3C]" />
                             <span>{computeReadTime(featuredArticle.content, featuredArticle.excerpt)} min read</span>
                           </span>
                         </div>
 
                         {/* Big Bold Headline */}
-                        <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#16241B] group-hover:text-[#1F4B43] transition-colors leading-tight tracking-tight">
+                        <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#16241B] group-hover:text-[#009E66] transition-colors leading-tight tracking-tight">
                           {featuredArticle.title}
                         </h3>
 
@@ -402,7 +402,7 @@ export const HealthTipsPage: React.FC = () => {
                       <div className="pt-4 border-t border-[#F0EAE1] flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5 text-xs text-[#88998C] font-semibold">
                           <span className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-[#1F4B43]" />
+                            <Calendar className="w-3.5 h-3.5 text-[#009E66]" />
                             <span>
                               {featuredArticle.publishedAt
                                 ? new Date(featuredArticle.publishedAt).toLocaleDateString('en-US', {
@@ -435,7 +435,7 @@ export const HealthTipsPage: React.FC = () => {
                       const category = resolveCategory(tip.title, tip.category);
                       const colors = categoryColorMap[category] || {
                         bg: 'bg-[#E6F9EC]',
-                        text: 'text-[#1F4B43]',
+                        text: 'text-[#009E66]',
                       };
                       const readTime = computeReadTime(tip.content, tip.excerpt);
 
@@ -461,7 +461,7 @@ export const HealthTipsPage: React.FC = () => {
                             </div>
 
                             {/* Title */}
-                            <h4 className="text-sm sm:text-base font-black text-[#16241B] group-hover:text-[#1F4B43] transition-colors line-clamp-2 leading-snug mb-2">
+                            <h4 className="text-sm sm:text-base font-black text-[#16241B] group-hover:text-[#009E66] transition-colors line-clamp-2 leading-snug mb-2">
                               {tip.title}
                             </h4>
 
@@ -477,7 +477,7 @@ export const HealthTipsPage: React.FC = () => {
                           <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#88998C] font-semibold mt-2">
                             <div className="flex items-center gap-2.5">
                               <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-[#1F4B43]" />
+                                <Calendar className="w-3 h-3 text-[#009E66]" />
                                 {tip.publishedAt
                                   ? new Date(tip.publishedAt).toLocaleDateString('en-US', {
                                       month: 'short',
@@ -487,7 +487,7 @@ export const HealthTipsPage: React.FC = () => {
                               </span>
                               <span>•</span>
                               <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-[#E3A23A]" />
+                                <Clock className="w-3 h-3 text-[#EF7C3C]" />
                                 {readTime} min read
                               </span>
                             </div>
@@ -511,13 +511,13 @@ export const HealthTipsPage: React.FC = () => {
           <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-8 border border-[#E2EEDB] shadow-xs">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-4 space-y-3 text-center lg:text-left">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#287A41] text-[11px] font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
-                  <Sparkles className="w-3.5 h-3.5 text-[#287A41]" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#009E66] text-[11px] font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#009E66]" />
                   <span>QUICK DAILY TIPS</span>
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight leading-tight">
                   Little Habits.<br />
-                  <span className="text-[#287A41]">Healthier Tomorrows.</span>
+                  <span className="text-[#009E66]">Healthier Tomorrows.</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-[#556658] font-medium leading-relaxed">
                   Simple habits you can follow every day to keep your pet happy and thriving.

@@ -139,7 +139,7 @@ export const VetProfilePage: React.FC = () => {
         {/* Back Link */}
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#287A41] hover:text-[#1B2B1E] bg-white border border-[#D5EAD9] px-4 py-2 rounded-full shadow-2xs transition-all cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#009E66] hover:text-[#1B2B1E] bg-white border border-[#D5EAD9] px-4 py-2 rounded-full shadow-2xs transition-all cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
@@ -167,7 +167,7 @@ export const VetProfilePage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl sm:text-3xl font-black text-[#16241B]">{vet.name}</h1>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#287A41] bg-[#E3F3E9] px-2.5 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#009E66] bg-[#E3F3E9] px-2.5 py-0.5 rounded-full">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Verified Vet
                     </span>
                   </div>
@@ -199,7 +199,7 @@ export const VetProfilePage: React.FC = () => {
 
               {/* Badges / Key Specs */}
               <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                <span className="inline-flex items-center gap-1 font-bold text-[#287A41] bg-[#EFF8F0] border border-[#D5EAD9] px-3 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 font-bold text-[#009E66] bg-[#EFF8F0] border border-[#D5EAD9] px-3 py-1 rounded-full">
                   <Award className="w-3.5 h-3.5" /> {vet.experienceYears || 5}+ Years Experience
                 </span>
                 {vet.petTypes && (
@@ -228,7 +228,7 @@ export const VetProfilePage: React.FC = () => {
           <div className="border-t border-[#EDE7D9] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <span className="text-xs font-semibold text-[#556658] block">Consultation Fee</span>
-              <span className="text-2xl font-black text-[#287A41]">
+              <span className="text-2xl font-black text-[#009E66]">
                 {formatCurrency(vet.consultationFee ?? 50)}
                 <span className="text-xs text-[#556658] font-normal"> / in-clinic visit</span>
               </span>
@@ -252,7 +252,7 @@ export const VetProfilePage: React.FC = () => {
               <h2 className="text-2xl font-black text-[#16241B]">Customer Reviews</h2>
               <p className="text-xs text-[#556658] mt-0.5">Verified feedback from real completed pet appointments</p>
             </div>
-            <div className="text-xs font-bold text-[#287A41] bg-[#E3F3E9] px-3 py-1 rounded-full">
+            <div className="text-xs font-bold text-[#009E66] bg-[#E3F3E9] px-3 py-1 rounded-full">
               {reviews.length} Review{reviews.length === 1 ? '' : 's'} Total
             </div>
           </div>
@@ -263,7 +263,7 @@ export const VetProfilePage: React.FC = () => {
                 <div key={rev.id} className="bg-white rounded-2xl p-5 border border-[#EDE7D9] shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-[#E3F3E9] text-[#287A41] font-black text-xs flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-[#E3F3E9] text-[#009E66] font-black text-xs flex items-center justify-center">
                         {rev.customerName ? rev.customerName.charAt(0) : 'A'}
                       </div>
                       <div>

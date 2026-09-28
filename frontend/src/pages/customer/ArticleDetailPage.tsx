@@ -165,7 +165,7 @@ export const ArticleDetailPage: React.FC = () => {
   const category = resolveCategory(article?.title, article?.category);
   const colors = categoryColorMap[category] || {
     bg: 'bg-[#E6F9EC]',
-    text: 'text-[#287A41]',
+    text: 'text-[#009E66]',
   };
 
   const readTime = article ? computeReadTime(article.content, article.excerpt) : 5;
@@ -174,7 +174,7 @@ export const ArticleDetailPage: React.FC = () => {
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col antialiased">
       <Navbar activePage="health-tips" />
 
-      <main className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-14 w-full space-y-8">
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-14 w-full space-y-8">
         {/* Back Button */}
         <div>
           <button
@@ -185,9 +185,9 @@ export const ArticleDetailPage: React.FC = () => {
                 navigate('/health-tips');
               }
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] text-xs font-bold shadow-2xs hover:shadow-md hover:border-[#1F4B43] transition-all cursor-pointer group"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] text-xs font-bold shadow-2xs hover:shadow-md hover:border-[#009E66] transition-all cursor-pointer group"
           >
-            <ArrowLeft className="w-4 h-4 text-[#1F4B43] group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft className="w-4 h-4 text-[#009E66] group-hover:-translate-x-1 transition-transform" />
             <span>Back</span>
           </button>
         </div>
@@ -220,7 +220,7 @@ export const ArticleDetailPage: React.FC = () => {
                   {category}
                 </span>
                 {article.petType && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-white text-[#1F4B43] border border-[#CBDAC6]">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-white text-[#009E66] border border-[#CBDAC6]">
                     For {article.petType}
                   </span>
                 )}
@@ -233,7 +233,7 @@ export const ArticleDetailPage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-between gap-4 pt-1 pb-3 border-b border-[#EAE3D4] text-xs text-[#88998C] font-semibold">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-[#1F4B43]" />
+                    <Calendar className="w-4 h-4 text-[#009E66]" />
                     {article.publishedAt
                       ? new Date(article.publishedAt).toLocaleDateString('en-US', {
                           day: 'numeric',
@@ -243,18 +243,18 @@ export const ArticleDetailPage: React.FC = () => {
                       : 'Recent'}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-[#E3A23A]" />
+                    <Clock className="w-4 h-4 text-[#EF7C3C]" />
                     {readTime} min read
                   </span>
                 </div>
 
                 <button
                   onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] text-xs font-bold hover:bg-[#E6F9EC] hover:text-[#1F4B43] hover:border-[#1F4B43] transition-all cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] text-xs font-bold hover:bg-[#E6F9EC] hover:text-[#009E66] hover:border-[#009E66] transition-all cursor-pointer shadow-2xs"
                 >
                   {copied ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-[#1F4B43]" />
+                      <Check className="w-3.5 h-3.5 text-[#009E66]" />
                       <span>Link Copied!</span>
                     </>
                   ) : (
@@ -297,7 +297,7 @@ export const ArticleDetailPage: React.FC = () => {
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-8 border-t border-[#EAE3D4] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="pt-4 border-t border-[#EAE3D4] flex items-center justify-start">
               <Link
                 to="/health-tips"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#009E66] hover:bg-[#008756] text-white font-black text-sm shadow-md transition-all cursor-pointer"
@@ -305,18 +305,11 @@ export const ArticleDetailPage: React.FC = () => {
                 <BookOpen className="w-4 h-4 text-white" />
                 <span>Explore All Health Tips</span>
               </Link>
-              <button
-                onClick={handleShare}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] font-bold text-xs shadow-2xs hover:shadow-md hover:border-[#009E66] transition-all cursor-pointer"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>{copied ? 'Link Copied to Clipboard!' : 'Share Article'}</span>
-              </button>
             </div>
 
             {/* Related Articles Section */}
             {relatedArticles.length > 0 && (
-              <section className="pt-12 space-y-6">
+              <section className="pt-6 space-y-5">
                 <div className="flex items-center justify-between border-b border-[#EAE3D4] pb-4">
                   <h3 className="text-xl sm:text-2xl font-black text-[#16241B]">
                     Related <span className="text-[#EF7C3C]">Health Tips</span>.
@@ -357,7 +350,7 @@ export const ArticleDetailPage: React.FC = () => {
 
                         <div className="pt-2.5 border-t border-[#F0EAE1] flex items-center justify-between text-[10px] text-[#88998C] font-semibold mt-2.5">
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-[#E3A23A]" />
+                            <Clock className="w-3 h-3 text-[#EF7C3C]" />
                             {relReadTime} min read
                           </span>
                           <div className="w-5 h-5 rounded-full bg-[#FAF6EE] group-hover:bg-[#009E66] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">

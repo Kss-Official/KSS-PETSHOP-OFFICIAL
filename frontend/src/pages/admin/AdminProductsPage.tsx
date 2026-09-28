@@ -297,7 +297,7 @@ export const AdminProductsPage: React.FC = () => {
       className: 'w-[16%]',
       render: (row) => {
         const cat = (row.category || 'MEDICATIONS').toUpperCase();
-        let bgClass = 'bg-[#E6F9EC] text-[#287A41] border-[#C3E8CC]';
+        let bgClass = 'bg-[#E6F9EC] text-[#009E66] border-[#C3E8CC]';
         if (cat.includes('FOOD')) bgClass = 'bg-[#FEF9C3] text-[#B45309] border-[#FDE047]';
         else if (cat.includes('SUPPLEMENT')) bgClass = 'bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF]';
         else if (cat.includes('FLEA')) bgClass = 'bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]';
@@ -408,8 +408,8 @@ export const AdminProductsPage: React.FC = () => {
             <div className="min-w-0">
               <p className="font-semibold text-gray-900 truncate">{row.name}</p>
               {row.brand && (
-                <p className="text-[11px] font-bold text-[#1F4B43] flex items-center gap-1">
-                  <Tag className="w-3 h-3 text-[#E3A23A]" />
+                <p className="text-[11px] font-bold text-[#009E66] flex items-center gap-1">
+                  <Tag className="w-3 h-3 text-[#EF7C3C]" />
                   {row.brand}
                 </p>
               )}
@@ -448,7 +448,7 @@ export const AdminProductsPage: React.FC = () => {
       className: 'w-[16%]',
       render: (row) => (
         <div>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-[#FAF6EE] text-[#1F4B43] border border-[#E5DFCE]">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-[#FAF6EE] text-[#009E66] border border-[#E5DFCE]">
             {row.category}
           </span>
           {row.subcategory && (

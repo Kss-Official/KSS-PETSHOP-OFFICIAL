@@ -743,7 +743,7 @@ export const AdminArticlesPage: React.FC = () => {
               <label className="block text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider">
                 Summary Highlight / Quote (Green Box Text)
               </label>
-              <span className="text-[10px] text-[#287A41] font-bold bg-[#E6F9EC] px-2 py-0.5 rounded-full border border-[#CBDAC6]">
+              <span className="text-[10px] text-[#009E66] font-bold bg-[#E6F9EC] px-2 py-0.5 rounded-full border border-[#CBDAC6]">
                 Green Callout Box
               </span>
             </div>

@@ -93,7 +93,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-30px' }}
       transition={springs.soft}
-      className="group bg-white rounded-2xl border border-[#EDE7D9] shadow-2xs hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(31,75,67,0.12)] hover:border-[#1F4B43]/30 transition-all duration-200 ease-out flex flex-col justify-between overflow-hidden relative cursor-pointer h-full"
+      className="group bg-white rounded-2xl border border-[#EDE7D9] shadow-2xs hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(31,75,67,0.12)] hover:border-[#009E66]/30 transition-all duration-200 ease-out flex flex-col justify-between overflow-hidden relative cursor-pointer h-full"
     >
       {/* Top Badges, Fixed Aspect Ratio Image & Wishlist Heart */}
       <div className="relative w-full aspect-[4/3] bg-[#FAF6EE] overflow-hidden flex items-center justify-center p-3">
@@ -107,12 +107,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Top-Left Status / Category Badges */}
         <div className="absolute top-2.5 left-2.5 z-10 flex flex-wrap items-center gap-1.5">
           {discountPercent ? (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E1694F] text-white text-[10px] font-black tracking-wide uppercase shadow-2xs">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#EF7C3C] text-white text-[10px] font-black tracking-wide uppercase shadow-2xs">
               <Sparkles className="w-2.5 h-2.5" />
               {discountPercent}% OFF
             </span>
           ) : product.prescriptionRequired ? (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E1694F]/12 text-[#E1694F] text-[10px] font-black uppercase tracking-wide border border-[#E1694F]/20 shadow-2xs">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#EF7C3C]/12 text-[#EF7C3C] text-[10px] font-black uppercase tracking-wide border border-[#EF7C3C]/20 shadow-2xs">
               <ShieldCheck className="w-3 h-3" />
               <span>Rx Required</span>
             </span>
@@ -138,8 +138,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Pickup Ready Tag */}
-        <div className="absolute bottom-2 left-2.5 flex items-center gap-1 text-[10px] font-bold text-[#1F4B43] bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-[#EDE7D9] shadow-2xs">
-          <Store className="w-3 h-3 text-[#E3A23A]" />
+        <div className="absolute bottom-2 left-2.5 flex items-center gap-1 text-[10px] font-bold text-[#009E66] bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-[#EDE7D9] shadow-2xs">
+          <Store className="w-3 h-3 text-[#EF7C3C]" />
           <span>Pickup Ready</span>
         </div>
       </div>
@@ -149,13 +149,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div>
           {/* Brand & Rating Row */}
           <div className="flex items-center justify-between text-[11px] mb-1 gap-2">
-            <span className="text-[#1F4B43] uppercase tracking-wider font-black truncate">
+            <span className="text-[#009E66] uppercase tracking-wider font-black truncate">
               {product.brand || product.category}
             </span>
 
             {reviewsCount > 0 && rating !== null ? (
               <div className="flex items-center gap-1 text-[#16241B] shrink-0">
-                <Star className="w-3.5 h-3.5 fill-[#E3A23A] text-[#E3A23A]" />
+                <Star className="w-3.5 h-3.5 fill-[#EF7C3C] text-[#EF7C3C]" />
                 <span className="font-black text-xs">{rating.toFixed(1)}</span>
                 <span className="text-[#88998C] text-[10px]">({reviewsCount})</span>
               </div>
@@ -169,7 +169,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Product Title */}
           <h4
-            className="text-sm font-medium text-[#16241B] line-clamp-2 leading-snug group-hover:text-[#1F4B43] transition-colors min-h-[2.5rem]"
+            className="text-sm font-medium text-[#16241B] line-clamp-2 leading-snug group-hover:text-[#009E66] transition-colors min-h-[2.5rem]"
             title={product.name}
           >
             {product.name}
@@ -187,7 +187,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           <div>
-            <span className="text-base sm:text-lg font-black text-[#1F4B43]">
+            <span className="text-base sm:text-lg font-black text-[#009E66]">
               {formatCurrency(product.price)}
             </span>
             <span className="block text-[10px] font-semibold text-[#88998C]">
@@ -220,7 +220,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-1"
                 title="Get notified when this item is back in stock"
               >
-                <Bell className="w-3.5 h-3.5 text-[#E3A23A]" />
+                <Bell className="w-3.5 h-3.5 text-[#EF7C3C]" />
                 <span>Notify</span>
               </button>
             )

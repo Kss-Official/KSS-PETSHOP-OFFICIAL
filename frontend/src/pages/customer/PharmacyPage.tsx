@@ -132,7 +132,7 @@ export const PharmacyPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F7F2] text-[#16241B] font-sans flex flex-col selection:bg-[#1F4B43]/20">
+    <div className="min-h-screen bg-[#F6F7F2] text-[#16241B] font-sans flex flex-col selection:bg-[#009E66]/20">
       {/* 1. Navbar */}
       <Navbar activePage="pharmacy" />
 
@@ -269,7 +269,7 @@ export const PharmacyPage: React.FC = () => {
                   className="group flex flex-col items-center text-center w-full max-w-[210px] transition-transform duration-300 hover:-translate-y-1.5 cursor-pointer"
                 >
                   {/* Soft Organic Card Shape with Generated Category Image */}
-                  <div className="relative w-full aspect-[4/5] rounded-[30px] overflow-hidden p-2.5 flex items-center justify-center bg-white border border-[#CBDAC6]/60 shadow-2xs group-hover:shadow-md group-hover:border-[#1F4B43]/50 transition-all duration-300">
+                  <div className="relative w-full aspect-[4/5] rounded-[30px] overflow-hidden p-2.5 flex items-center justify-center bg-white border border-[#CBDAC6]/60 shadow-2xs group-hover:shadow-md group-hover:border-[#009E66]/50 transition-all duration-300">
                     {/* Organic Pastel Background Tint */}
                     <div
                       className={`absolute inset-2 rounded-[22px] ${category.color.bg} opacity-90 group-hover:opacity-100 transition-opacity`}
@@ -291,7 +291,7 @@ export const PharmacyPage: React.FC = () => {
 
                   {/* Category Title & Tagline */}
                   <div className="mt-3.5 space-y-1 px-1">
-                    <h3 className="text-sm sm:text-base font-black text-[#16241B] group-hover:text-[#1F4B43] transition-colors leading-snug">
+                    <h3 className="text-sm sm:text-base font-black text-[#16241B] group-hover:text-[#009E66] transition-colors leading-snug">
                       {category.name}
                     </h3>
                     <p className="text-[11px] sm:text-xs text-[#556658] font-normal leading-relaxed line-clamp-2">
@@ -345,7 +345,7 @@ export const PharmacyPage: React.FC = () => {
                   className="group flex flex-col items-center text-center w-full max-w-[290px] cursor-pointer"
                 >
                   {/* Rounded Image Container */}
-                  <div className="relative w-full aspect-square rounded-[28px] sm:rounded-[32px] overflow-hidden bg-white border border-[#CBDAC6]/60 shadow-xs group-hover:shadow-md group-hover:border-[#1F4B43]/50 transition-all duration-300 mb-4 p-2 sm:p-2.5">
+                  <div className="relative w-full aspect-square rounded-[28px] sm:rounded-[32px] overflow-hidden bg-white border border-[#CBDAC6]/60 shadow-xs group-hover:shadow-md group-hover:border-[#009E66]/50 transition-all duration-300 mb-4 p-2 sm:p-2.5">
                     <div className="w-full h-full rounded-[22px] sm:rounded-[24px] overflow-hidden bg-[#F6F7F2]">
                       <img
                         src={concern.imageUrl}
@@ -361,7 +361,7 @@ export const PharmacyPage: React.FC = () => {
 
                   {/* Concern Title & Exact Tagline */}
                   <div className="space-y-1.5 px-2">
-                    <h3 className="text-base sm:text-lg font-black text-[#16241B] group-hover:text-[#1F4B43] transition-colors leading-snug">
+                    <h3 className="text-base sm:text-lg font-black text-[#16241B] group-hover:text-[#009E66] transition-colors leading-snug">
                       {concern.title}
                     </h3>
                     <p className="text-xs text-[#556658] font-normal leading-relaxed max-w-[260px]">

@@ -271,7 +271,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                   title="Notifications"
                   className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-colors cursor-pointer shadow-2xs ${
                     notificationMenuOpen
-                      ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41]'
+                      ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#009E66]'
                       : 'bg-white border-[#E5DFCE] text-[#334437] hover:bg-[#F3EDE0]'
                   }`}
                 >
@@ -293,7 +293,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                             {unreadCount} new
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-[#E6F9EC] text-[#009E66] text-[10px] font-bold">
                             All read
                           </span>
                         )}
@@ -336,7 +336,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                                 item.type === 'admin'
                                   ? 'bg-[#FEF3C7] border-[#FDE68A] text-[#D97706]'
                                   : item.type === 'appointment'
-                                  ? 'bg-[#E6F9EC] border-[#C3ECD0] text-[#287A41]'
+                                  ? 'bg-[#E6F9EC] border-[#C3ECD0] text-[#009E66]'
                                   : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#2563EB]'
                               }`}
                             >
@@ -422,7 +422,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                   aria-expanded={notificationMenuOpen}
                   className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${
                     notificationMenuOpen
-                      ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41]'
+                      ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#009E66]'
                       : 'bg-white border-[#E5DFCE] text-[#334437] hover:bg-[#F3EDE0]'
                   }`}
                 >
@@ -444,7 +444,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                             {unreadCount} new
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-[#E6F9EC] text-[#009E66] text-[10px] font-bold">
                             All read
                           </span>
                         )}
@@ -487,7 +487,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
                                 item.type === 'admin'
                                   ? 'bg-[#FEF3C7] border-[#FDE68A] text-[#D97706]'
                                   : item.type === 'appointment'
-                                  ? 'bg-[#E6F9EC] border-[#C3ECD0] text-[#287A41]'
+                                  ? 'bg-[#E6F9EC] border-[#C3ECD0] text-[#009E66]'
                                   : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#2563EB]'
                               }`}
                             >

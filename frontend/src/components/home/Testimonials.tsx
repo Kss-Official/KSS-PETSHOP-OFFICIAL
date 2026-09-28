@@ -31,7 +31,7 @@ const testimonials: TestimonialItem[] = [
     quote: 'Finding a specialized feline clinician was effortless. The in-app medical records and prescription refills saved us so much time.',
     rating: 5,
     avatarBg: 'bg-[#D8F3DC]',
-    avatarColor: 'text-[#287A41]',
+    avatarColor: 'text-[#009E66]',
     tag: 'Clinic Booking',
   },
   {
@@ -133,7 +133,7 @@ export const Testimonials: React.FC = () => {
                   <span className="text-[11px] font-bold text-[#8C9B8F] uppercase tracking-wider">
                     {item.tag}
                   </span>
-                  <span className="text-[11px] font-semibold text-[#287A41] flex items-center gap-1">
+                  <span className="text-[11px] font-semibold text-[#009E66] flex items-center gap-1">
                     Verified Parent ✓
                   </span>
                 </div>

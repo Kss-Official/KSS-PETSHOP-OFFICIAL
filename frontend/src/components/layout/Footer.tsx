@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, Heart } from 'lucide-react';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 
@@ -225,14 +225,14 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-6 sm:pt-8 border-t border-[#23382A] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#A3B3A6]">
           <p className="text-center sm:text-left">
-            © 2024 Pawfectly Inc. Dedicated to happier, healthier pets everywhere.
+            © 2024 Pawfectly India. Bengaluru, Karnataka, India.
           </p>
 
           <div className="flex items-center gap-4 text-xs text-[#7A8E7E]">
             <span className="inline-flex items-center gap-1.5 text-[#A3B3A6]">
               <span>Made with</span>
-              <span className="text-[#EF7C3C]" aria-hidden="true">🐾</span>
-              <span>for pets & parents</span>
+              <Heart className="w-3.5 h-3.5 text-[#EF7C3C] fill-[#EF7C3C]" />
+              <span>in Bangalore</span>
             </span>
           </div>
         </div>

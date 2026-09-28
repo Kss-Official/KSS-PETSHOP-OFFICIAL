@@ -377,7 +377,7 @@ export const HomePage: React.FC = () => {
                           <span>•</span>
                           <span>{vet.experienceYears || 7}+ yrs exp</span>
                         </div>
-                        <p className="font-bold text-[#287A41] pt-0.5 text-xs">
+                        <p className="font-bold text-[#009E66] pt-0.5 text-xs">
                           {formatCurrency(vet.consultationFee ?? 500)} / visit
                         </p>
                       </div>
@@ -413,7 +413,7 @@ export const HomePage: React.FC = () => {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-6 border-y border-[#EDE6D8]">
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-[#D8F3DC] flex items-center justify-center text-[#287A41] shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#D8F3DC] flex items-center justify-center text-[#009E66] shrink-0">
                 <Headphones className="w-5 h-5" />
               </div>
               <div>

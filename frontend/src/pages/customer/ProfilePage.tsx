@@ -928,7 +928,7 @@ export const ProfilePage: React.FC = () => {
     if (!status) return 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]';
     const s = status.toUpperCase();
     if (s === 'DELIVERED' || s === 'COMPLETED') {
-      return 'bg-[#E6F9EC] text-[#287A41] border-[#C3ECD0]';
+      return 'bg-[#E6F9EC] text-[#009E66] border-[#C3ECD0]';
     } else if (s === 'READY_FOR_PICKUP' || s === 'SHIPPED' || s === 'PROCESSING') {
       return 'bg-[#FFF0E6] text-[#EF7C3C] border-[#FED7AA]';
     } else if (s === 'PLACED') {
@@ -942,7 +942,7 @@ export const ProfilePage: React.FC = () => {
   const getAptStatusBadge = (status: AppointmentItem['status']) => {
     switch (status) {
       case 'CONFIRMED':
-        return 'bg-[#E6F9EC] text-[#287A41] border-[#C3ECD0]';
+        return 'bg-[#E6F9EC] text-[#009E66] border-[#C3ECD0]';
       case 'PENDING':
         return 'bg-[#FEF9C3] text-[#B45309] border-[#FDE047]';
       case 'COMPLETED':
@@ -1100,10 +1100,10 @@ export const ProfilePage: React.FC = () => {
                     className="bg-[#EFF8F0] border border-[#D5EAD9] hover:border-[#009E66]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold tracking-wider text-[#287A41] uppercase">
+                      <span className="text-[11px] font-semibold tracking-wider text-[#009E66] uppercase">
                         NEXT APPOINTMENT
                       </span>
-                      <div className="w-7 h-7 rounded-full bg-white/90 border border-[#C3ECD0] flex items-center justify-center text-[#287A41] shadow-2xs group-hover:scale-105 transition-transform">
+                      <div className="w-7 h-7 rounded-full bg-white/90 border border-[#C3ECD0] flex items-center justify-center text-[#009E66] shadow-2xs group-hover:scale-105 transition-transform">
                         <Calendar className="w-3.5 h-3.5" />
                       </div>
                     </div>
@@ -1303,7 +1303,7 @@ export const ProfilePage: React.FC = () => {
                           >
                             <div className="space-y-1.5 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[11px] font-semibold border border-[#C3ECD0]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#009E66] text-[11px] font-semibold border border-[#C3ECD0]">
                                   {apt.petName || 'Pet'}
                                 </span>
                                 <span className="text-xs text-[#88998C] font-normal">
@@ -1355,7 +1355,7 @@ export const ProfilePage: React.FC = () => {
                         const petSpecies = pets.length > 0 && pets[0].species ? `?petType=${encodeURIComponent(pets[0].species)}` : '';
                         navigate(`/health-tips/by-pet-type${petSpecies}`);
                       }}
-                      className="text-xs font-bold text-[#1F4B43] hover:text-[#E3A23A] flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                      className="text-xs font-bold text-[#009E66] hover:text-[#EF7C3C] flex items-center gap-1 transition-colors cursor-pointer shrink-0"
                     >
                       <span>View All</span>
                     </button>
@@ -1386,7 +1386,7 @@ export const ProfilePage: React.FC = () => {
                         <div
                           key={article.id}
                           onClick={() => navigate(`/health-tips/${article.id}`)}
-                          className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] hover:border-[#1F4B43]/40 transition-all cursor-pointer group flex flex-col justify-between shadow-2xs"
+                          className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] hover:border-[#009E66]/40 transition-all cursor-pointer group flex flex-col justify-between shadow-2xs"
                         >
                           <div className="space-y-2">
                             {article.imageUrl && (
@@ -1401,18 +1401,18 @@ export const ProfilePage: React.FC = () => {
 
                             <div className="flex items-center gap-2">
                               {article.petType && (
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#1F4B43] text-[10px] font-semibold uppercase border border-[#CBDAC6]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#009E66] text-[10px] font-semibold uppercase border border-[#CBDAC6]">
                                   {article.petType}
                                 </span>
                               )}
                               {article.isFeatured && (
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#E1694F] text-[10px] font-semibold uppercase border border-[#FED7AA]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#EF7C3C] text-[10px] font-semibold uppercase border border-[#FED7AA]">
                                   Featured
                                 </span>
                               )}
                             </div>
 
-                            <h3 className="text-sm font-semibold text-[#16241B] group-hover:text-[#1F4B43] transition-colors line-clamp-2">
+                            <h3 className="text-sm font-semibold text-[#16241B] group-hover:text-[#009E66] transition-colors line-clamp-2">
                               {article.title}
                             </h3>
 
@@ -1423,7 +1423,7 @@ export const ProfilePage: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="pt-3 border-t border-[#EAE3D4] mt-3 flex items-center justify-between text-xs font-semibold text-[#1F4B43] group-hover:text-[#E3A23A] transition-colors">
+                          <div className="pt-3 border-t border-[#EAE3D4] mt-3 flex items-center justify-between text-xs font-semibold text-[#009E66] group-hover:text-[#EF7C3C] transition-colors">
                             <span>Read Article</span>
                             <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                           </div>
@@ -2230,7 +2230,7 @@ export const ProfilePage: React.FC = () => {
                               {/* Clinical Medical Record (if added by Doctor/Admin) */}
                               {(apt.diagnosis || apt.prescription || apt.notes) && (
                                 <div className="pt-3 border-t border-[#F2ECE0] bg-[#FBF9F4] p-3 rounded-xl space-y-2 text-left">
-                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#287A41]">
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#009E66]">
                                     <FileText className="w-3.5 h-3.5" />
                                     <span>Medical Record</span>
                                   </div>
@@ -2481,7 +2481,7 @@ export const ProfilePage: React.FC = () => {
                         {selectedVetId && (
                           <div className="p-3 bg-[#EFF8F0] border border-[#D5EAD9] rounded-xl flex items-center justify-between text-xs font-medium text-[#16241B]">
                             <span>Consultation Fee:</span>
-                            <span className="text-sm font-semibold text-[#287A41]">
+                            <span className="text-sm font-semibold text-[#009E66]">
                               {formatCurrency(vetsList.find((v) => v.id === selectedVetId)?.consultationFee ?? 50)}
                             </span>
                           </div>
@@ -2533,7 +2533,7 @@ export const ProfilePage: React.FC = () => {
                     <AnimatePresence mode="popLayout" initial={false}>
                       {notifications.map((n) => {
                         const getIcon = () => {
-                          if (n.type === 'APPOINTMENT_CONFIRMED') return <CheckCircle2 className="w-5 h-5 text-[#287A41]" />;
+                          if (n.type === 'APPOINTMENT_CONFIRMED') return <CheckCircle2 className="w-5 h-5 text-[#009E66]" />;
                           if (n.type === 'APPOINTMENT_REJECTED') return <AlertCircle className="w-5 h-5 text-[#DC2626]" />;
                           if (n.type === 'NEW_VET') return <Stethoscope className="w-5 h-5 text-[#0284C7]" />;
                           if (n.type && n.type.includes('ORDER')) return <ShoppingBag className="w-5 h-5 text-[#009E66]" />;
@@ -2674,7 +2674,7 @@ export const ProfilePage: React.FC = () => {
                                 {imageSrc ? (
                                   <img src={imageSrc} alt={item.name} className="w-full h-full object-cover" />
                                 ) : item.itemType === 'VET' ? (
-                                  <Stethoscope className="w-6 h-6 text-[#287A41]" />
+                                  <Stethoscope className="w-6 h-6 text-[#009E66]" />
                                 ) : item.itemType === 'SERVICE' ? (
                                   <Sparkles className="w-6 h-6 text-[#7E22CE]" />
                                 ) : (
@@ -2685,7 +2685,7 @@ export const ProfilePage: React.FC = () => {
                                 <div className="flex items-center gap-1.5">
                                   <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
                                     item.itemType === 'VET'
-                                      ? 'bg-[#E3F3E9] text-[#287A41]'
+                                      ? 'bg-[#E3F3E9] text-[#009E66]'
                                       : item.itemType === 'SERVICE'
                                       ? 'bg-[#F3E8FF] text-[#7E22CE]'
                                       : 'bg-[#E6F9EC] text-[#009E66]'

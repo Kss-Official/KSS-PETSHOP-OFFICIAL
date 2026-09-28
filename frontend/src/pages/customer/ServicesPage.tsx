@@ -104,8 +104,8 @@ export const ServicesPage: React.FC = () => {
   };
 
   const serviceIconsMap: Record<string, { icon: React.ElementType; bg: string; text: string }> = {
-    'Veterinary Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
-    'Vet Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
+    'Veterinary Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#009E66]' },
+    'Vet Care': { icon: Stethoscope, bg: 'bg-[#E6F9EC]', text: 'text-[#009E66]' },
     'Pet Food & Nutrition': { icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
     'Pet Food': { icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
     'Professional Grooming': { icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
@@ -258,7 +258,7 @@ export const ServicesPage: React.FC = () => {
                   const iconConfig = serviceIconsMap[service.name] || {
                     icon: Stethoscope,
                     bg: 'bg-[#E6F9EC]',
-                    text: 'text-[#287A41]',
+                    text: 'text-[#009E66]',
                   };
                   const IconComponent = iconConfig.icon;
 

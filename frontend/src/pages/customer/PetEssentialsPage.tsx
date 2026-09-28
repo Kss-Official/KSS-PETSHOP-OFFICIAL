@@ -316,7 +316,7 @@ export const PetEssentialsPage: React.FC = () => {
   }, [allProducts, selectedPetTypes, selectedSubcategory, selectedBrands, maxPrice, ageFilter, searchQuery, sortBy]);
 
   return (
-    <div className="min-h-screen bg-[#F6F7F2] text-[#16241B] font-sans flex flex-col selection:bg-[#E3A23A]/30">
+    <div className="min-h-screen bg-[#F6F7F2] text-[#16241B] font-sans flex flex-col selection:bg-[#EF7C3C]/30">
       {/* 1. Universal Navbar */}
       <Navbar activePage="pet-essentials" />
 
@@ -332,9 +332,9 @@ export const PetEssentialsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FAF6EE] border border-[#E5DFCE] text-xs font-black text-[#1F4B43] hover:bg-[#F0EAE1] transition-colors cursor-pointer shadow-2xs"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FAF6EE] border border-[#E5DFCE] text-xs font-black text-[#009E66] hover:bg-[#F0EAE1] transition-colors cursor-pointer shadow-2xs"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-[#1F4B43]" />
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#009E66]" />
                 <span className="tracking-wide">FILTERS</span>
               </button>
 
@@ -343,7 +343,7 @@ export const PetEssentialsPage: React.FC = () => {
                 <select
                   value={ageFilter}
                   onChange={(e) => setAgeFilter(e.target.value)}
-                  className="appearance-none pl-3 pr-7 py-2 rounded-xl bg-white border border-[#E5DFCE] text-xs font-bold text-[#16241B] focus:outline-none focus:ring-1 focus:ring-[#1F4B43] cursor-pointer shadow-2xs"
+                  className="appearance-none pl-3 pr-7 py-2 rounded-xl bg-white border border-[#E5DFCE] text-xs font-bold text-[#16241B] focus:outline-none focus:ring-1 focus:ring-[#009E66] cursor-pointer shadow-2xs"
                 >
                   <option value="All">Age: All</option>
                   <option value="Puppy / Kitten">Puppy / Kitten</option>
@@ -361,7 +361,7 @@ export const PetEssentialsPage: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none pl-3.5 pr-8 py-2 rounded-xl bg-white border border-[#E5DFCE] text-xs font-bold text-[#16241B] focus:outline-none focus:ring-1 focus:ring-[#1F4B43] cursor-pointer shadow-2xs"
+                  className="appearance-none pl-3.5 pr-8 py-2 rounded-xl bg-white border border-[#E5DFCE] text-xs font-bold text-[#16241B] focus:outline-none focus:ring-1 focus:ring-[#009E66] cursor-pointer shadow-2xs"
                 >
                   <option value="popularity">Popularity</option>
                   <option value="price-low-to-high">Price: Low to High</option>
@@ -390,7 +390,7 @@ export const PetEssentialsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPriceAccordionOpen(!priceAccordionOpen)}
-                    className="w-full flex items-center justify-between text-sm font-black text-[#1F4B43] cursor-pointer"
+                    className="w-full flex items-center justify-between text-sm font-black text-[#009E66] cursor-pointer"
                   >
                     <span>Price</span>
                     <ChevronDown
@@ -409,11 +409,11 @@ export const PetEssentialsPage: React.FC = () => {
                         step="50"
                         value={maxPrice}
                         onChange={(e) => setMaxPrice(Number(e.target.value))}
-                        className="w-full h-2 bg-[#CBDAC6] rounded-lg appearance-none cursor-pointer accent-[#1F4B43]"
+                        className="w-full h-2 bg-[#CBDAC6] rounded-lg appearance-none cursor-pointer accent-[#009E66]"
                       />
                       <div className="flex items-center justify-between text-xs font-bold text-[#16241B]">
                         <span>₹ 0</span>
-                        <span className="px-2.5 py-0.5 rounded-md bg-[#FAF6EE] border border-[#E5DFCE] font-black text-[#1F4B43]">
+                        <span className="px-2.5 py-0.5 rounded-md bg-[#FAF6EE] border border-[#E5DFCE] font-black text-[#009E66]">
                           Up to ₹ {maxPrice}
                         </span>
                         <span>₹ 5,000</span>
@@ -427,7 +427,7 @@ export const PetEssentialsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPetTypeAccordionOpen(!petTypeAccordionOpen)}
-                    className="w-full flex items-center justify-between text-sm font-black text-[#1F4B43] cursor-pointer"
+                    className="w-full flex items-center justify-between text-sm font-black text-[#009E66] cursor-pointer"
                   >
                     <span>Pet Type</span>
                     <ChevronDown
@@ -440,34 +440,34 @@ export const PetEssentialsPage: React.FC = () => {
                   {petTypeAccordionOpen && (
                     <div className="mt-3.5 space-y-2.5">
                       {/* Dogs */}
-                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#1F4B43] select-none">
+                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#009E66] select-none">
                         <input
                           type="checkbox"
                           checked={selectedPetTypes.includes('DOG')}
                           onChange={() => handleTogglePetType('DOG')}
-                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#1F4B43] focus:ring-0 cursor-pointer accent-[#1F4B43]"
+                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#009E66] focus:ring-0 cursor-pointer accent-[#009E66]"
                         />
                         <span>Dogs ({petTypeCounts.DOG || 0})</span>
                       </label>
 
                       {/* Cats */}
-                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#1F4B43] select-none">
+                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#009E66] select-none">
                         <input
                           type="checkbox"
                           checked={selectedPetTypes.includes('CAT')}
                           onChange={() => handleTogglePetType('CAT')}
-                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#1F4B43] focus:ring-0 cursor-pointer accent-[#1F4B43]"
+                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#009E66] focus:ring-0 cursor-pointer accent-[#009E66]"
                         />
                         <span>Cats ({petTypeCounts.CAT || 0})</span>
                       </label>
 
                       {/* Small Pets */}
-                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#1F4B43] select-none">
+                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#009E66] select-none">
                         <input
                           type="checkbox"
                           checked={selectedPetTypes.includes('SMALL_PET')}
                           onChange={() => handleTogglePetType('SMALL_PET')}
-                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#1F4B43] focus:ring-0 cursor-pointer accent-[#1F4B43]"
+                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#009E66] focus:ring-0 cursor-pointer accent-[#009E66]"
                         />
                         <span>Small Pets ({petTypeCounts.SMALL_PET || 0})</span>
                       </label>
@@ -480,7 +480,7 @@ export const PetEssentialsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setBrandAccordionOpen(!brandAccordionOpen)}
-                    className="w-full flex items-center justify-between text-sm font-black text-[#1F4B43] cursor-pointer"
+                    className="w-full flex items-center justify-between text-sm font-black text-[#009E66] cursor-pointer"
                   >
                     <span>Brand</span>
                     <ChevronDown
@@ -498,13 +498,13 @@ export const PetEssentialsPage: React.FC = () => {
                           return (
                             <label
                               key={brand}
-                              className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#1F4B43] select-none"
+                              className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#009E66] select-none"
                             >
                               <input
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => handleToggleBrand(brand)}
-                                className="w-4 h-4 rounded border-[#CBDAC6] text-[#1F4B43] focus:ring-0 cursor-pointer accent-[#1F4B43]"
+                                className="w-4 h-4 rounded border-[#CBDAC6] text-[#009E66] focus:ring-0 cursor-pointer accent-[#009E66]"
                               />
                               <span className="truncate">
                                 {brand} ({count})
@@ -524,7 +524,7 @@ export const PetEssentialsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="w-full py-2 px-3 rounded-xl bg-[#FAF6EE] text-xs font-bold text-[#E1694F] hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer border border-[#E5DFCE]"
+                    className="w-full py-2 px-3 rounded-xl bg-[#FAF6EE] text-xs font-bold text-[#EF7C3C] hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer border border-[#E5DFCE]"
                   >
                     Reset All Filters
                   </button>
@@ -555,8 +555,8 @@ export const PetEssentialsPage: React.FC = () => {
                         <div
                           className={`w-16 h-16 rounded-full overflow-hidden p-1 transition-all ${
                             isSelected
-                              ? 'ring-3 ring-[#E3A23A] ring-offset-2 scale-105 shadow-sm'
-                              : 'border border-[#E5DFCE] group-hover:scale-105 group-hover:border-[#1F4B43]'
+                              ? 'ring-3 ring-[#EF7C3C] ring-offset-2 scale-105 shadow-sm'
+                              : 'border border-[#E5DFCE] group-hover:scale-105 group-hover:border-[#009E66]'
                           }`}
                         >
                           <img
@@ -570,8 +570,8 @@ export const PetEssentialsPage: React.FC = () => {
                         <span
                           className={`text-xs mt-2 text-center whitespace-nowrap font-bold transition-colors ${
                             isSelected
-                              ? 'text-[#E3A23A] font-black'
-                              : 'text-[#556658] group-hover:text-[#1F4B43]'
+                              ? 'text-[#EF7C3C] font-black'
+                              : 'text-[#556658] group-hover:text-[#009E66]'
                           }`}
                         >
                           {pill.name}
@@ -579,7 +579,7 @@ export const PetEssentialsPage: React.FC = () => {
 
                         {/* Active Indicator */}
                         {isSelected && (
-                          <div className="w-10 h-0.5 bg-[#E3A23A] rounded-full mt-1 animate-in fade-in duration-200" />
+                          <div className="w-10 h-0.5 bg-[#EF7C3C] rounded-full mt-1 animate-in fade-in duration-200" />
                         )}
                       </button>
                     );
@@ -590,7 +590,7 @@ export const PetEssentialsPage: React.FC = () => {
               {/* Active Filters Summary & Dynamic Product Count */}
               <div className="flex items-center justify-between text-xs text-[#556658]">
                 <div className="flex items-center flex-wrap gap-2">
-                  <span className="font-black text-[#1F4B43]">
+                  <span className="font-black text-[#009E66]">
                     {selectedPetTypes.length === 0
                       ? 'All Pets Essentials'
                       : selectedPetTypes.length === 1
@@ -602,14 +602,14 @@ export const PetEssentialsPage: React.FC = () => {
                         : `${selectedPetTypes.map((p) => (p === 'DOG' ? 'Dogs' : p === 'CAT' ? 'Cats' : 'Small Pets')).join(' & ')} Essentials`}
                   </span>
                   {selectedSubcategory !== 'All' && (
-                    <span className="font-bold text-[#E3A23A]">· {selectedSubcategory}</span>
+                    <span className="font-bold text-[#EF7C3C]">· {selectedSubcategory}</span>
                   )}
                   {selectedBrands.length > 0 && (
-                    <span className="font-bold text-[#1F4B43]">· {selectedBrands.join(', ')}</span>
+                    <span className="font-bold text-[#009E66]">· {selectedBrands.join(', ')}</span>
                   )}
                 </div>
 
-                <span className="font-black text-[#1F4B43]">
+                <span className="font-black text-[#009E66]">
                   {displayedProducts.length} {displayedProducts.length === 1 ? 'product' : 'products'} found
                 </span>
               </div>
