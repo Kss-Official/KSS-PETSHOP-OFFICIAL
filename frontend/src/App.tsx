@@ -2,19 +2,15 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import HomePage from './pages/customer/HomePage';
-import { ServicesPage } from './pages/customer/ServicesPage';
+import { FindVetPage } from './pages/customer/FindVetPage';
 import { VetProfilePage } from './pages/customer/VetProfilePage';
+import { ServicesPage } from './pages/customer/ServicesPage';
+import { ServiceDetailPage } from './pages/customer/ServiceDetailPage';
 import { HealthTipsPage } from './pages/customer/HealthTipsPage';
 import { ArticleDetailPage } from './pages/customer/ArticleDetailPage';
-import { BrowsePetHealthTipsPage } from './pages/customer/BrowsePetHealthTipsPage';
 import { PharmacyPage } from './pages/customer/PharmacyPage';
-import { PharmacyCategoryPage } from './pages/customer/PharmacyCategoryPage';
-import { PharmacyConcernPage } from './pages/customer/PharmacyConcernPage';
 import { PetEssentialsPage } from './pages/customer/PetEssentialsPage';
-import { ContactSupportPage } from './pages/customer/ContactSupportPage';
-import { PrivacyPolicyPage } from './pages/customer/PrivacyPolicyPage';
-import { TermsOfServicePage } from './pages/customer/TermsOfServicePage';
-import { HelpCenterPage } from './pages/customer/HelpCenterPage';
+import { InsurancePage } from './pages/customer/InsurancePage';
 import { ProfilePage } from './pages/customer/ProfilePage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -32,6 +28,7 @@ import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AuthProvider } from './features/auth/AuthContext';
 import { CartProvider, useCart } from './hooks/useCart';
 import { CompareProvider } from './hooks/useCompare';
+import { FlyToCartPortal } from './components/common/FlyToCartPortal';
 import { Confetti } from './components/ui/Confetti';
 import { CompareBar } from './components/products/CompareBar';
 import { CompareSheet } from './components/products/CompareSheet';
@@ -45,17 +42,20 @@ import { Preloader } from './components/motion/Preloader';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { BackToTop } from './components/motion/BackToTop';
 
-import { LoginPromptModal } from './components/common/LoginPromptModal';
-
 function AppCartOverlay() {
-  const { confettiParticles, isAuthModalOpen, closeAuthModal } = useCart();
+  const { flyingClones, confettiParticles } = useCart();
   return (
     <>
+      <ScrollProgress />
+      <Preloader />
+      <CustomCursor showTrail={true} />
+      <FlyToCartPortal clones={flyingClones} />
       <Confetti particles={confettiParticles} />
       <CartDrawer />
       <CompareBar />
       <CompareSheet />
-      <LoginPromptModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
+      <FloatingSupport />
+      <BackToTop />
     </>
   );
 }
@@ -122,23 +122,19 @@ function AnimatedRoutes() {
       <Routes location={displayLocation}>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/services" element={<ServicesPage />} />
+        <Route path="/find-a-vet" element={<FindVetPage />} />
+        <Route path="/vets" element={<FindVetPage />} />
         <Route path="/vets/:id" element={<VetProfilePage />} />
+        <Route path="/services" element={<ServicesPage />} />
+        <Route path="/services/:id" element={<ServiceDetailPage />} />
         <Route path="/health-tips" element={<HealthTipsPage />} />
-        <Route path="/health-tips/by-pet-type" element={<BrowsePetHealthTipsPage />} />
-        <Route path="/health-tips/pet-types" element={<BrowsePetHealthTipsPage />} />
-        <Route path="/pet-health-tips" element={<BrowsePetHealthTipsPage />} />
         <Route path="/health-tips/:id" element={<ArticleDetailPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
         <Route path="/pharmacy" element={<PharmacyPage />} />
-        <Route path="/pharmacy/concern/:concernSlug" element={<PharmacyConcernPage />} />
-        <Route path="/pharmacy/:category" element={<PharmacyCategoryPage />} />
         <Route path="/pet-essentials" element={<PetEssentialsPage />} />
         <Route path="/essentials" element={<PetEssentialsPage />} />
-        <Route path="/contact-support" element={<ContactSupportPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-        <Route path="/help-center" element={<HelpCenterPage />} />
+        <Route path="/insurance" element={<InsurancePage />} />
+        <Route path="/pet-insurance" element={<InsurancePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin/login" element={<LoginPage />} />
         <Route path="/register" element={<LoginPage />} />

@@ -1,6 +1,9 @@
 import React from 'react';
 import { Star, Quote } from 'lucide-react';
 import { Badge } from '../ui/Badge';
+import { Reveal } from '../motion/Reveal';
+import { HoverCard } from '../motion/HoverCard';
+import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 
 interface TestimonialItem {
   id: number;
@@ -57,10 +60,81 @@ const testimonials: TestimonialItem[] = [
 ];
 
 export const Testimonials: React.FC = () => {
+  const prefersReduced = usePrefersReducedMotion();
+
+  const renderCard = (item: TestimonialItem, isClone = false) => {
+    const initials = item.name
+      .split(' ')
+      .map((n) => n[0])
+      .join('');
+
+    return (
+      <HoverCard
+        key={isClone ? `clone-${item.id}` : item.id}
+        aria-hidden={isClone}
+        className="w-[300px] sm:w-[340px] shrink-0 bg-white rounded-3xl p-5 sm:p-6 border border-[#ECE5D8] flex flex-col justify-between"
+      >
+        <div className="space-y-4">
+          {/* Top Row: Avatar + Details & Rating */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-11 h-11 rounded-full ${item.avatarBg} ${item.avatarColor} border border-[#ECE5D8] flex items-center justify-center font-black text-sm shrink-0 shadow-xs`}
+                aria-hidden="true"
+              >
+                {initials}
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-[#16241B] group-hover:text-[#EF7C3C] transition-colors leading-snug">
+                  {item.name}
+                </h3>
+                <p className="text-[11px] font-medium text-[#7A8B7E] leading-snug line-clamp-1">
+                  {item.pet}
+                </p>
+              </div>
+            </div>
+            <Quote className="w-5 h-5 text-[#E0D7C6] shrink-0" aria-hidden="true" />
+          </div>
+
+          {/* Star Rating */}
+          <div className="flex items-center gap-1" aria-label={`${item.rating} out of 5 stars`}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star
+                key={i}
+                className={`w-4 h-4 ${
+                  i < item.rating
+                    ? 'fill-[#F5A623] text-[#F5A623]'
+                    : 'fill-transparent text-[#D4CBB8]'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Quote Text */}
+          <p className="text-xs sm:text-sm text-[#445548] leading-relaxed italic font-medium">
+            "{item.quote}"
+          </p>
+        </div>
+
+        {/* Tag Footer */}
+        {item.tag && (
+          <div className="pt-4 mt-4 border-t border-[#F3EDE2] flex items-center justify-between">
+            <span className="text-[11px] font-bold text-[#8C9B8F] uppercase tracking-wider">
+              {item.tag}
+            </span>
+            <span className="text-[11px] font-semibold text-[#287A41] flex items-center gap-1">
+              Verified Parent ✓
+            </span>
+          </div>
+        )}
+      </HoverCard>
+    );
+  };
+
   return (
-    <section id="testimonials" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <section id="testimonials" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 overflow-hidden">
       {/* Section Header */}
-      <div className="space-y-3.5 text-left">
+      <Reveal delay={0.05} className="space-y-3.5 text-left">
         <Badge variant="orange" className="inline-flex">
           TESTIMONIALS
         </Badge>
@@ -70,78 +144,39 @@ export const Testimonials: React.FC = () => {
         <p className="text-sm sm:text-base text-[#445548] max-w-2xl">
           Real stories from pet parents who found the right care, nutrition, and peace of mind with Pawfectly.
         </p>
-      </div>
+      </Reveal>
 
-      {/* Testimonials List - Grid on desktop, horizontal scroll on mobile */}
-      <div className="flex lg:grid lg:grid-cols-4 gap-5 sm:gap-6 overflow-x-auto lg:overflow-x-visible no-scrollbar pb-3 lg:pb-0 scroll-smooth">
-        {testimonials.map((item) => {
-          const initials = item.name
-            .split(' ')
-            .map((n) => n[0])
-            .join('');
-
-          return (
-            <div
-              key={item.id}
-              className="w-[290px] sm:w-[320px] lg:w-auto shrink-0 bg-white rounded-3xl p-5 sm:p-6 border border-[#ECE5D8] shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
-            >
-              <div className="space-y-4">
-                {/* Top Row: Avatar + Details & Rating */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-11 h-11 rounded-full ${item.avatarBg} ${item.avatarColor} border border-[#ECE5D8] flex items-center justify-center font-black text-sm shrink-0 shadow-xs`}
-                      aria-hidden="true"
-                    >
-                      {initials}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-extrabold text-[#16241B] group-hover:text-[#EF7C3C] transition-colors leading-snug">
-                        {item.name}
-                      </h3>
-                      <p className="text-[11px] font-medium text-[#7A8B7E] leading-snug line-clamp-1">
-                        {item.pet}
-                      </p>
-                    </div>
-                  </div>
-                  <Quote className="w-5 h-5 text-[#E0D7C6] shrink-0" aria-hidden="true" />
-                </div>
-
-                {/* Star Rating */}
-                <div className="flex items-center gap-1" aria-label={`${item.rating} out of 5 stars`}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < item.rating
-                          ? 'fill-[#F5A623] text-[#F5A623]'
-                          : 'fill-transparent text-[#D4CBB8]'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                {/* Quote Text */}
-                <p className="text-xs sm:text-sm text-[#445548] leading-relaxed italic font-medium">
-                  "{item.quote}"
-                </p>
-              </div>
-
-              {/* Tag Footer */}
-              {item.tag && (
-                <div className="pt-4 mt-4 border-t border-[#F3EDE2] flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-[#8C9B8F] uppercase tracking-wider">
-                    {item.tag}
-                  </span>
-                  <span className="text-[11px] font-semibold text-[#287A41] flex items-center gap-1">
-                    Verified Parent ✓
-                  </span>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* Testimonials Marquee or Static Grid */}
+      {prefersReduced ? (
+        <div className="flex lg:grid lg:grid-cols-4 gap-5 sm:gap-6 overflow-x-auto lg:overflow-x-visible no-scrollbar pb-3 lg:pb-0 scroll-smooth">
+          {testimonials.map((item) => renderCard(item))}
+        </div>
+      ) : (
+        <div
+          className="relative w-full overflow-hidden py-4 -my-4 [mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)]"
+        >
+          <style>{`
+            @keyframes testimonialMarquee {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+            .testimonial-track {
+              display: flex;
+              width: max-content;
+              gap: 1.5rem;
+              animation: testimonialMarquee 50s linear infinite;
+            }
+            .testimonial-track:hover,
+            .testimonial-track:focus-within {
+              animation-play-state: paused;
+            }
+          `}</style>
+          <div className="testimonial-track">
+            {testimonials.map((item) => renderCard(item, false))}
+            {testimonials.map((item) => renderCard(item, true))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };

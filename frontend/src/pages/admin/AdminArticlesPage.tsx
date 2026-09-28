@@ -11,7 +11,6 @@ import api from '../../lib/axios';
 interface ArticleItem {
   id: number;
   title: string;
-  excerpt?: string;
   content: string;
   imageUrl: string;
   petType: string;
@@ -19,7 +18,6 @@ interface ArticleItem {
   isFeatured: boolean;
   isActive: boolean;
   publishedAt: string;
-  _source?: 'articles' | 'health-tips';
 }
 
 const resolveCategory = (title?: string, cat?: string): string => {
@@ -45,12 +43,12 @@ const categoryColorMap: Record<string, { bg: string; text: string; border: strin
 };
 
 export const AdminArticlesPage: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'health-tips' | 'articles'>('health-tips');
+  const [viewMode, setViewMode] = useState<'articles' | 'health-tips'>('articles');
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [healthTips, setHealthTips] = useState<ArticleItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'health-tip' | 'article'>('health-tip');
+  const [modalType, setModalType] = useState<'article' | 'health-tip'>('article');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState<ArticleItem | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -62,7 +60,6 @@ export const AdminArticlesPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     title: '',
-    excerpt: '',
     content: '',
     imageUrl: '',
     petType: 'ALL',
@@ -74,28 +71,17 @@ export const AdminArticlesPage: React.FC = () => {
   const fetchItems = async () => {
     try {
       setIsLoading(true);
-      const [artRes, tipRes] = await Promise.allSettled([
-        api.get('/admin/articles'),
-        api.get('/admin/health-tips'),
-      ]);
-
-      const artData: ArticleItem[] = (
-        artRes.status === 'fulfilled' && Array.isArray(artRes.value.data) ? artRes.value.data : []
-      ).map((item) => ({ ...item, _source: 'articles' as const }));
-
-      const rawTipData: ArticleItem[] =
-        tipRes.status === 'fulfilled' && Array.isArray(tipRes.value.data) ? tipRes.value.data : [];
-
-      const tipData: ArticleItem[] = (rawTipData.length > 0 ? rawTipData : artData).map((item) => ({
-        ...item,
-        _source: rawTipData.length > 0 ? ('health-tips' as const) : ('articles' as const),
-      }));
-
-      setArticles(artData);
-      setHealthTips(tipData);
+      if (viewMode === 'articles') {
+        const res = await api.get('/admin/articles');
+        setArticles(res.data || []);
+      } else {
+        const res = await api.get('/admin/health-tips');
+        setHealthTips(res.data || []);
+      }
     } catch (err: any) {
-      console.error(`Failed to fetch items`, err);
-      showToast('Failed to load health tips from database.', 'error');
+      console.error(`Failed to fetch ${viewMode}`, err);
+      const msg = err.response?.data?.message || `Failed to load ${viewMode} from database.`;
+      showToast(msg, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -105,13 +91,12 @@ export const AdminArticlesPage: React.FC = () => {
     fetchItems();
   }, [viewMode]);
 
-  const openAddModal = (type: 'health-tip' | 'article' = viewMode === 'articles' ? 'article' : 'health-tip') => {
+  const openAddModal = (type: 'article' | 'health-tip' = 'article') => {
     setIsEditing(false);
     setCurrentId(null);
     setModalType(type);
     setFormData({
       title: '',
-      excerpt: '',
       content: '',
       imageUrl: '',
       petType: 'ALL',
@@ -123,13 +108,12 @@ export const AdminArticlesPage: React.FC = () => {
     setModalOpen(true);
   };
 
-  const openEditModal = (item: ArticleItem, type: 'health-tip' | 'article' = viewMode === 'articles' ? 'article' : 'health-tip') => {
+  const openEditModal = (item: ArticleItem, type: 'article' | 'health-tip' = viewMode === 'health-tips' ? 'health-tip' : 'article') => {
     setIsEditing(true);
     setCurrentId(item.id);
     setModalType(type);
     setFormData({
       title: item.title,
-      excerpt: item.excerpt || '',
       content: item.content || '',
       imageUrl: item.imageUrl || '',
       petType: item.petType || 'ALL',
@@ -149,22 +133,14 @@ export const AdminArticlesPage: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!articleToDelete) return;
     setDeleting(true);
-    const source = articleToDelete._source || (viewMode === 'health-tips' ? 'health-tips' : 'articles');
-    const primary = `/admin/${source}/${articleToDelete.id}`;
-    const fallback = `/admin/${source === 'health-tips' ? 'articles' : 'health-tips'}/${articleToDelete.id}`;
+    const endpoint = viewMode === 'health-tips' ? `/admin/health-tips/${articleToDelete.id}` : `/admin/articles/${articleToDelete.id}`;
     try {
-      let res;
-      try {
-        res = await api.delete(primary);
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          res = await api.delete(fallback);
-        } else {
-          throw err;
-        }
+      const res = await api.delete(endpoint);
+      if (viewMode === 'articles') {
+        setArticles((prev) => prev.filter((a) => a.id !== articleToDelete.id));
+      } else {
+        setHealthTips((prev) => prev.filter((a) => a.id !== articleToDelete.id));
       }
-      setArticles((prev) => prev.filter((a) => a.id !== articleToDelete.id));
-      setHealthTips((prev) => prev.filter((a) => a.id !== articleToDelete.id));
       showToast(res.data?.message || `${viewMode === 'health-tips' ? 'Health tip' : 'Article'} "${articleToDelete.title}" deleted successfully.`);
       setDeleteModalOpen(false);
       setArticleToDelete(null);
@@ -179,29 +155,20 @@ export const AdminArticlesPage: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (itemOrId: ArticleItem | number) => {
-    const id = typeof itemOrId === 'number' ? itemOrId : itemOrId.id;
-    const source = typeof itemOrId === 'object' && itemOrId._source ? itemOrId._source : (viewMode === 'health-tips' ? 'health-tips' : 'articles');
+  const handleToggleStatus = async (id: number) => {
     try {
-      const primary = `/admin/${source}/${id}/toggle-status`;
-      const fallback = `/admin/${source === 'health-tips' ? 'articles' : 'health-tips'}/${id}/toggle-status`;
-      let res;
-      try {
-        res = await api.patch(primary);
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          res = await api.patch(fallback);
-        } else {
-          throw err;
-        }
-      }
+      const endpoint = viewMode === 'health-tips' ? `/admin/health-tips/${id}/toggle-status` : `/admin/articles/${id}/toggle-status`;
+      const res = await api.patch(endpoint);
       const updatedActive = res.data?.isActive;
-      setArticles((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, isActive: updatedActive !== undefined ? updatedActive : !a.isActive } : a))
-      );
-      setHealthTips((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, isActive: updatedActive !== undefined ? updatedActive : !a.isActive } : a))
-      );
+      if (viewMode === 'articles') {
+        setArticles((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isActive: updatedActive ?? !a.isActive } : a))
+        );
+      } else {
+        setHealthTips((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isActive: updatedActive ?? !a.isActive } : a))
+        );
+      }
       showToast(res.data?.message || 'Status updated successfully!');
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Failed to toggle status.';
@@ -209,29 +176,20 @@ export const AdminArticlesPage: React.FC = () => {
     }
   };
 
-  const handleToggleFeatured = async (itemOrId: ArticleItem | number) => {
-    const id = typeof itemOrId === 'number' ? itemOrId : itemOrId.id;
-    const source = typeof itemOrId === 'object' && itemOrId._source ? itemOrId._source : (viewMode === 'health-tips' ? 'health-tips' : 'articles');
+  const handleToggleFeatured = async (id: number) => {
     try {
-      const primary = `/admin/${source}/${id}/toggle-featured`;
-      const fallback = `/admin/${source === 'health-tips' ? 'articles' : 'health-tips'}/${id}/toggle-featured`;
-      let res;
-      try {
-        res = await api.patch(primary);
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          res = await api.patch(fallback);
-        } else {
-          throw err;
-        }
-      }
+      const endpoint = viewMode === 'health-tips' ? `/admin/health-tips/${id}/toggle-featured` : `/admin/articles/${id}/toggle-featured`;
+      const res = await api.patch(endpoint);
       const updatedFeatured = res.data?.isFeatured;
-      setArticles((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, isFeatured: updatedFeatured !== undefined ? updatedFeatured : !a.isFeatured } : a))
-      );
-      setHealthTips((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, isFeatured: updatedFeatured !== undefined ? updatedFeatured : !a.isFeatured } : a))
-      );
+      if (viewMode === 'articles') {
+        setArticles((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isFeatured: updatedFeatured ?? !a.isFeatured } : a))
+        );
+      } else {
+        setHealthTips((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isFeatured: updatedFeatured ?? !a.isFeatured } : a))
+        );
+      }
       showToast(res.data?.message || `${viewMode === 'health-tips' ? 'Health tip' : 'Article'} featured flag updated!`);
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Failed to toggle featured flag.';
@@ -247,7 +205,6 @@ export const AdminArticlesPage: React.FC = () => {
     try {
       const payload = {
         title: formData.title,
-        excerpt: formData.excerpt,
         content: formData.content,
         imageUrl: formData.imageUrl,
         petType: formData.petType,
@@ -256,30 +213,13 @@ export const AdminArticlesPage: React.FC = () => {
         isActive: formData.isActive,
       };
 
+      const targetEndpoint = modalType === 'health-tip' ? '/admin/health-tips' : '/admin/articles';
+
       if (isEditing && currentId) {
-        const primary = `/admin/${modalType === 'health-tip' ? 'health-tips' : 'articles'}/${currentId}`;
-        const fallback = `/admin/${modalType === 'health-tip' ? 'articles' : 'health-tips'}/${currentId}`;
-        try {
-          await api.put(primary, payload);
-        } catch (err: any) {
-          if (err.response?.status === 404) {
-            await api.put(fallback, payload);
-          } else {
-            throw err;
-          }
-        }
+        await api.put(`${targetEndpoint}/${currentId}`, payload);
         showToast(modalType === 'health-tip' ? 'Health tip updated successfully!' : 'Article updated successfully!');
       } else {
-        const targetEndpoint = modalType === 'health-tip' ? '/admin/health-tips' : '/admin/articles';
-        try {
-          await api.post(targetEndpoint, payload);
-        } catch (err: any) {
-          if (err.response?.status === 404 && modalType === 'health-tip') {
-            await api.post('/admin/articles', payload);
-          } else {
-            throw err;
-          }
-        }
+        await api.post(targetEndpoint, payload);
         showToast(modalType === 'health-tip' ? 'New health tip published successfully!' : 'New article published successfully!');
       }
 
@@ -361,7 +301,7 @@ export const AdminArticlesPage: React.FC = () => {
       className: 'w-[14%]',
       render: (row) => (
         <button
-          onClick={() => handleToggleFeatured(row)}
+          onClick={() => handleToggleFeatured(row.id)}
           className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer ${
             row.isFeatured
               ? 'bg-[#FEF9C3] text-[#B45309] border-[#FDE047]'
@@ -409,7 +349,7 @@ export const AdminArticlesPage: React.FC = () => {
             <Edit2 className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => handleToggleStatus(row)}
+            onClick={() => handleToggleStatus(row.id)}
             className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer shrink-0 ${
               row.isActive
                 ? 'text-[#6B7280] hover:text-[#C0392B] hover:bg-[#FDEDEC]'
@@ -522,7 +462,7 @@ export const AdminArticlesPage: React.FC = () => {
             <Edit2 className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => handleToggleStatus(row)}
+            onClick={() => handleToggleStatus(row.id)}
             className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer shrink-0 ${
               row.isActive
                 ? 'text-[#6B7280] hover:text-[#C0392B] hover:bg-[#FDEDEC]'
@@ -548,56 +488,25 @@ export const AdminArticlesPage: React.FC = () => {
     <div className="relative shrink-0">
       <select
         value={viewMode}
-        onChange={(e) => setViewMode(e.target.value as 'health-tips' | 'articles')}
+        onChange={(e) => setViewMode(e.target.value as 'articles' | 'health-tips')}
         className="px-3 py-2 text-xs font-bold text-[#16241B] bg-[#F9FAF8] border border-[#E5E7EB] hover:border-[#3FA65C] focus:border-[#3FA65C] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/20 transition-all cursor-pointer shadow-2xs"
-        aria-label="Select health tips view"
+        aria-label="Select management view"
       >
+        <option value="articles">Articles</option>
         <option value="health-tips">Health Tips</option>
-        <option value="articles">Browse by Pet Type</option>
       </select>
     </div>
   );
 
   return (
-    <AdminLayout title="Health Tips Management">
-      {viewMode === 'health-tips' ? (
-        <DataTable
-          columns={healthTipColumns}
-          data={healthTips}
-          isLoading={isLoading}
-          beforeSearch={viewSwitcherNode}
-          searchPlaceholder="Search health tips by title..."
-          searchKey="title"
-          filterLabel="All Categories"
-          filterOptions={[
-            { label: 'All Categories', value: 'ALL' },
-            { label: 'Nutrition', value: 'Nutrition' },
-            { label: 'Vaccination', value: 'Vaccination' },
-            { label: 'Grooming', value: 'Grooming' },
-            { label: 'Preventive Care', value: 'Preventive Care' },
-            { label: 'Behaviour', value: 'Behaviour' },
-            { label: 'Senior Pet Care', value: 'Senior Pet Care' },
-            { label: 'Emergency Care', value: 'Emergency Care' },
-            { label: 'Puppy Care', value: 'Puppy Care' },
-          ]}
-          filterKey={(row) => resolveCategory(row.title, row.category)}
-          actions={
-            <button
-              onClick={() => openAddModal('health-tip')}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#3FA65C] hover:bg-[#33894B] active:scale-[0.99] text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Add Health Tip
-            </button>
-          }
-        />
-      ) : (
+    <AdminLayout title="Health Tips & Articles Management">
+      {viewMode === 'articles' ? (
         <DataTable
           columns={articleColumns}
           data={articles}
           isLoading={isLoading}
           beforeSearch={viewSwitcherNode}
-          searchPlaceholder="Search pet tips by title..."
+          searchPlaceholder="Search articles by title..."
           searchKey="title"
           filterLabel="All Pet Types"
           filterOptions={[
@@ -628,7 +537,26 @@ export const AdminArticlesPage: React.FC = () => {
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#3FA65C] hover:bg-[#33894B] active:scale-[0.99] text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              Add Pet Health Tip
+              New Article
+            </button>
+          }
+        />
+      ) : (
+        <DataTable
+          columns={healthTipColumns}
+          data={healthTips}
+          isLoading={isLoading}
+          beforeSearch={viewSwitcherNode}
+          searchPlaceholder="Search health tips by name..."
+          searchKey="title"
+          filterOptions={undefined}
+          actions={
+            <button
+              onClick={() => openAddModal('health-tip')}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#3FA65C] hover:bg-[#33894B] active:scale-[0.99] text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              New Health Tip
             </button>
           }
         />
@@ -642,19 +570,19 @@ export const AdminArticlesPage: React.FC = () => {
           isEditing
             ? modalType === 'health-tip'
               ? 'Edit Health Tip'
-              : 'Edit Pet Health Tip'
+              : 'Edit Article'
             : modalType === 'health-tip'
-              ? 'Add New Health Tip'
-              : 'Add Pet Health Tip'
+              ? 'Create Health Tip'
+              : 'Create Articles'
         }
         subtitle={
           isEditing
             ? modalType === 'health-tip'
               ? 'Update published veterinary health tip'
-              : 'Update published guidance for pet type'
+              : 'Update published guidance'
             : modalType === 'health-tip'
               ? 'Publish veterinary care advice'
-              : 'Publish care guidance for specific pet type'
+              : 'Publish veterinary health advice'
         }
         maxWidth="xl"
       >
@@ -668,7 +596,7 @@ export const AdminArticlesPage: React.FC = () => {
 
           <div>
             <label className="block text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider mb-1.5">
-              {modalType === 'health-tip' ? 'Health Tip Title *' : 'Pet Health Tip Title *'}
+              {modalType === 'health-tip' ? 'Tip Name / Title *' : 'Article Title *'}
             </label>
             <input
               type="text"
@@ -729,39 +657,17 @@ export const AdminArticlesPage: React.FC = () => {
           </div>
 
           <AdminImageUrlInput
-            label={modalType === 'health-tip' ? 'Tip Image URL' : 'Pet Tip Image URL'}
+            label={modalType === 'health-tip' ? 'Tip Image URL' : 'Article Image URL'}
             value={formData.imageUrl || ''}
             onChange={(val) => setFormData({ ...formData, imageUrl: val })}
             placeholder="https://images.unsplash.com/... or https://..."
-            entityName={formData.title || 'Health Tip'}
-            helperText="Provide a direct URL to an illustration or photo (starts with http:// or https://, max 512 chars)."
+            entityName={formData.title || 'Article'}
+            helperText="Provide a direct URL to an article illustration or photo (starts with http:// or https://, max 512 chars)."
           />
-
-          {/* Green Callout Highlight / Excerpt */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider">
-                Summary Highlight / Quote (Green Box Text)
-              </label>
-              <span className="text-[10px] text-[#287A41] font-bold bg-[#E6F9EC] px-2 py-0.5 rounded-full border border-[#CBDAC6]">
-                Green Callout Box
-              </span>
-            </div>
-            <textarea
-              rows={2}
-              value={formData.excerpt}
-              onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-              placeholder='e.g. "Explore veterinary insights on macronutrient balances, life-stage feeding guidelines, and avoiding toxic household foods for dogs and cats."'
-              className="w-full px-3 py-2 bg-[#F9FAF8] border border-[#E5E7EB] focus:border-[#3FA65C] rounded-lg text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#3FA65C]/20 transition-all"
-            />
-            <p className="text-[11px] text-[#6B7280] mt-1">
-              Text entered here will appear highlighted in the green summary callout box right below the article image.
-            </p>
-          </div>
 
           <div>
             <label className="block text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider mb-1.5">
-              {modalType === 'health-tip' ? 'Tip Content & Guidelines *' : 'Pet Tip Content *'}
+              {modalType === 'health-tip' ? 'Tip Content & Guidelines *' : 'Article Content *'}
             </label>
             <textarea
               rows={6}
@@ -787,7 +693,7 @@ export const AdminArticlesPage: React.FC = () => {
                 className="w-4 h-4 text-[#3FA65C] focus:ring-[#3FA65C] border-gray-300 rounded cursor-pointer"
               />
               <label htmlFor="isFeatured" className="text-xs font-medium text-[#4B5563] select-none cursor-pointer">
-                Feature this tip on customer home and health-tips pages
+                Feature this article on customer home and health-tips pages
               </label>
             </div>
           )}
@@ -810,10 +716,10 @@ export const AdminArticlesPage: React.FC = () => {
                 : isEditing
                   ? modalType === 'health-tip'
                     ? 'Update Health Tip'
-                    : 'Update Pet Health Tip'
+                    : 'Update Article'
                   : modalType === 'health-tip'
                     ? 'Publish Health Tip'
-                    : 'Publish Pet Health Tip'}
+                    : 'Publish Article'}
             </button>
           </div>
         </form>
@@ -823,7 +729,7 @@ export const AdminArticlesPage: React.FC = () => {
       <AdminModal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        title={modalType === 'health-tip' ? 'Delete Health Tip' : 'Delete Pet Health Tip'}
+        title={modalType === 'health-tip' ? 'Delete Health Tip' : 'Delete Article'}
         subtitle="Permanent removal from published tips directory"
       >
         <div className="space-y-4">
@@ -846,7 +752,7 @@ export const AdminArticlesPage: React.FC = () => {
               disabled={deleting}
               className="px-4 py-2 bg-[#D0453C] hover:bg-[#b83c34] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
             >
-              {deleting ? 'Deleting...' : modalType === 'health-tip' ? 'Delete Health Tip' : 'Delete Pet Health Tip'}
+              {deleting ? 'Deleting...' : modalType === 'health-tip' ? 'Delete Health Tip' : 'Delete Article'}
             </button>
           </div>
         </div>

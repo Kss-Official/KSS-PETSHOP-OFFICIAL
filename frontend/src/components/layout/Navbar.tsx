@@ -25,7 +25,7 @@ interface NotificationItem {
   message: string;
   time: string;
   isRead: boolean;
-  type: 'admin' | 'appointment' | 'order' | 'promo' | 'product' | 'restock';
+  type: 'admin' | 'appointment' | 'order' | 'promo';
 }
 
 function formatRelativeTime(dateStr?: string): string {
@@ -49,6 +49,7 @@ interface NavbarProps {
     | 'pharmacy'
     | 'pet-essentials'
     | 'health-tips'
+    | 'find-a-vet'
     | 'insurance'
     | 'profile';
 }
@@ -71,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const fetchBackendNotifications = useCallback(async () => {
     if (!isAuthenticated) {
-      setNotifications((prev) => (prev.length > 0 ? [] : prev));
+      setNotifications([]);
       return;
     }
     try {
@@ -173,14 +174,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
 
   const handleNotificationClick = (notif: NotificationItem) => {
     markAsRead(notif.id);
-    setNotificationMenuOpen(false);
-    if (
-      notif.type === 'product' ||
-      notif.type === 'restock' ||
-      notif.title.toLowerCase().includes('back in stock')
-    ) {
-      navigate('/pharmacy');
-    }
   };
 
   useEffect(() => {
@@ -203,8 +196,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage = 'home' }) => {
     { label: 'Home', href: '/', id: 'home' },
     { label: 'Services', href: '/services', id: 'services' },
     { label: 'Pharmacy', href: '/pharmacy', id: 'pharmacy' },
-    { label: 'Paw Store', href: '/pet-essentials', id: 'pet-essentials' },
-    { label: 'Fur & Facts', href: '/health-tips', id: 'health-tips' },
+    { label: 'Pet Essentials', href: '/pet-essentials', id: 'pet-essentials' },
+    { label: 'Health Tips', href: '/health-tips', id: 'health-tips' },
   ];
 
   return (

@@ -33,9 +33,6 @@ interface CartContextType {
   cartWobbleKey: number;
   flyingClones: FlyingClone[];
   confettiParticles: ConfettiParticle[];
-  isAuthModalOpen: boolean;
-  openAuthModal: () => void;
-  closeAuthModal: () => void;
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
@@ -62,35 +59,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [cartWobbleKey] = useState(0);
-  const [flyingClones] = useState<FlyingClone[]>([]);
-  const [confettiParticles] = useState<ConfettiParticle[]>([]);
+  const [cartWobbleKey, setCartWobbleKey] = useState(0);
+  const [flyingClones, setFlyingClones] = useState<FlyingClone[]>([]);
+  const [confettiParticles, setConfettiParticles] = useState<ConfettiParticle[]>([]);
   const [isUpdating, setIsUpdating] = useState<Record<number, boolean>>({});
 
-  const openAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
-  const closeAuthModal = useCallback(() => setIsAuthModalOpen(false), []);
-
-  // Sync to localStorage or clear if unauthenticated
+  // Sync to localStorage
   useEffect(() => {
-    if (!isAuthenticated) {
-      setItems((prev) => (prev.length > 0 ? [] : prev));
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-      return;
-    }
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
     } catch {
       // ignore
     }
-  }, [items, isAuthenticated]);
+  }, [items]);
 
   // Fetch from backend when authenticated
   const fetchBackendCart = useCallback(async () => {
-    if (!isAuthenticated) {
-      setItems((prev) => (prev.length > 0 ? [] : prev));
-      return;
-    }
+    if (!isAuthenticated) return;
     try {
       const res = await apiClient.get<any[]>('/customer/cart');
       if (Array.isArray(res.data)) {
@@ -121,13 +106,66 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const totalCount = items.reduce((acc, item) => acc + (item.quantity || 0), 0);
   const subtotal = items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0);
 
-  const addToCart = async (product: ProductItemData, _e?: React.MouseEvent) => {
-    if (!isAuthenticated) {
-      setIsAuthModalOpen(true);
-      return;
+  const triggerCartWobbleAndConfetti = (targetX: number, targetY: number) => {
+    setCartWobbleKey((k) => k + 1);
+
+    // Generate ~12 confetti particles around target cart
+    const brandColors = ['#009E66', '#EF7C3C', '#FFD84D', '#16241B', '#EC4899'];
+    const particles: ConfettiParticle[] = Array.from({ length: 12 }).map((_, i) => {
+      const angle = (i * 30 + Math.random() * 20 - 10) * (Math.PI / 180);
+      const distance = 30 + Math.random() * 35;
+      return {
+        id: Date.now() + i,
+        x: targetX,
+        y: targetY,
+        targetX: targetX + Math.cos(angle) * distance,
+        targetY: targetY + Math.sin(angle) * distance,
+        rotation: (Math.random() - 0.5) * 360,
+        color: brandColors[i % brandColors.length],
+        size: 8 + Math.random() * 6,
+        isPaw: i % 2 === 0,
+      };
+    });
+
+    setConfettiParticles(particles);
+    setTimeout(() => setConfettiParticles([]), 850);
+  };
+
+  const addToCart = async (product: ProductItemData, e?: React.MouseEvent) => {
+    // 1. Calculate trajectory from click element to navbar cart icon
+    let startX = window.innerWidth / 2;
+    let startY = window.innerHeight / 2;
+
+    if (e && e.currentTarget) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      startX = rect.left + rect.width / 2;
+      startY = rect.top + rect.height / 2;
     }
 
-    // Optimistic local state update
+    const cartTargetEl = document.getElementById('navbar-cart-button') || document.querySelector('[data-cart-button]');
+    let targetX = window.innerWidth - 60;
+    let targetY = 32;
+
+    if (cartTargetEl) {
+      const targetRect = cartTargetEl.getBoundingClientRect();
+      targetX = targetRect.left + targetRect.width / 2;
+      targetY = targetRect.top + targetRect.height / 2;
+    }
+
+    // 2. Spawn flying clone
+    const cloneId = Date.now();
+    const newClone: FlyingClone = {
+      id: cloneId,
+      imageUrl: product.imageUrl || '',
+      startX,
+      startY,
+      targetX,
+      targetY,
+    };
+
+    setFlyingClones((clones) => [...clones, newClone]);
+
+    // 3. Optimistic local state update
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === product.id);
       if (existing) {
@@ -150,27 +188,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ];
     });
 
-    // Backend synchronization
-    try {
-      setIsUpdating((prev) => ({ ...prev, [product.id]: true }));
-      await apiClient.post('/customer/cart', {
-        productId: product.id,
-        quantity: 1,
-      });
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch {
-      // Handled gracefully
-    } finally {
-      setIsUpdating((prev) => ({ ...prev, [product.id]: false }));
+    // 4. Clean up clone & trigger landing effect after flight duration (~650ms)
+    setTimeout(() => {
+      setFlyingClones((clones) => clones.filter((c) => c.id !== cloneId));
+      triggerCartWobbleAndConfetti(targetX, targetY);
+    }, 650);
+
+    // 5. Backend synchronization if authenticated
+    if (isAuthenticated) {
+      try {
+        setIsUpdating((prev) => ({ ...prev, [product.id]: true }));
+        await apiClient.post('/customer/cart', {
+          productId: product.id,
+          quantity: 1,
+        });
+        window.dispatchEvent(new Event('cart-updated'));
+      } catch {
+        // Handled gracefully
+      } finally {
+        setIsUpdating((prev) => ({ ...prev, [product.id]: false }));
+      }
     }
   };
 
   const updateQuantity = async (productId: number, quantity: number) => {
-    if (!isAuthenticated) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-
     if (quantity <= 0) {
       await removeItem(productId);
       return;
@@ -183,7 +224,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       prev.map((i) => (i.productId === productId ? { ...i, quantity } : i))
     );
 
-    if (cartItemId) {
+    if (isAuthenticated && cartItemId) {
       try {
         setIsUpdating((prev) => ({ ...prev, [productId]: true }));
         await apiClient.put(`/customer/cart/${cartItemId}?quantity=${quantity}`);
@@ -197,17 +238,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const removeItem = async (productId: number) => {
-    if (!isAuthenticated) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-
     const currentItem = items.find((i) => i.productId === productId);
     const cartItemId = currentItem?.id;
 
     setItems((prev) => prev.filter((i) => i.productId !== productId));
 
-    if (cartItemId) {
+    if (isAuthenticated && cartItemId) {
       try {
         setIsUpdating((prev) => ({ ...prev, [productId]: true }));
         await apiClient.delete(`/customer/cart/${cartItemId}`);
@@ -232,10 +268,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const openCart = () => setIsCartOpen(true);
-  const closeCart = () => setIsCartOpen(false);
-  const toggleCart = () => setIsCartOpen((prev) => !prev);
-
   return (
     <CartContext.Provider
       value={{
@@ -247,12 +279,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cartWobbleKey,
         flyingClones,
         confettiParticles,
-        isAuthModalOpen,
-        openAuthModal,
-        closeAuthModal,
-        openCart,
-        closeCart,
-        toggleCart,
+        openCart: () => setIsCartOpen(true),
+        closeCart: () => setIsCartOpen(false),
+        toggleCart: () => setIsCartOpen((o) => !o),
         addToCart,
         updateQuantity,
         removeItem,
@@ -272,5 +301,3 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
-
-export default CartContext;

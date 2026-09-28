@@ -5,38 +5,21 @@ import { Footer } from '../../components/layout/Footer';
 import { CtaBanner } from '../../components/layout/CtaBanner';
 import { Testimonials } from '../../components/home/Testimonials';
 import { StatsStrip } from '../../components/home/StatsStrip';
+import { TrustMarquee } from '../../components/TrustMarquee';
 import { ServicesShowcase } from '../../components/home/ServicesShowcase';
-import { getCloudinaryImageUrl, getVetImageUrl, formatCurrency } from '../../lib/utils';
+import { HowItWorks } from '../../components/home/HowItWorks';
+import { VetCarousel } from '../../components/vets/VetCarousel';
+import { initialVetsData, type VetData, type PetType } from '../../data/vetsData';
+import { getCloudinaryImageUrl, getVetImageUrl } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { apiClient } from '../../lib/axios';
-import {
-  ChevronRight,
-  Calendar,
-  ShieldCheck,
-  ShoppingBag,
-  Sparkles,
-  Headphones,
-} from 'lucide-react';
-
-interface VetItem {
-  id: number;
-  name: string;
-  specialization: string;
-  secondarySpecialization?: string;
-  petTypes?: string;
-  experienceYears?: number;
-  reviewsCount?: number;
-  city?: string;
-  consultationFee?: number;
-  photoUrl?: string;
-  rating?: number;
-}
+import { Reveal } from '../../components/motion/Reveal';
+import { ParallaxLayer } from '../../components/motion/ParallaxLayer';
 
 export const HomePage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('All');
-  const [vets, setVets] = useState<VetItem[]>([]);
-  const [loadingVets, setLoadingVets] = useState(true);
+  const [vets, setVets] = useState<VetData[]>(initialVetsData);
   const navigate = useNavigate();
 
   // Cloudinary image assets
@@ -47,8 +30,6 @@ export const HomePage: React.FC = () => {
   const avatar4Url = getCloudinaryImageUrl('avatar_user_4');
 
   const fetchHomeData = () => {
-    setLoadingVets(true);
-
     apiClient
       .get('/vets')
       .then((res) => {
@@ -78,33 +59,46 @@ export const HomePage: React.FC = () => {
     fetchHomeData();
   }, []);
 
-  const filteredVets = (() => {
-    const matched = vets.filter((vet) => {
-      if (activeCategory === 'All') return true;
-      const petLower = activeCategory.toLowerCase();
-      // Primary: match against petTypes string from DB
-      if (vet.petTypes && vet.petTypes.toLowerCase().includes(petLower)) return true;
-      // Secondary: for Exotic Pets, also match by specialization keyword
-      if (activeCategory === 'Exotic Pets' &&
-        vet.specialization && vet.specialization.toLowerCase().includes('exotic')) return true;
-      return false;
-    });
-    // 'All' shows every vet; individual species tabs are capped at 4
-    return activeCategory === 'All' ? matched : matched.slice(0, 4);
-  })();
-
-  const handleVetScroll = () => {
-    if (vetScrollRef.current) {
-      vetScrollRef.current.scrollBy({ left: 320, behavior: 'smooth' });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C] overflow-x-clip relative">
       {/* 1. Navbar */}
       <Navbar activePage="home" />
 
-      <main className="flex-1 space-y-10 sm:space-y-14 py-6 sm:py-8">
+      {/* Decorative Parallax Layers (Positioned safely behind content) */}
+      <ParallaxLayer
+        speed={0.15}
+        size={64}
+        type="paw"
+        rotate={12}
+        className="top-[950px] -left-6 lg:left-8"
+      />
+      <ParallaxLayer
+        speed={0.25}
+        size={180}
+        type="blob-yellow"
+        className="top-[1400px] right-0 sm:right-12"
+      />
+      <ParallaxLayer
+        speed={0.3}
+        size={54}
+        type="paw-angled"
+        rotate={-20}
+        className="top-[2100px] left-4 lg:left-20"
+      />
+      <ParallaxLayer
+        speed={0.2}
+        size={220}
+        type="blob-green"
+        className="top-[2800px] -right-12"
+      />
+      <ParallaxLayer
+        speed={0.35}
+        size={40}
+        type="circle-orange"
+        className="top-[3400px] left-8 sm:left-28"
+      />
+
+      <main className="flex-1 space-y-16 md:space-y-24 py-8 md:py-12 relative z-10">
         {/* 2. Hero Section */}
         <section id="home" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
@@ -120,15 +114,24 @@ export const HomePage: React.FC = () => {
               </h1>
 
               <p className="text-base sm:text-lg text-[#445548] max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                Pet care, premium nutrition, toys, treats and everything
+                Expert vets, ridiculously good food, toys, treats and everything
                 your furry roommate needs — all in one happy place.
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                <Link to="/services">
+                <a
+                  href="#vets"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('vets');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                >
                   <Button variant="primary" size="lg" showPaw>
-                    Explore Services
+                    Find a Vet
                   </Button>
                 </a>
                 <Link to="/pharmacy">
@@ -226,180 +229,51 @@ export const HomePage: React.FC = () => {
           <StatsStrip />
         </Reveal>
 
-        {/* 3.5. Stats Strip */}
-        <StatsStrip />
+        {/* 3.8. Trusted By Marquee */}
+        <Reveal delay={0.1}>
+          <TrustMarquee />
+        </Reveal>
 
         {/* 4. Services Showcase Section */}
         <ServicesShowcase />
 
-        {/* 5. Category Filter Tabs */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
-          <div className="bg-white border border-[#EDE6D8] rounded-full p-1.5 shadow-xs inline-flex items-center gap-1 overflow-x-auto max-w-full no-scrollbar">
-            {categories.map((cat) => {
-              const isActive = activeCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-5 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${isActive
-                    ? 'bg-[#16241B] text-white shadow-xs'
-                    : 'text-[#556658] hover:text-[#16241B] hover:bg-[#FAF6EE]'
-                    }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {/* 4.5. How It Works Section */}
+        <Reveal delay={0.1}>
+          <HowItWorks />
+        </Reveal>
 
         {/* 6. Vets Section */}
         <section id="vets" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-5 space-y-6 relative">
-              <Badge variant="orange" className="inline-flex">
-                BEST CARE, RIGHT NEAR YOU
-              </Badge>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#16241B] tracking-tight">
-                Meet Their New <span className="text-[#EF7C3C]">Favorite</span> Human.
-              </h2>
-              <p className="text-base text-[#445548] leading-relaxed">
-                Verified vets. Happy pets. Less worry for you.
-              </p>
-
-              {/* P.S. Badge */}
-              <div className="pt-2 relative">
-                <div className="relative inline-flex items-center ml-4 sm:ml-12 lg:ml-16">
-                  <div className="inline-flex items-center bg-white border border-[#E8E2D4] px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-xs">
-                    <span className="text-xs sm:text-sm font-bold text-[#16241B] flex items-center gap-1.5">
-                      P.S. They'll get extra treats
-                    </span>
-                  </div>
-
-                  <div className="hidden sm:block absolute left-[52%] bottom-[80%] w-52 sm:w-60 lg:w-68 h-28 pointer-events-none z-10">
-                    <svg
-                      className="w-full h-full text-[#14261C] overflow-visible"
-                      viewBox="0 0 240 100"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M 8,92 C 12,28 50,8 115,10 C 160,12 190,24 225,18" />
-                      <path d="M 212,10 L 228,18 L 215,27" />
-                    </svg>
-                  </div>
-                </div>
+          <div className="space-y-8">
+            {/* Header Content */}
+            <Reveal delay={0.05} className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div className="space-y-3 max-w-2xl">
+                <Badge variant="orange" className="inline-flex">
+                  BEST CARE, RIGHT NEAR YOU
+                </Badge>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#14261C] tracking-tight">
+                  Meet Their New <span className="text-[#F47B3A]">Favorite</span> Human.
+                </h2>
+                <p className="text-base text-[#445548] leading-relaxed">
+                  Verified vets. Happy pets. Less worry for you.
+                </p>
               </div>
-            </div>
+            </Reveal>
 
-            {/* Right Cards Stack / Slider */}
-            <div className="lg:col-span-7 relative">
-              <div
-                ref={vetScrollRef}
-                className="flex items-center gap-6 overflow-x-auto no-scrollbar py-2 px-1 scroll-smooth"
-              >
-                {loadingVets ? (
-                  Array.from({ length: 2 }).map((_, i) => (
-                    <div key={i} className="w-[300px] sm:w-[320px] shrink-0 bg-white rounded-2xl p-4 border border-[#ECE5D8] space-y-3">
-                      <Skeleton className="w-full aspect-[4/3] rounded-2xl" />
-                      <Skeleton className="h-5 w-1/2" />
-                      <Skeleton className="h-4 w-1/3" />
-                    </div>
-                  ))
-                ) : filteredVets.length > 0 ? (
-                  filteredVets.map((vet) => {
-                    const photo = getVetImageUrl(vet.name, vet.photoUrl, vet.id);
-                    return (
-                    <Card
-                      key={vet.id}
-                      onClick={() => navigate(`/vets/${vet.id}`)}
-                      className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group bg-white rounded-3xl p-5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all cursor-pointer"
-                    >
-                      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#F4EFE6] flex items-center justify-center">
-                        {photo ? (
-                          <img
-                            src={photo}
-                            alt={vet.name}
-                            className="w-full h-full object-cover object-[center_20%] rounded-2xl"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-[#F4EFE6] text-[#16241B]">
-                            <span className="text-4xl font-black">{vet.name.charAt(0)}</span>
-                            <span className="text-xs text-gray-500 font-semibold mt-1">{vet.name}</span>
-                          </div>
-                        )}
-                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
-                          {vet.reviewsCount && vet.reviewsCount > 0 && vet.rating ? (
-                            <>
-                              <span className="text-yellow-500">★</span> {vet.rating.toFixed(1)}
-                            </>
-                          ) : (
-                            <span className="text-gray-400 text-[11px] font-bold">No reviews</span>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-black text-[#16241B] group-hover:text-[#EF7C3C] transition-colors">
-                          {vet.name}
-                        </h3>
-                        <p className="text-xs font-bold text-[#EF7C3C] mt-0.5">
-                          {vet.specialization}
-                        </p>
-                        {vet.secondarySpecialization && (
-                          <p className="text-xs text-[#556658] font-medium mt-0.5">
-                            {vet.secondarySpecialization}
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-1 text-xs text-[#556658]">
-                        <div className="flex items-center gap-1.5 flex-wrap font-semibold">
-                          {vet.reviewsCount && vet.reviewsCount > 0 && vet.rating ? (
-                            <>
-                              <span className="text-[#F5A623] font-extrabold flex items-center gap-0.5">
-                                ★ {vet.rating.toFixed(1)}
-                              </span>
-                              <span>({vet.reviewsCount} review{vet.reviewsCount > 1 ? 's' : ''})</span>
-                            </>
-                          ) : (
-                            <span className="text-gray-400">No reviews yet</span>
-                          )}
-                          <span>•</span>
-                          <span>{vet.experienceYears || 7}+ yrs exp</span>
-                        </div>
-                        <p className="font-bold text-[#287A41] pt-0.5 text-xs">
-                          {formatCurrency(vet.consultationFee ?? 500)} / visit
-                        </p>
-                      </div>
-                    </Card>
-                    );
-                  })
-                ) : (
-                  <div className="w-full py-8 text-center text-[#5D6F63] text-sm font-semibold">
-                    No veterinarians listed for {activeCategory} at this time.
-                  </div>
-                )}
-              </div>
-
-              {/* Scroll Right Arrow Button */}
-              <button
-                onClick={handleVetScroll}
-                aria-label="Next vet"
-                className="absolute -right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-[#E5DFCE] shadow-md flex items-center justify-center text-[#16241B] hover:bg-[#FAF6EE] transition-all cursor-pointer z-10 hidden sm:flex"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+            {/* Upgraded Vet Carousel */}
+            <Reveal delay={0.12}>
+              <VetCarousel
+                vets={vets}
+                activePetType={activeCategory}
+                onSelectPetType={(cat) => setActiveCategory(cat)}
+                onBook={(vetId) => navigate(`/vets/${vetId}`)}
+              />
+            </Reveal>
           </div>
         </section>
 
         {/* 7. Testimonials Section */}
         <Testimonials />
-
-        {/* 8. Shared CTA Banner */}
-        <CtaBanner />
 
         {/* 8. Shared CTA Banner */}
         <Reveal delay={0.1}>
