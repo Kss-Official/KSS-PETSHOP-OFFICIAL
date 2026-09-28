@@ -39,6 +39,8 @@ import { ErrorBoundary } from './components/feedback/ErrorBoundary';
 import { ScrollProgress } from './components/motion/ScrollProgress';
 import { CustomCursor } from './components/motion/CustomCursor';
 import { Preloader } from './components/motion/Preloader';
+import { CartDrawer } from './components/cart/CartDrawer';
+import { BackToTop } from './components/motion/BackToTop';
 
 function AppCartOverlay() {
   const { flyingClones, confettiParticles } = useCart();
@@ -49,9 +51,11 @@ function AppCartOverlay() {
       <CustomCursor showTrail={true} />
       <FlyToCartPortal clones={flyingClones} />
       <Confetti particles={confettiParticles} />
+      <CartDrawer />
       <CompareBar />
       <CompareSheet />
       <FloatingSupport />
+      <BackToTop />
     </>
   );
 }
