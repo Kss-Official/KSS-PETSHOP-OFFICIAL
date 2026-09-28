@@ -113,6 +113,38 @@ export const VetCarousel: React.FC<VetCarouselProps> = ({
     navigate(`/vets/${vetId}`);
   };
 
+  // Mouse wheel & trackpad scroll support
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    let lastWheelTime = 0;
+    const cooldownMs = 250;
+
+    const handleWheel = (e: WheelEvent) => {
+      const absX = Math.abs(e.deltaX);
+      const absY = Math.abs(e.deltaY);
+      const isHorizontal = absX > absY;
+      const dominantDelta = isHorizontal ? e.deltaX : e.deltaY;
+
+      if (Math.abs(dominantDelta) < 15) return;
+
+      const now = Date.now();
+      if (now - lastWheelTime < cooldownMs) return;
+
+      if (dominantDelta > 0) {
+        handleNext();
+        lastWheelTime = now;
+      } else if (dominantDelta < 0) {
+        handlePrev();
+        lastWheelTime = now;
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: true });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleNext, handlePrev]);
+
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
